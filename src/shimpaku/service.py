@@ -123,6 +123,18 @@ async def routing_get_health(device: str | None = None) -> dict:
     return await _device_read(devices.routing_health, device)
 
 
+async def device_get_health(device: str | None = None, window_min: int = 60) -> dict:
+    """Stored health per device (no device call): latest CPU / memory samples and the device-minute
+    verdicts of the last `window_min` minutes. Provider: the daemon's store (`providers.py`)."""
+    return await _call_provider("device_get_health", device=device, window_min=int(window_min))
+
+
+async def iface_get_history(device: str, window_min: int = 60) -> dict:
+    """Per-interface traffic rates over time, computed from the collector's stored gNMI counters
+    (`if.in_octets` / `if.out_octets` / packets). Provider: the daemon's store (`providers.py`)."""
+    return await _call_provider("iface_get_history", device=device, window_min=int(window_min))
+
+
 async def config_get_commits(device: str, n: int = 10) -> dict:
     """Newest commits (index, user, client, time, log, pending-confirm flag)."""
     return await _device_read(devices.commits, device, n)

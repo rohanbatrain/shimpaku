@@ -807,6 +807,9 @@ def create_app(
     async def stream_events(request: Request, p: Principal = Depends(reader)):
         return poller(request, "incidents", EVENTS_TICK_S, lambda: _viewed(view.incident_list, call("incident_list")))
 
+    from shimpaku.api import routes_viz  # /api/viz/*: Overview, Topology, Device pages (read-only)
+    app.include_router(routes_viz.router(call, reader))
+
     @app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
     async def api_404(rest: str):
         raise HTTPException(404, "no such API route")

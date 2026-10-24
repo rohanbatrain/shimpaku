@@ -169,9 +169,127 @@ def register_all(store) -> None:
             return {"available": False, "reason": "no benchmark results published yet"}
         return json.loads(p.read_text())
 
+    def _epoch(t) -> float | None:
+        if t is None or (not isinstance(t, str) and pd.isna(t)):
+            return None
+        t = pd.Timestamp(t)
+        return (t.tz_localize("UTC") if t.tzinfo is None else t).timestamp()
+
+    async def device_get_health(device: str | None = None, window_min: int = 60) -> dict:
+        """Stored health only (no device call): the newest CPU / memory sample per device (≤ 10 min
+        old) and the device-minute verdicts of the window. Nothing is filled in when absent."""
+        window_min = max(5, min(int(window_min), 7 * 24 * 60))
+        end = pd.Timestamp.now(tz="UTC").tz_localize(None)
+        start = end - pd.Timedelta(minutes=window_min)
+        with adb.lock_of(store):
+            cur = _cursor()
+            try:
+                have = adb.tables(cur)
+                samples = cur.execute(
+                    "SELECT entity_id, metric, arg_max(value, ts), max(ts) FROM metric_sample "
+                    "WHERE ts >= ? AND metric IN ('cpu.idle', 'mem.used_pct') GROUP BY 1, 2",
+                    [end - pd.Timedelta(minutes=10)]).fetchall() if "metric_sample" in have else []
+                minutes = cur.execute(
+                    "SELECT entity_id, status, classifier, sub_classifier, count(*), max(minute) FROM device_minute "
+                    "WHERE minute >= ? AND minute < ? AND sle = 'fabric_health' GROUP BY 1, 2, 3, 4",
+                    [start, end]).fetchall() if "device_minute" in have else []
+                ports = cur.execute(
+                    "SELECT entity_id, arg_max(value, ts) FROM metric_sample "
+                    "WHERE ts >= ? AND metric = 'if.oper_up' GROUP BY 1",
+                    [end - pd.Timedelta(minutes=10)]).fetchall() if "metric_sample" in have else []
+                last = cur.execute(
+                    "SELECT entity_id, arg_max(status, minute), arg_max(classifier, minute), "
+                    "arg_max(sub_classifier, minute), max(minute) FROM device_minute "
+                    "WHERE minute >= ? AND minute < ? AND sle = 'fabric_health' GROUP BY 1",
+                    [start, end]).fetchall() if "device_minute" in have else []
+            finally:
+                cur.close()
+        from shimpaku import devices as _dev
+        names = [device] if device else sorted(_dev.inventory().nodes)
+        out = {n: {"device": n, "cpu_pct": None, "mem_pct": None, "sampled_at": None,
+                   "minutes": {"n": 0, "good": 0, "bad": 0}, "classifiers": [], "last": None, "ports": {}}
+               for n in names}
+        for eid, v in ports:
+            node, _, ifn = eid.partition(":")
+            if node in out and ifn and ":" not in ifn and v is not None:
+                out[node]["ports"][ifn] = "up" if v >= 0.5 else "down"
+        for eid, metric, value, t in samples:
+            d = out.get(eid)
+            if d is None or value is None:
+                continue
+            if metric == "cpu.idle":
+                d["cpu_pct"] = round(100.0 - float(value), 1)
+            else:
+                d["mem_pct"] = round(float(value), 1)
+            d["sampled_at"] = max(d["sampled_at"] or 0, _epoch(t) or 0) or None
+        for eid, status, cls, sub, k, _t in minutes:
+            d = out.get(eid)
+            if d is None or status not in ("good", "bad"):
+                continue
+            d["minutes"]["n"] += int(k)
+            d["minutes"][status] += int(k)
+            if status == "bad":
+                d["classifiers"].append({"classifier": cls, "sub_classifier": sub, "minutes": int(k)})
+        for eid, status, cls, sub, t in last:
+            if eid in out:
+                out[eid]["last"] = {"minute": _epoch(t), "status": status, "classifier": cls, "sub_classifier": sub}
+        for d in out.values():
+            d["classifiers"].sort(key=lambda c: -c["minutes"])
+        return {"window_min": window_min, "devices": list(out.values())}
+
+    IF_RATE_METRICS = {"if.in_octets": "in_bps", "if.out_octets": "out_bps",
+                       "if.in_pkts": "in_pps", "if.out_pkts": "out_pps"}
+
+    async def iface_get_history(device: str, window_min: int = 60) -> dict:
+        """Traffic rates per interface from the collector's stored gNMI counters: the last sample of
+        each bucket, rate = Δcounter / Δt between consecutive buckets (octets × 8 = bits). A counter
+        that goes backwards (reset) gives no point rather than a made-up one."""
+        window_min = max(5, min(int(window_min), 24 * 60))
+        step_min = max(1, window_min // 60)
+        end = pd.Timestamp.now(tz="UTC").tz_localize(None)
+        start = end - pd.Timedelta(minutes=window_min + step_min)
+        with adb.lock_of(store):
+            cur = _cursor()
+            try:
+                if "metric_sample" not in adb.tables(cur):
+                    return {"available": False, "reason": "the collector has not created its metric table"}
+                df = cur.execute(
+                    "SELECT entity_id, metric, time_bucket(to_minutes(CAST(? AS BIGINT)), ts) AS b, "
+                    "arg_max(value, ts) AS v, max(ts) AS t FROM metric_sample "
+                    "WHERE ts >= ? AND starts_with(entity_id, ?) AND metric IN (SELECT unnest(?)) "
+                    "GROUP BY 1, 2, 3 ORDER BY 1, 2, 3",
+                    [step_min, start, f"{device}:", list(IF_RATE_METRICS)]).df()
+            finally:
+                cur.close()
+        if df.empty:
+            return {"available": False,
+                    "reason": f"no interface counters stored for {device} in the last {window_min} min"}
+        ifaces: dict[str, dict[float, dict]] = {}
+        for (eid, metric), g in df.groupby(["entity_id", "metric"], sort=False):
+            ifn = eid.split(":", 1)[1]
+            if ":" in ifn:
+                continue
+            key = IF_RATE_METRICS[metric]
+            pts = ifaces.setdefault(ifn, {})
+            prev = None
+            for r in g.itertuples():
+                t = _epoch(r.t)
+                if prev is not None and t and prev[1] and t > prev[1] and r.v >= prev[0]:
+                    rate = (r.v - prev[0]) / (t - prev[1]) * (8 if key.endswith("bps") else 1)
+                    bt = _epoch(r.b)
+                    pts.setdefault(bt, {"t": bt})[key] = round(rate, 2)
+                prev = (r.v, t)
+        rows = [{"ifname": ifn, "series": [pts[k] for k in sorted(pts)]} for ifn, pts in sorted(ifaces.items())]
+        return {"device": device, "window_min": window_min, "step_s": step_min * 60,
+                "first_sample": _epoch(df["t"].min()), "last_sample": _epoch(df["t"].max()),
+                "source": "gNMI interface counters stored by the collector (metric_sample)",
+                "interfaces": [r for r in rows if r["series"]]}
+
     service.register_provider("sle_get_summary", sle_get_summary)
     service.register_provider("sle_get_blast_radius", sle_get_blast_radius)
     service.register_provider("probe_run", probe_run)
     service.register_provider("incident_list", incident_list)
     service.register_provider("incident_get", incident_get)
     service.register_provider("bench_results", bench_results)
+    service.register_provider("device_get_health", device_get_health)
+    service.register_provider("iface_get_history", iface_get_history)
