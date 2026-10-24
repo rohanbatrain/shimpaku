@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, useApi } from "../api";
 import { useSession } from "../session";
+import { EraseData } from "./Erase";
 import { Busy } from "./ui";
 import { fixtureArgs } from "./fixture";
 
@@ -39,8 +40,14 @@ export function LeaseBanner() {
     refresh();
   };
   if (!l) return null;
+  const erase = l.state !== "ended" && (
+    <div className="lease-erase">
+      <EraseData path="/api/lease/erase" what="Your display name, the invite note and any request behind it" onDone={() => setTimeout(refresh, 2500)} />
+    </div>
+  );
   const left = l.state === "active" && l.ends ? Math.max(0, Math.round(l.ends - now / 1000)) : null;
   return (
+    <>
     <div className={`notice lease ${l.state === "active" ? "ok" : "warn"}`} role="status">
       <span style={{ flex: 1 }}>
         {l.state === "active" ? <>Tester session · <b className="mono">{left != null ? mmss(left) : "—"}</b> left · {l.breaks_left} breaks, {l.seeds_left} re-seeds left</>
@@ -49,6 +56,8 @@ export function LeaseBanner() {
       </span>
       {l.state !== "ended" && <button className="btn" onClick={end} disabled={busy}>{busy && <Busy />} End session</button>}
     </div>
+    {erase}
+    </>
   );
 }
 

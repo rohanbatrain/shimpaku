@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "../api";
 import { DISCLAIMER, Mark } from "../App";
+import { DeletionLine } from "../components/Erase";
 import { Busy } from "../components/ui";
 
 export type Notice = { retention_days: number; contact: string | null; lease_minutes: number; max_slots: number; open: boolean };
@@ -109,7 +110,7 @@ export default function Request() {
                 <li><b>Purpose:</b> to schedule your session and reply to you.</li>
                 <li><b>What is kept:</b> your name, contact, message and times; if you are approved, the times of your session and what you do in it (audited under a pass id, not your name).</li>
                 <li><b>How long:</b> name, contact and message are deleted {days} days after your slot (or after a decline). The audit trail keeps only ids.</li>
-                <li><b>Deletion:</b> ask {n?.contact ? <span className="mono">{n.contact}</span> : "the lab owner"} and it is deleted sooner. You may also complain to India's Data Protection Board.</li>
+                <DeletionLine days={days} contact={n?.contact} />
               </ul>
             </div>
             <label className="small" style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 14 }}>

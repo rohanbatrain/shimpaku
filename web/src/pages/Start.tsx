@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { DISCLAIMER, Mark } from "../App";
+import { DeletionLine, EraseData } from "../components/Erase";
 import { Busy } from "../components/ui";
 
 type Status = { valid: boolean; reason: string | null; retention_days: number; lease_minutes: number; contact: string | null; opens_at?: number; closes_at?: number };
@@ -62,6 +63,9 @@ export default function Start({ onDone }: { onDone: () => void }) {
               {WHY[st.reason ?? "invalid"] ?? WHY.invalid}
               {st.reason === "early" && st.opens_at && <> It opens at <b>{at(st.opens_at)}</b>; keep this link and come back then.</>}
               {st.reason !== "early" && <> <a href="/request">Request a new session</a>.</>}
+              {st.reason !== "invalid" && (
+                <EraseData path="/api/invites/erase" body={{ token }} what="Your display name, the invite note and any request behind this link" />
+              )}
             </div>
           ) : (
             <>
@@ -72,7 +76,7 @@ export default function Start({ onDone }: { onDone: () => void }) {
                   <li><b>Purpose:</b> to know who tried this demo and follow up with them.</li>
                   <li><b>What is kept:</b> your request (name, contact, message) or the owner's note about you, the display name below if you give one, the times of your session, and what you do in it (your actions are audited under a pass id, not your name).</li>
                   <li><b>How long:</b> your name, contact, message and the owner's note are deleted {days} days after your session ends. The audit trail keeps only the pass id.</li>
-                  <li><b>Deletion:</b> ask {st?.contact ? <span className="mono">{st.contact}</span> : "the person who sent you this link"} and it is deleted sooner. You may also complain to India's Data Protection Board.</li>
+                  <DeletionLine days={days} contact={st?.contact} />
                 </ul>
               </div>
               <div className="field">

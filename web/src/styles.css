@@ -167,6 +167,10 @@ dl.kv dd { margin: 0; }
 ul.chg-list { list-style: none; padding: 0; margin: 0; display: flex; gap: 6px 22px; flex-wrap: wrap; font-size: 13px; }
 ul.chg-list li { display: flex; gap: 6px; align-items: center; }
 .notice.lease { margin: 12px 24px 0; display: flex; align-items: center; gap: 12px; }
+.erase-box { margin-top: 16px; }
+.erase-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lease-erase { margin: 8px 24px 0; }
+@media (max-width: 600px) { .erase-actions .btn { flex: 1 1 auto; justify-content: center; } .lease-erase { margin: 8px 16px 0; } }
 
 @media (max-width: 900px) {
   /* Drawer, not bottom tabs: six destinations (two admin) + identity/sign-out + disclaimer don't fit four tabs. */

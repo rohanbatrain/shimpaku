@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { Copy } from "grommet-icons";
 import { api, ApiError } from "../api";
+import { EraseData } from "../components/Erase";
 import { Busy, Pill } from "../components/ui";
 import { PublicFrame, when } from "./Request";
 
 type St = {
-  id: string; status: "pending" | "approved" | "declined" | "expired" | "used"; slots: number[];
+  id: string; status: "pending" | "approved" | "declined" | "expired" | "used" | "erased"; slots: number[];
   slot_start: number | null; slot_end: number | null; opens_at: number | null; decline_note: string | null;
   link: string | null; ics_url: string | null; retention_days: number;
 };
-const TONE = { pending: "info", approved: "ok", declined: "crit", expired: "neutral", used: "neutral" } as const;
-const LABEL = { pending: "Waiting for the owner", approved: "Approved", declined: "Declined", expired: "Expired", used: "Used" };
+const TONE = { pending: "info", approved: "ok", declined: "crit", expired: "neutral", used: "neutral", erased: "neutral" } as const;
+const LABEL = { pending: "Waiting for the owner", approved: "Approved", declined: "Declined", expired: "Expired", used: "Used", erased: "Deleted" };
 
 /** Public: the status token in the URL is the only key to this page. */
 export default function RequestStatus() {
@@ -47,7 +48,7 @@ export default function RequestStatus() {
             )}
             <dl className="status-kv">
               <dt>Status</dt><dd><Pill tone={TONE[st.status]}>{LABEL[st.status]}</Pill></dd>
-              <dt>You asked for</dt><dd>{st.slots.map((t) => <div key={t}>{when(t)}</div>)}</dd>
+              {st.slots.length > 0 && <><dt>You asked for</dt><dd>{st.slots.map((t) => <div key={t}>{when(t)}</div>)}</dd></>}
               {st.slot_start && <><dt>Your slot</dt><dd><b>{when(st.slot_start)}</b> (30 minutes)</dd></>}
               {st.opens_at && st.status === "approved" && <><dt>Link opens</dt><dd>{when(st.opens_at)}</dd></>}
               {st.decline_note && <><dt>Note</dt><dd style={{ whiteSpace: "pre-wrap" }}>{st.decline_note}</dd></>}
@@ -68,7 +69,15 @@ export default function RequestStatus() {
             {st.status === "declined" && <p className="weak">You may <a href="/request">send another request</a> for other times.</p>}
             {st.status === "expired" && <p className="weak">The times passed without a session. <a href="/request">Send a new request</a>.</p>}
             {st.status === "used" && <p className="weak">Your session link has been used. Thanks for trying Shimpaku.</p>}
-            <p className="small weak" style={{ marginTop: 16 }}>Your name, contact and message are deleted {st.retention_days} days after your slot or a decline.</p>
+            {st.status === "erased" ? (
+              <div className="notice ok erase-box" role="status"><b>Your data has been deleted.</b> Your name, contact, message and times are gone; only the request id and when it was made remain. <a href="/request">Send a new request</a>.</div>
+            ) : (
+              <>
+                <p className="small weak" style={{ marginTop: 16 }}>Delete your data any time here — it is erased immediately. Otherwise your name, contact and message are deleted automatically {st.retention_days} days after your slot.</p>
+                <EraseData path="/api/session-requests/erase" body={{ token: s }} what="Your name, contact, message and times"
+                  onDone={() => api<St>(`/api/session-requests/status?s=${encodeURIComponent(s)}`).then(setSt).catch(() => {})} />
+              </>
+            )}
           </>
         )}
       </div>
