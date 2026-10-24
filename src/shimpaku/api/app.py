@@ -7,6 +7,11 @@ function names). Rules enforced here, not in the browser:
 - Bearer scopes: ``read`` = GETs and the assistant; ``propose`` = also propose and cancel.
 - Every non-GET that rides on cookies passes an Origin / Sec-Fetch-Site check and a double-submit
   CSRF token (cookie value echoed in ``X-CSRF-Token``). Bearer requests carry no cookies and are exempt.
+- Tester passes (``shimpaku.api.lease``): an invite redeemed at ``POST /api/invites/redeem``
+  gives a tester session bound to one lease; a tester writes only while that lease is active, and
+  the engine limits what it may write. Invites, leases and tokens are operator-only surfaces.
+- Writes, demo operations and Ask Shim are rate-limited per principal and globally (429 with
+  ``Retry-After``; ``shimpaku.api.ratelimit``).
 - The session cookie is ``__Host-shimpaku_session`` (Secure) only over https; over plain http it is
   ``shimpaku_session`` without Secure, and ``/api/settings`` reports that so the UI can warn.
 """
@@ -30,7 +35,10 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 from shimpaku.api import view
+from shimpaku.api import lease as lease_mod
 from shimpaku.api.auth import ADMIN_USER, OFF_MODE_USER, SCOPES, AuthStore, Principal, load_admin_hash, verify_password
+from shimpaku.api.llm_keys import LLMKeyError
+from shimpaku.api.ratelimit import RateLimiter
 from shimpaku.config import settings
 
 log = logging.getLogger("shimpaku.api")
@@ -39,7 +47,7 @@ WEB_DIST = Path(__file__).resolve().parents[3] / "web" / "dist"
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 REPLAY_READ_ONLY = "read-only replay: the write path runs only against the private lab"
 ERROR_STATUS = {"not_found": 404, "unknown_device": 404, "bad_state": 409, "forbidden": 403,
-                "bad_argument": 422, "propose_failed": 422, "device_unreachable": 502, "provider_failed": 502}
+                "bad_argument": 422, "propose_failed": 422, "busy": 409, "device_error": 502, "device_unreachable": 502, "provider_failed": 502}
 
 SLE_TICK_S = 10.0
 ACTIONS_TICK_S = 2.0
@@ -60,6 +68,26 @@ class ProposeBody(BaseModel):
     kind: str = Field(min_length=1, max_length=64)
     args: dict[str, Any] = Field(default_factory=dict)
     reason: str = Field(default="", max_length=4000)
+
+
+class InviteBody(BaseModel):
+    note: str = Field(default="", max_length=500)
+    ttl_hours: float | None = Field(default=None, gt=0, le=24 * 30)
+
+
+class RedeemBody(BaseModel):
+    token: str = Field(min_length=1, max_length=200)
+    consent: bool = False
+    display_name: str | None = Field(default=None, max_length=60)
+
+
+def invite_link(token: str) -> str | None:
+    """Built only from the configured SHIMPAKU_PUBLIC_URL, never from a request's Host header."""
+    base = (settings.public_url or "").rstrip("/")
+    return f"{base}/start?i={token}" if base else None
+
+
+NO_REFERRER_PATHS = ("/start", "/api/invites/")
 
 
 class AskBody(BaseModel):
@@ -84,6 +112,8 @@ def create_app(
     auth_mode: str | None = None,
     web_dist: Path | None = None,
     demo: bool | None = None,
+    leases: "lease_mod.LeaseManager | None" = None,
+    limiter: RateLimiter | None = None,
 ) -> FastAPI:
     """Build the app.
 
@@ -99,8 +129,12 @@ def create_app(
     # Replay (public host): every visitor is an anonymous reader; nothing signs in or writes.
     is_replay = bool(getattr(service, "REPLAY", False))
     replay_info = service.info() if is_replay else None
-    auth = AuthStore(statedb)
+    auth = leases.auth if leases is not None else AuthStore(statedb)
     ask_fn = assistant or getattr(service, "assistant_ask", None)
+    if leases is None:
+        real = getattr(service, "__name__", "") == "shimpaku.service"
+        leases = lease_mod.from_settings(auth, service, action_store=(lambda: service._engine().store) if real else None)
+    limiter = limiter or RateLimiter(settings.rate_limit_table())
     dist = web_dist or WEB_DIST
 
     app = FastAPI(title="Shimpaku", version="0.0.1", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
@@ -108,6 +142,8 @@ def create_app(
     app.state.service = service
     app.state.store = store
     app.state.auth_mode = mode
+    app.state.leases = leases
+    app.state.limiter = limiter
 
     async def call(name: str, *args: Any, **kwargs: Any) -> Any:
         fn = getattr(service, name, None)
@@ -136,7 +172,9 @@ def create_app(
         resp = await call_next(request)
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("X-Frame-Options", "DENY")
-        resp.headers.setdefault("Referrer-Policy", "same-origin")
+        # invite pages carry the token in the URL: send no Referer anywhere from them (OWASP)
+        no_ref = request.url.path == "/start" or request.url.path.startswith(NO_REFERRER_PATHS[1])
+        resp.headers["Referrer-Policy"] = "no-referrer" if no_ref else resp.headers.get("Referrer-Policy", "same-origin")
         if not request.url.path.startswith("/api/docs"):
             resp.headers.setdefault(
                 "Content-Security-Policy",
@@ -152,14 +190,21 @@ def create_app(
         authz = request.headers.get("authorization", "")
         if authz.lower().startswith("bearer "):
             p = auth.token_principal(authz[7:].strip())
+            # a tester's token works only while its lease is active
+            if p is not None and p.effective_role == "tester" and not leases.is_active(p.lease_id):
+                p = None
             if p is None:
-                raise HTTPException(401, "invalid or revoked token", headers={"WWW-Authenticate": "Bearer"})
+                raise HTTPException(401, "invalid, expired or revoked token", headers={"WWW-Authenticate": "Bearer"})
             return p
+        sname, _ = _cookie_names(_is_https(request))
+        rec = auth.session_record(request.cookies.get(sname))
+        if rec and rec.get("role") == "tester":
+            if not leases.is_live(rec.get("lease_id")):
+                return None if mode != "off" else Principal("session", OFF_MODE_USER, "admin")
+            return Principal("session", rec["user"], "tester", role="tester", lease_id=rec["lease_id"])
         if mode == "off":
             return Principal("session", OFF_MODE_USER, "admin")
-        sname, _ = _cookie_names(_is_https(request))
-        user = auth.session_user(request.cookies.get(sname))
-        return Principal("session", user, "admin") if user else None
+        return Principal("session", rec["user"], "admin") if rec else None
 
     def check_csrf(request: Request, p: Principal | None) -> None:
         if request.method in SAFE_METHODS or (p is not None and p.kind == "token"):
@@ -183,11 +228,26 @@ def create_app(
         check_csrf(request, p)
         return p
 
+    def rate(category: str, p: Principal | str) -> None:
+        key = p if isinstance(p, str) else (p.token_id or f"{p.name}:{p.lease_id or ''}")
+        wait = limiter.check(category, key)
+        if wait is not None:
+            raise HTTPException(429, f"rate limit ({category}); retry in {wait} s", headers={"Retry-After": str(wait)})
+
+    def require_lease(p: Principal) -> None:
+        if p.effective_role == "tester" and not leases.is_active(p.lease_id):
+            info = leases.lease(p.lease_id) or {}
+            pos = info.get("queue_position")
+            raise HTTPException(403, f"your lease has not started (queue position {pos})" if pos
+                                else "your lease is not active")
+
     def proposer(p: Principal = Depends(reader)) -> Principal:
         if is_replay:
             raise HTTPException(403, REPLAY_READ_ONLY)
         if not p.can_propose:
             raise HTTPException(403, f"{p.name} has scope {p.scope}; proposing needs scope propose")
+        require_lease(p)
+        rate("write", p)
         return p
 
     def session_user(p: Principal = Depends(reader)) -> Principal:
@@ -195,6 +255,18 @@ def create_app(
             raise HTTPException(403, REPLAY_READ_ONLY)
         if not p.can_approve:
             raise HTTPException(403, "this needs a signed-in dashboard user; tokens cannot do it")
+        require_lease(p)
+        return p
+
+    def writer(p: Principal = Depends(session_user)) -> Principal:
+        rate("write", p)
+        return p
+
+    def operator(p: Principal = Depends(reader)) -> Principal:
+        if is_replay:
+            raise HTTPException(403, REPLAY_READ_ONLY)
+        if not p.is_operator:
+            raise HTTPException(403, "operator only")
         return p
 
     def set_csrf(request: Request, response: Response, rotate: bool = False) -> None:
@@ -215,6 +287,7 @@ def create_app(
             "mode": mode, "demo": is_demo, "replay": replay_info, "authenticated": p is not None,
             "user": p.name if p else None, "kind": p.kind if p else None, "scope": p.scope if p else None,
             "can_approve": bool(p and p.can_approve), "can_propose": bool(p and p.can_propose),
+            "role": p.effective_role if p else None, "lease_id": p.lease_id if p else None,
         }
 
     @app.get("/api/settings")
@@ -264,17 +337,17 @@ def create_app(
 
     # ---- tokens (Connected agents) -----------------------------------------------
     @app.get("/api/tokens")
-    async def list_tokens(p: Principal = Depends(session_user)) -> dict:
+    async def list_tokens(p: Principal = Depends(operator)) -> dict:
         return {"tokens": auth.list_tokens(), "scopes": list(SCOPES)}
 
     @app.post("/api/tokens", status_code=201)
-    async def create_token(body: TokenBody, p: Principal = Depends(session_user)) -> dict:
+    async def create_token(body: TokenBody, p: Principal = Depends(operator)) -> dict:
         if body.scope not in SCOPES:
             raise HTTPException(422, f"scope must be one of {list(SCOPES)}; approve is never a token scope")
         return auth.create_token(body.name, body.scope, p.name)
 
     @app.delete("/api/tokens/{token_id}")
-    async def revoke_token(token_id: str, p: Principal = Depends(session_user)) -> dict:
+    async def revoke_token(token_id: str, p: Principal = Depends(operator)) -> dict:
         if not auth.revoke_token(token_id):
             raise HTTPException(404, "no such active token")
         return {"ok": True}
@@ -333,7 +406,7 @@ def create_app(
         return await call("action_propose", body.kind, body.args, body.reason, p.caller())
 
     @app.post("/api/actions/{action_id}/approve")
-    async def approve(action_id: str, p: Principal = Depends(session_user)):
+    async def approve(action_id: str, p: Principal = Depends(writer)):
         return await call("action_approve", action_id, p.caller())
 
     @app.post("/api/actions/{action_id}/cancel")
@@ -341,17 +414,32 @@ def create_app(
         return await call("action_cancel", action_id, p.caller())
 
     @app.post("/api/actions/{action_id}/reject")
-    async def reject(action_id: str, p: Principal = Depends(session_user)):
+    async def reject(action_id: str, p: Principal = Depends(writer)):
         return await call("action_reject", action_id, p.caller())
 
     @app.post("/api/assistant/ask")
     async def ask(body: AskBody, request: Request, p: Principal = Depends(reader)):
         if ask_fn is None:
             raise HTTPException(503, "the assistant is not wired into this daemon")
+        extra: dict = {}
+        if p.effective_role == "tester":
+            require_lease(p)
+            # a tester's questions spend only the lease's own LiteLLM key, never the operator's
+            if "llm_key" not in inspect.signature(ask_fn).parameters:
+                raise HTTPException(503, "Ask Shim is not available to testers on this server")
+            try:
+                key = await leases.llm_key(p.lease_id or "")
+            except LLMKeyError:
+                raise HTTPException(503, "Ask Shim is unavailable: the LLM gateway refused a key for this lease") from None
+            if key is None:
+                raise HTTPException(503, "Ask Shim is not enabled for testers on this server "
+                                         "(no LLM admin key is configured)")
+            extra["llm_key"] = key
+        rate("ask", p)
 
         async def gen():
             try:
-                async for ev in ask_fn(body.question, p.name, body.context):
+                async for ev in ask_fn(body.question, p.name, body.context, **extra):
                     if await request.is_disconnected():
                         break
                     yield {"event": ev.get("type", "message"), "data": json.dumps(ev)}
@@ -360,6 +448,131 @@ def create_app(
                 yield {"event": "error", "data": json.dumps({"type": "error", "message": type(e).__name__})}
 
         return EventSourceResponse(gen(), ping=15)
+
+    # ---- tester passes: invites, leases, demo fixture ----------------------------------
+    @app.get("/api/invites/status")
+    async def invite_status(i: str = "") -> dict:
+        """Does NOT consume the invite (link previews fetch the link too). Notice fields included."""
+        st = leases.invite_status(i) if i and not is_replay else {"valid": False, "reason": "invalid"}
+        return {**st, "retention_days": settings.retention_days, "lease_minutes": int(leases.lease_s // 60),
+                "contact": settings.privacy_contact}
+
+    @app.post("/api/invites/redeem")
+    async def invite_redeem(body: RedeemBody, request: Request, response: Response) -> dict:
+        check_csrf(request, None)
+        if is_replay:
+            raise HTTPException(403, REPLAY_READ_ONLY)
+        rate("redeem", f"ip:{request.client.host if request.client else '?'}")
+        try:
+            info = leases.redeem(body.token, consent=body.consent, display_name=body.display_name)
+        except lease_mod.InviteError as e:
+            status = {"consent": 422, "invalid": 404}.get(e.code, 410)
+            raise HTTPException(status, str(e)) from None
+        secure = _is_https(request)
+        sname, _ = _cookie_names(secure)
+        auth.drop_session(request.cookies.get(sname))
+        sid = auth.create_session(lease_mod.tester_name(info["invite_id"]), role="tester", lease_id=info["id"])
+        response.set_cookie(sname, sid, httponly=True, secure=secure, samesite="lax", path="/")
+        set_csrf(request, response, rotate=True)
+        return {"ok": True, "lease": _public_lease(info)}
+
+    def _public_lease(info: dict | None) -> dict | None:
+        if info is None:
+            return None
+        return {k: v for k, v in info.items() if k != "display_name"}
+
+    @app.get("/api/lease")
+    async def get_lease(p: Principal = Depends(reader)) -> dict:
+        role = p.effective_role
+        assistant_ok = bool(leases.keys and leases.keys.enabled and ask_fn is not None
+                            and "llm_key" in inspect.signature(ask_fn).parameters)
+        if role == "tester":
+            return {"role": role, "lease": _public_lease(leases.lease(p.lease_id)), "assistant": assistant_ok,
+                    "demo_ops": leases.demo_ops}
+        if p.is_operator:
+            live = [x for x in leases.leases() if x["state"] in ("queued", "active", "ending")]
+            return {"role": role, "lease": None, "leases": [_public_lease(x) for x in live]}
+        return {"role": role, "lease": None}
+
+    @app.post("/api/lease/end")
+    async def end_lease(request: Request, response: Response, p: Principal = Depends(reader)) -> dict:
+        if p.effective_role != "tester" or p.kind != "session":
+            raise HTTPException(403, "only a tester ends their own lease here; operators use /api/admin/leases")
+        rate("write", p)
+        info = await leases.end(p.lease_id or "", "tester")
+        secure = _is_https(request)
+        sname, _ = _cookie_names(secure)
+        response.delete_cookie(sname, path="/", secure=secure, httponly=True, samesite="lax")
+        return {"ok": True, "lease": _public_lease(info)}
+
+    @app.post("/api/lease/token", status_code=201)
+    async def lease_token(request: Request, p: Principal = Depends(reader)) -> dict:
+        if p.effective_role != "tester" or p.kind != "session":
+            raise HTTPException(403, "a lease token is issued only to a tester's dashboard session")
+        require_lease(p)
+        rate("write", p)
+        try:
+            tok = leases.issue_token(p.lease_id or "")
+        except lease_mod.LeaseError as e:
+            raise HTTPException(409 if e.code == "exists" else 403, str(e)) from None
+        base = (settings.public_url or f"{request.url.scheme}://{request.url.netloc}").rstrip("/")
+        return {**tok, "mcp_url": f"{base}/mcp"}
+
+    async def _demo(op: str, p: Principal) -> dict:
+        if is_replay:
+            raise HTTPException(403, REPLAY_READ_ONLY)
+        role = p.effective_role
+        if not (p.is_operator or (role == "tester" and p.kind == "session")):
+            raise HTTPException(403, "demo operations need an operator or a tester session")
+        require_lease(p)
+        rate("demo", p)
+        if role == "tester" and not leases.use_demo_op(p.lease_id or "", op):
+            info = leases.lease(p.lease_id) or {}
+            wait = str(max(1, info.get("remaining_s") or 1))
+            raise HTTPException(429, f"this lease has used its {leases.demo_ops} {op} operations",
+                                headers={"Retry-After": wait})
+        return await call(f"demo_{op}", p.caller())
+
+    @app.post("/api/demo/break")
+    async def demo_break(p: Principal = Depends(reader)):
+        return await _demo("break", p)
+
+    @app.post("/api/demo/seed")
+    async def demo_seed(p: Principal = Depends(reader)):
+        return await _demo("seed", p)
+
+    # ---- operator: invites and leases ---------------------------------------------------
+    @app.post("/api/admin/invites", status_code=201)
+    async def admin_invite(body: InviteBody, p: Principal = Depends(operator)) -> dict:
+        inv = leases.create_invite(body.note, p.name, ttl_s=body.ttl_hours * 3600 if body.ttl_hours else None)
+        return {**inv, "link": invite_link(inv["token"]),
+                "link_warning": None if settings.public_url else "SHIMPAKU_PUBLIC_URL is not set; no link built"}
+
+    @app.get("/api/admin/invites")
+    async def admin_invites(p: Principal = Depends(operator)) -> dict:
+        return {"invites": leases.list_invites()}
+
+    @app.delete("/api/admin/invites/{invite_id}")
+    async def admin_invite_revoke(invite_id: str, p: Principal = Depends(operator)) -> dict:
+        if not leases.revoke_invite(invite_id, p.name):
+            raise HTTPException(404, "no such open invite")
+        await leases.tick()
+        return {"ok": True}
+
+    @app.get("/api/admin/leases")
+    async def admin_leases(p: Principal = Depends(operator)) -> dict:
+        return {"leases": leases.leases()}
+
+    @app.post("/api/admin/leases/{lease_id}/revoke")
+    async def admin_lease_revoke(lease_id: str, p: Principal = Depends(operator)) -> dict:
+        if not leases.request_end(lease_id, "operator"):
+            raise HTTPException(404, "no such live lease")
+        await leases.tick()
+        return {"ok": True, "lease": leases.lease(lease_id)}
+
+    @app.post("/api/admin/purge")
+    async def admin_purge(p: Principal = Depends(operator)) -> dict:
+        return leases.purge()
 
     # ---- SSE -------------------------------------------------------------------
     async def _viewed(fn: Callable[[Any], Any], pending: Any) -> Any:

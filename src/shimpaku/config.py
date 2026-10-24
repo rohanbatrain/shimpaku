@@ -26,6 +26,23 @@ class Settings(BaseSettings):
     llm_key: str | None = Field(default=None, repr=False)
     llm_models: str = "triage=nvidia-glm-flash,diagnose=tokenharbor-claude-haiku-5.5-free,escalate=nvidia-glm"
 
+    # ---- guest testers (docs/DEPLOY-DESIGN.md build steps 4-5) ----
+    public_url: str | None = None          # fixed base for invite links; never taken from a Host header
+    invite_ttl_hours: float = 72.0         # time to redeem an invite
+    lease_minutes: float = 30.0            # one tester lease
+    lease_max_active: int = 1              # concurrent leases; the rest queue (FIFO)
+    lease_demo_ops: int = 5                # per lease, each of break and seed
+    retention_days: int = 90               # tester identity data kept after lease end
+    privacy_contact: str | None = None     # how a tester asks for deletion (shown on the Start page)
+    # LiteLLM admin/master key used only to mint and delete per-lease virtual keys. Unset: Ask Shim
+    # is disabled for testers (never falls back to the operator's key).
+    llm_admin_key: str | None = Field(default=None, repr=False)
+    tester_llm_budget_usd: float = 0.50
+    tester_llm_rpm: int = 10
+    tester_llm_models: str = ""            # comma list; empty = the models in llm_models
+    # per-principal/global requests per minute: category=per_principal/global
+    rate_limits: str = "write=30/300,demo=6/30,ask=10/60,mcp=60/600,redeem=10/60"
+
     def require_device_password(self) -> str:
         """Device credentials are never defaulted in code (see .env.example)."""
         if not self.device_password:
@@ -40,6 +57,20 @@ class Settings(BaseSettings):
 
     def models(self) -> dict[str, str]:
         return dict(kv.split("=", 1) for kv in self.llm_models.split(",") if "=" in kv)
+
+    def tester_models(self) -> list[str]:
+        if self.tester_llm_models.strip():
+            return [m.strip() for m in self.tester_llm_models.split(",") if m.strip()]
+        return sorted(set(self.models().values()))
+
+    def rate_limit_table(self) -> dict[str, tuple[int, int]]:
+        out = {}
+        for kv in self.rate_limits.split(","):
+            if "=" in kv and "/" in kv:
+                k, v = kv.split("=", 1)
+                a, b = v.split("/", 1)
+                out[k.strip()] = (int(a), int(b))
+        return out
 
     def topology_paths(self) -> list[Path]:
         return [self.lab_repo / "lab/topologies" / t.strip() for t in self.topologies.split(",") if t.strip()]

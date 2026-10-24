@@ -203,11 +203,13 @@ def test_tester_blocked_outside_fixture_over_rest(eng, monkeypatch, tmp_path, ki
     service.set_audit_log(audit)
     try:
         app = create_app(service, auth_mode="local")
-        # no tester tokens exist until build step 4; stand one in for the token table
-        monkeypatch.setattr(app.state.auth, "token_principal", lambda v: Principal(
-            "token", "token:tester", "propose", token_id="tok_t", role="tester", lease_id="L1"))
+        # a real tester token: invite → redeem → the lease's one MCP token
+        lm = app.state.leases
+        inv = lm.create_invite("gate test", "admin")
+        lease = lm.redeem(inv["token"], consent=True)
+        tok = lm.issue_token(lease["id"])["token"]
         r = TestClient(app).post("/api/actions", json={"kind": kind, "args": args, "reason": "demo"},
-                                 headers={"Authorization": "Bearer x"})
+                                 headers={"Authorization": f"Bearer {tok}"})
         assert r.status_code == 201, r.text
         assert r.json()["status"] == "blocked" and r.json()["policy"]["reasons"][0].startswith("T0 tester scope")
         row = audit.query(tool="action_propose")[0]

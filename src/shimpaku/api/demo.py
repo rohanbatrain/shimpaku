@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import random
 import time
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 DEMO = True
 _T0 = time.time()
@@ -413,8 +413,19 @@ async def bench_results() -> dict:
 
 
 # ---- assistant ------------------------------------------------------------------
-async def assistant_ask(question: str, principal: str, context: dict | None = None) -> AsyncIterator[dict]:
-    """Canned streamed answer: events ``tool`` → ``evidence`` → ``token``… → ``done``."""
+async def demo_seed(caller: Any = None) -> dict:
+    """Stand-in for service.demo_seed: no device, nothing written."""
+    return {"op": "seed", "changed": True, "writes": [{"device": "sw1", "changed": True, "diff": "(demo: no device)"}]}
+
+
+async def demo_break(caller: Any = None) -> dict:
+    """Stand-in for service.demo_break: no device, nothing written."""
+    return {"op": "break", "changed": True, "writes": [{"device": "sw1", "changed": True, "diff": "(demo: no device)"}]}
+
+
+async def assistant_ask(question: str, principal: str, context: dict | None = None,
+                        llm_key: str | None = None) -> AsyncIterator[dict]:
+    """Canned streamed answer (no LLM; a tester's per-lease key is accepted and unused): events ``tool`` → ``evidence`` → ``token``… → ``done``."""
     q = question.lower()
     fabric = any(w in q for w in ("fabric", "leaf", "spine", "ospf", "bfd"))
     tools = (["sle_get_summary(fabric, 60)", "routing_get_health(leaf1)", "iface_get_errors(leaf1, ge-0/0/1)", "config_get_commits(leaf1)"]

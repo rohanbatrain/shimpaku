@@ -21,7 +21,7 @@ from shimpaku.analytics.loop import run_analytics_loop
 from shimpaku.api.app import create_app
 from shimpaku.collector import Collector
 from shimpaku.config import settings
-from shimpaku.mcp.server import build_server, http_app
+from shimpaku.mcp.server import build_server, http_app, set_token_verifier
 
 log = logging.getLogger("shimpaku.daemon")
 
@@ -71,6 +71,10 @@ async def async_main() -> None:
     mcp_server = build_server()  # wires service.set_audit_log + executor audit internally
     mcp_app = http_app(mcp_server)
     rest_app = create_app(service, store, settings.sqlite_path)
+    leases = rest_app.state.leases
+    # bearer tokens on /mcp verify against the AuthStore (expiry, revocation) and, for a
+    # tester's token, its lease being active
+    set_token_verifier(leases.verify_token)
     dispatcher = CombinedASGI(mcp_app, rest_app)
 
     from shimpaku.actions.engine import engine
@@ -80,6 +84,8 @@ async def async_main() -> None:
         tasks.append(asyncio.create_task(Collector(store, topo).run(), name="collector"))
         tasks.append(asyncio.create_task(run_analytics_loop(store), name="analytics"))
         tasks.append(engine().start())
+        # tester leases: timeouts, end-of-lease cleanup, queue promotion, daily retention purge
+        tasks.append(asyncio.create_task(leases.run_forever(), name="leases"))
 
         config = uvicorn.Config(dispatcher, host=settings.bind, port=settings.port, log_level="info")
         server = uvicorn.Server(config)
