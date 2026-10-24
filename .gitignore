@@ -3,7 +3,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 var/
-.paridyum-no-checkpoint
 deploy/vps/snapshot/
 deploy/vps/site-built/
 deploy/vps/.env
