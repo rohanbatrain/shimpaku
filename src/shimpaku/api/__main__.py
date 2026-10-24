@@ -24,8 +24,11 @@ def _loopback(host: str) -> bool:
 
 
 def main() -> None:
-    # auth_mode=off serves every caller as the operator: loopback only, as the MCP endpoint
-    if settings.auth_mode.lower() == "off" and not _loopback(settings.bind):
+    # auth_mode=off serves every caller as the operator: loopback only, as the MCP endpoint.
+    # The replay is the exception: there every caller is an anonymous read-only visitor, nothing
+    # writes and nothing reaches the lab, so it is built to bind publicly (deploy/vps).
+    if (settings.auth_mode.lower() == "off" and not _loopback(settings.bind)
+            and not os.environ.get("SHIMPAKU_REPLAY")):
         raise RuntimeError(f"SHIMPAKU_AUTH_MODE=off refuses a non-loopback bind ({settings.bind}); "
                            "use 127.0.0.1 or set SHIMPAKU_AUTH_MODE=local")
     if os.environ.get("SHIMPAKU_REPLAY"):

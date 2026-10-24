@@ -210,7 +210,8 @@ class Assistant:
                                 payload = res.structured_content
                                 if payload is None:
                                     payload = "\n".join(getattr(x, "text", "") for x in res.content)
-                                ok = not res.is_error and not (isinstance(payload, dict) and "error" in payload)
+                                # a read returns {"error": null, ...} on success: only a non-empty error is a failure
+                                ok = not res.is_error and not (isinstance(payload, dict) and payload.get("error"))
                                 status = (payload.get("status") if isinstance(payload, dict) else None) or ("ok" if ok else "error")
                             except Exception as e:  # noqa: BLE001 — timeouts and transport errors go back to the model
                                 payload, ok, status = {"error": f"{type(e).__name__}: tool call failed"}, False, "error"

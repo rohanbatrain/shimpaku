@@ -154,3 +154,11 @@ def test_parse_answer_and_claims():
     assert not claims_execution("The port has not been bounced; a bounce is proposed.")
     assert not claims_execution("Nothing was executed yet.")
     assert loop.default_mcp_url().endswith("/mcp")
+
+
+def test_a_null_error_field_is_success_not_failure():
+    """Every MCP read returns {"error": null, ...} on success; treating the key's presence as a
+    failure marked all of Shim's tool calls failed and made it retry them (found live 2026-10-25)."""
+    import inspect
+    src = inspect.getsource(loop.Assistant.ask)
+    assert 'payload.get("error")' in src and '"error" in payload' not in src
