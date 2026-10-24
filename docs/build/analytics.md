@@ -16,7 +16,7 @@ been run. R5's numbers come from simulated data. The numbers on this page are la
 | `incidents.py` | Opens, correlates and closes incidents (rules below) |
 | `db.py` | DuckDB access. It accepts a `Store` (and holds `Store._lock`) or a raw connection, and creates the analytics tables only if they are missing (same columns as `store/schema.sql`) |
 | `loop.py` | `run_once(store, now=None)` and **`async def run_analytics_loop(store, every_s=60)`**. The loop runs 3 s after each minute boundary, in a worker thread, and logs and survives errors |
-| `rpm.py` | `parse_probe_results(node, xml)`: turns Junos `get-probe-results` into `probe_result` rows (`client_id = rpm:<node>:<owner>/<test>`, RTT in ms) |
+| `rpm.py` | `parse_probe_results(node, xml)`: turns Junos `get-probe-results` into `probe_result` rows (`client_id = rpm:<node>:<owner>/<test>`, RTT in ms). Fixed 2026-10-24 against the real vJunos 26.2 shape (`tests/collector/fixtures/rpm_sw1.xml`), which nests three `probe-test-generic-results` blocks under current/last/all-tests scopes instead of one flat `probe-results-summary`; it now prefers "last test" (a completed cycle) the same way B-telemetry's local `parse_rpm_xml` did. The old flat shape still parses too (kept for the earlier synthetic test) |
 | `__main__.py` | `python -m shimpaku.analytics --db PATH --minutes N`: a **read-only** replay that writes nothing |
 
 ## SLE definitions

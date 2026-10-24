@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -89,6 +90,19 @@ def test_rpm_parse():
     </probe-results>"""
     (r,) = parse_probe_results("leaf1", xml)
     assert r["client_id"] == "rpm:leaf1:shimpaku/vxlan-l2" and r["ok"] and abs(r["rtt_ms"] - 5.651) < 1e-9
+
+
+def test_rpm_parse_real_vjunos_shape():
+    """Real vJunos 26.2 get-probe-results has no flat probe-results-summary; it nests
+    probe-test-generic-results under current/last/all-tests scopes with RTT further nested
+    under probe-test-rtt/probe-summary-results. Captured live on sw1, 2026-10-24."""
+    xml = Path(__file__).parents[1] / "collector" / "fixtures" / "rpm_sw1.xml"
+    (r,) = parse_probe_results("sw1", xml.read_bytes())
+    assert r["client_id"] == "rpm:sw1:shimpaku/users-servers"
+    assert r["target"] == "10.20.0.1" and r["ok"] and r["loss_pct"] == 0.0
+    # "last test" scope (5 probes), not "current test" (4, in progress) or "all tests" (34, cumulative)
+    assert abs(r["rtt_ms"] - 8.710) < 1e-6
+    assert abs(r["jitter_ms"] - 30.104) < 1e-6
 
 
 # ------------------------------------------------------------------ end-to-end phase-3 exit, synthetic
