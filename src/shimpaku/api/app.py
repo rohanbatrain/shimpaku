@@ -87,6 +87,10 @@ class InviteBody(BaseModel):
     ttl_hours: float | None = Field(default=None, gt=0, le=24 * 30)
 
 
+class EraseBody(BaseModel):
+    token: str = ""  # any bad token (empty, long, unknown) is the same 404, never a 422
+
+
 class RedeemBody(BaseModel):
     token: str = Field(min_length=1, max_length=200)
     consent: bool = False
@@ -671,6 +675,35 @@ def create_app(
         response.delete_cookie(sname, path="/", secure=secure, httponly=True, samesite="lax")
         return {"ok": True, "lease": _public_lease(info)}
 
+    @app.post("/api/lease/erase")
+    async def erase_lease(request: Request, response: Response, p: Principal = Depends(reader)) -> dict:
+        """The tester erases their own data: invite note, display name (and the request behind the
+        invite); the lease ends through the normal cleanup."""
+        if p.effective_role != "tester" or p.kind != "session":
+            raise HTTPException(403, "only a tester erases their own pass here")
+        rate("erase", f"ip:{client_ip(request)}")
+        info = leases.lease(p.lease_id) or {}
+        if not info.get("invite_id") or not leases.erase_tester(info["invite_id"]):
+            raise HTTPException(404, "no such pass")
+        await leases.tick()
+        secure = _is_https(request)
+        sname, _ = _cookie_names(secure)
+        response.delete_cookie(sname, path="/", secure=secure, httponly=True, samesite="lax")
+        return {"ok": True, "erased": True}
+
+    @app.post("/api/invites/erase")
+    async def erase_invite(body: EraseBody, request: Request) -> dict:
+        """Erase via the original invite link, in any state (used, expired, revoked). Any unknown
+        token is the same 404."""
+        check_csrf(request, None)
+        if is_replay:
+            raise HTTPException(403, REPLAY_READ_ONLY)
+        rate("erase", f"ip:{client_ip(request)}")
+        if leases.erase_by_token(body.token) is None:
+            raise HTTPException(404, "no such invite")
+        await leases.tick()
+        return {"ok": True, "erased": True}
+
     @app.post("/api/lease/token", status_code=201)
     async def lease_token(request: Request, p: Principal = Depends(reader)) -> dict:
         if p.effective_role != "tester" or p.kind != "session":
@@ -754,9 +787,6 @@ def create_app(
         check_csrf(request, None)
         if is_replay or mode != "local":
             raise HTTPException(403, "session requests are taken only by a lab in auth mode local")
-        if not (settings.privacy_contact or "").strip():
-            # the notice must tell a stranger how to ask for deletion (DPDP s.5); no contact, no intake
-            raise HTTPException(503, "session requests are closed: no privacy contact is configured")
         rate("request", f"ip:{client_ip(request)}")
         try:
             out = requests_.create(name=body.name, contact=body.contact, message=body.message,
@@ -775,6 +805,20 @@ def create_app(
             raise HTTPException(404, "no such request")
         tok = st.pop("invite_token")
         return {**_req_links(st, tok), "retention_days": settings.retention_days}
+
+    @app.post("/api/session-requests/erase")
+    async def session_request_erase(body: EraseBody, request: Request) -> dict:
+        """The requester erases their request with the status token (DPDP s.12 without a mailbox).
+        Any unknown token is the same 404 as the status page."""
+        check_csrf(request, None)
+        if is_replay:
+            raise HTTPException(403, REPLAY_READ_ONLY)
+        rate("erase", f"ip:{client_ip(request)}")
+        st = requests_.erase(body.token)
+        if st is None:
+            raise HTTPException(404, "no such request")
+        await leases.tick()  # an ended lease: cancel its actions and re-seed now
+        return {**_req_links(st, None), "retention_days": settings.retention_days}
 
     @app.get("/api/session-requests/notice")
     async def session_request_notice() -> dict:

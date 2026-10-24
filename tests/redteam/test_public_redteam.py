@@ -187,3 +187,40 @@ def test_password_alone_never_signs_in_on_the_public_site(pv):  # noqa: F811
     pv.totp.disable()
     assert _login(c).status_code == 403
     assert c.get("/api/whoami").json()["role"] == "visitor"
+
+
+def _erase(c, path, tok):
+    return c.post(path, json={"token": tok}, headers=csrf(c))
+
+
+def test_erasing_another_requesters_data_with_a_guessed_or_other_token_fails(pv):  # noqa: F811
+    rid_a, s_a = a_request(pv)
+    rid_b, s_b = a_request(pv)
+    inv_b = approve(pv, rid_b, pv.clock.t + 3 * HOUR).json()["link"].split("i=")[1]
+    c = cl(pv.pv)
+    # B's request id, a near-miss of B's token, B's invite token on the request route
+    for tok in (rid_b, s_b[:-2], s_b + "x", s_b.upper(), inv_b, "req_" + "0" * 12):
+        assert _erase(c, "/api/session-requests/erase", tok).status_code == 404, tok
+    # a status token is not an invite token, and a request id is not one either
+    for tok in (s_a, s_b, rid_b):
+        assert _erase(c, "/api/invites/erase", tok).status_code == 404, tok
+    # A erasing their own request leaves B untouched
+    assert _erase(c, "/api/session-requests/erase", s_a).status_code == 200
+    c_op, _ = op(pv)
+    b = c_op.get(f"/api/admin/session-requests/{rid_b}").json()
+    assert b["status"] == "approved" and b["name"] == NAME and b["contact"] == CONTACT
+    assert cl(pv.pv).get(f"/api/invites/status?i={inv_b}").json()["reason"] == "early"
+
+
+def test_a_tester_session_cannot_erase_another_testers_pass(pv):  # noqa: F811
+    from test_tester_passes import redeem as redeem_named
+    tok_a, tok_b = invite(pv, note="Alice A"), invite(pv, note="Bob B")
+    t_a, _ = redeem_named(pv, tok_a, name="Alice")
+    t_b, r_b = redeem_named(pv, tok_b, name="Bob")  # queued behind Alice
+    lease_b = r_b.json()["lease"]
+    assert t_a.post("/api/lease/erase", headers=csrf(t_a)).status_code == 200
+    assert pv.lm.lease(lease_b["id"])["display_name"] == "Bob"
+    assert pv.lm._q("SELECT note FROM invite WHERE invite_id=?", (lease_b["invite_id"],))[0]["note"] == "Bob B"
+    # a visitor with no session cannot reach the tester route at all
+    v = cl(pv.pv)
+    assert v.post("/api/lease/erase", headers=csrf(v)).status_code == 403

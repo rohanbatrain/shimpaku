@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     lease_max_active: int = 1              # concurrent leases; the rest queue (FIFO)
     lease_demo_ops: int = 5                # per lease, each of break and seed
     retention_days: int = 90               # tester identity data kept after lease end
-    privacy_contact: str | None = None     # how a tester asks for deletion (shown on the Start page)
+    privacy_contact: str | None = None     # optional; erasure is self-service, this adds a postal/e-mail route to the notices
     # Anonymous visitors get live read-only access in auth_mode=local (role visitor). Off by default
     # so a lab without the edge in front of it stays closed.
     public_view: bool = False
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     # per-principal/global requests per minute: category=per_principal/global
     # read (anonymous visitors, per address) and request (session requests, per address) were added
     # with public view; categories missing from an override keep these defaults.
-    rate_limits: str = "write=30/300,demo=6/30,ask=10/60,mcp=60/600,redeem=10/60,read=120/1200,request=3/20"
+    rate_limits: str = "write=30/300,demo=6/30,ask=10/60,mcp=60/600,redeem=10/60,read=120/1200,request=3/20,erase=10/100"
 
     def require_device_password(self) -> str:
         """Device credentials are never defaulted in code (see .env.example)."""

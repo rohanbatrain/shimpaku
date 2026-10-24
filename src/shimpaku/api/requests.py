@@ -14,8 +14,14 @@ page can show the link; it is wiped when the invite is used, the slot ends, or t
 declined. The invite's note is the request id, never the requester's name.
 
 **States.** ``pending`` -> ``approved`` | ``declined`` | ``expired`` (every requested slot passed);
+any state -> ``erased`` (the requester erased it);
 ``approved`` -> ``used`` (invite redeemed) | ``expired`` (slot ended unused) | ``declined``
 (operator withdrew it; the invite is revoked). ``sweep`` applies the time-based moves.
+
+**Erasure.** ``POST /api/session-requests/erase`` with the status token (the same capability)
+wipes name, contact, message, decline note, preferred slots and the slot at once, cancels a pending
+request, revokes its invite and ends any lease bound to it, and leaves ``erased`` with only the id,
+the status and the timestamps. Idempotent; an unknown token is the same 404 as on the status page.
 
 **Retention.** ``purge`` deletes name, contact, message and decline note ``retention_days`` after
 the slot ended (approved/used/expired after approval), after the decline, or after the last
@@ -233,6 +239,42 @@ class SessionRequests:
         _audit({"kind": "cli" if by == "cli" else "dashboard", "name": by, "role": "operator",
                 "transport": "cli" if by == "cli" else "rest"}, "session_request_decline", {"request_id": rid})
         return self.get(rid)
+
+    # ------------------------------------------------------------------ erasure
+    def erase(self, token: str) -> dict | None:
+        """The requester erases their own request (status token). None for any unknown token.
+        Wipes identity and times at once; the invite is revoked and its lease ended (the caller
+        runs ``LeaseManager.tick`` to finish the cleanup). Idempotent."""
+        if not token or len(token) > 200:
+            return None
+        r = self._erase("status_hash", _digest(token))
+        if r is None:
+            return None
+        if r["invite_id"]:
+            self.lm.erase_invite(r["invite_id"])
+        return self._view(r, operator=False)
+
+    def erase_for_invite(self, invite_id: str) -> str | None:
+        """Erase the request an invite was made for (the tester erased via their invite)."""
+        r = self._erase("invite_id", invite_id)
+        return r["request_id"] if r else None
+
+    def _erase(self, col: str, value: str) -> dict | None:
+        from shimpaku.api.lease import _audit
+
+        now = self.clock()
+        # one UPDATE: an approve racing this one loses (it updates only WHERE status='pending')
+        n = self._x("UPDATE session_request SET status='erased', name=NULL, contact=NULL, message=NULL,"
+                    " decline_note=NULL, slots='[]', slot_start=NULL, slot_end=NULL, invite_token=NULL,"
+                    f" closed_at=COALESCE(closed_at, ?), purged_at=? WHERE {col}=? AND status!='erased'",
+                    (now, now, value))
+        rows = self._q(f"SELECT * FROM session_request WHERE {col}=?", (value,))
+        if not rows:
+            return None
+        if n:
+            _audit({"kind": "dashboard", "name": "visitor", "role": "visitor", "transport": "rest"},
+                   "session_request_erase", {"request_id": rows[0]["request_id"]})
+        return rows[0]
 
     # ------------------------------------------------------------------ calendar
     def ics_for_request(self, rid: str, link: str | None) -> str:

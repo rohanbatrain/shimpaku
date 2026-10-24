@@ -427,8 +427,13 @@ def test_cli_requests_list_approve_decline(pv, monkeypatch):
     assert out.exit_code == 0 and pv.lm.requests.get(rid2)["status"] == "declined"
 
 
-def test_requests_closed_without_a_privacy_contact(pv, monkeypatch):
+def test_requests_open_without_a_privacy_contact(pv, monkeypatch):
+    """Erasure is self-service (the status page), so intake needs no mailbox; the notice then
+    names no contact."""
     from shimpaku.config import settings
     monkeypatch.setattr(settings, "privacy_contact", None)
     r = send(pv)
-    assert r.status_code == 503 and "privacy contact" in r.json()["detail"]
+    assert r.status_code == 201, r.text
+    notice = cl(pv.pv).get("/api/session-requests/notice").json()
+    assert notice["open"] is True and notice["contact"] is None
+    assert cl(pv.pv).get("/api/invites/status?i=x").json()["contact"] is None

@@ -22,6 +22,11 @@ the cleanup steps are recorded one by one, so a daemon restart resumes them:
 
 then the next queued lease is promoted. ``run_forever`` is the daemon task that drives this.
 
+**Erasure.** A tester erases their own data (``POST /api/lease/erase`` from the tester session, or
+``POST /api/invites/erase`` with the invite token, even once it is used or expired): the invite
+note and the display name are wiped at once, the invite is revoked and the lease is ended through
+the normal cleanup. Audit rows carry the invite id only.
+
 **Retention.** ``purge`` deletes the invite note and the display name ``retention_days`` (90)
 after the lease ended (or after an unredeemed invite expired or was revoked). Audit rows are not
 touched: they never held either.
@@ -200,6 +205,42 @@ class LeaseManager:
                 "transport": "cli" if by == "cli" else "rest"}, "invite_revoke", {"invite_id": invite_id})
         if rows[0]["lease_id"]:
             self.request_end(rows[0]["lease_id"], "revoked")
+        return True
+
+    def erase_invite(self, invite_id: str) -> bool:
+        """Wipe the invite note and its lease's display name, revoke the invite and end the lease
+        (the cleanup runs in ``tick``). Idempotent; False for an unknown invite."""
+        rows = self._q("SELECT lease_id, revoked_at FROM invite WHERE invite_id=?", (invite_id,))
+        if not rows:
+            return False
+        now = self.clock()
+        with self._mu:
+            self._db.execute("UPDATE invite SET note=NULL, purged_at=COALESCE(purged_at, ?),"
+                             " revoked_at=COALESCE(revoked_at, ?) WHERE invite_id=?", (now, now, invite_id))
+            self._db.execute("UPDATE lease SET display_name=NULL, purged_at=COALESCE(purged_at, ?)"
+                             " WHERE invite_id=?", (now, invite_id))
+        if rows[0]["lease_id"]:
+            self.request_end(rows[0]["lease_id"], "erased")
+        return True
+
+    def erase_by_token(self, token: str) -> str | None:
+        """Erase via the invite link (any state). Returns the invite id, None for an unknown token."""
+        if not token or len(token) > 200:
+            return None
+        rows = self._q("SELECT invite_id FROM invite WHERE token_hash=?", (_digest(token),))
+        if not rows:
+            return None
+        self.erase_tester(rows[0]["invite_id"])
+        return rows[0]["invite_id"]
+
+    def erase_tester(self, invite_id: str) -> bool:
+        """The tester's own erasure: their invite and lease, and the session request behind the
+        invite if there is one. Audited with the invite id only."""
+        if not self.erase_invite(invite_id):
+            return False
+        self.requests.erase_for_invite(invite_id)
+        _audit({"kind": "dashboard", "name": tester_name(invite_id), "role": "tester", "transport": "rest"},
+               "tester_erase", {"invite_id": invite_id})
         return True
 
     def invite_status(self, token: str) -> dict:
