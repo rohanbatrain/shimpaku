@@ -10,7 +10,8 @@ services:
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    mem_limit: 512m
+    mem_limit: 384m
+    cgroup_parent: edge.slice   # ADR-0204 D3: the whole edge shares one 1 GiB slice
     pids_limit: 128
     environment:
       SHIMPAKU_TRUSTED_PROXIES: "*"   # only Caddy can reach it: no published port
@@ -21,6 +22,8 @@ services:
   caddy:
     # caddy:2 plus the built SPA at /srv/app (Dockerfile target `edge`): one build, no shared volume
     build: { context: ../.., dockerfile: deploy/vps/Dockerfile, target: edge }
+    mem_limit: 192m
+    cgroup_parent: edge.slice
     restart: unless-stopped
     ports: ["80:80", "443:443", "443:443/udp"]
     environment:
@@ -44,7 +47,8 @@ services:
     volumes:
       - kuma_data:/app/data
     networks: [web]          # so it can check replay:8780 directly
-    mem_limit: 512m
+    mem_limit: 320m
+    cgroup_parent: edge.slice
 
 networks:
   web: {}

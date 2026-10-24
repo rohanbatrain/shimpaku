@@ -110,7 +110,7 @@ step_lab_config() {
 step_deploy() {
   need DOMAIN REPO_URL LAB_NETBIRD_IP
   SHIMPAKU_LAB_HOST="$LAB_HOST" SHIMPAKU_VPS_HOST="$VPS_HOST" SHIMPAKU_DOMAIN="$DOMAIN" SHIMPAKU_REPO_URL="$REPO_URL" \
-    SHIMPAKU_LAB_UPSTREAM="$LAB_NETBIRD_IP:$LAB_PORT" deploy/vps/deploy.sh "$@" 2>&1 | tee -a "$LOG"
+    SHIMPAKU_LAB_UPSTREAM="$LAB_NETBIRD_IP:$LAB_PORT" SHIMPAKU_VPS_SUDO_SECRETS="${VPS_SUDO_SECRETS/#\~/$HOME}" deploy/vps/deploy.sh "$@" 2>&1 | tee -a "$LOG"
 }
 
 step_verify() {
