@@ -92,13 +92,31 @@ computer:
 A tester pass stores the operator's invite note and an optional display name. Neither enters the
 audit chain, which records only the invite id (`tester:<invite id>`) and the lease id. A daily purge in
 the daemon (also `shimpaku admin purge`) deletes both 90 days after the lease ends, or after an unused
-invite expired or was revoked; audit rows are never rewritten. Deletion on request: `shimpaku admin
-invite revoke` and then delete the rows by hand (no command for it yet).
+invite expired or was revoked; audit rows are never rewritten.
+
+Erasure is self-service; there is no shared mailbox (`SHIMPAKU_PRIVACY_CONTACT` is optional and only
+adds an "or write to" line to the notices). A tester presses **Delete my data** on the session banner
+(`POST /api/lease/erase`, tester session + CSRF) or on the original invite page, which works even once
+the invite is used, expired or revoked (`POST /api/invites/erase` with the invite token, CSRF). Either
+wipes the invite note and display name at once, revokes the invite, ends the lease through the normal
+cleanup (actions cancelled, token/session/LLM key revoked, fixture re-seeded) and erases the session
+request behind a slot-bound invite. Audit row `tester_erase` carries the invite id only.
 
 Session requests store the requester's name, contact (e-mail or LinkedIn URL), message and preferred
 times, shown only to the operator. The audit chain records request ids only. The same purge deletes
 name, contact, message and decline note 90 days after the slot ended, the decline, or the last
 requested time of an expired request.
+
+A requester presses **Delete my data** on their status page (`POST /api/session-requests/erase` with
+the status token, CSRF, rate-limited per address as `erase`, default 10/min). In one UPDATE it wipes
+name, contact, message, decline note, the preferred times and the approved slot, cancels a pending
+request (an approve racing it loses: approve updates only a `pending` row), revokes the invite and
+ends any lease bound to it, and leaves the row `erased` with only the id, status and timestamps. An
+erased request cannot be approved or declined. Idempotent; audit row `session_request_erase` with
+the request id only. Every unknown, malformed or other person's token gets the same 404 on all
+three erase routes (the status token, invite token and request id are not interchangeable;
+`tests/redteam/test_public_redteam.py`). Session-request intake no longer requires a privacy contact
+(it returned 503 without one until 2026-10-25).
 
 ## Scope
 

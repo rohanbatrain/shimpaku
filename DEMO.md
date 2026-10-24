@@ -111,7 +111,10 @@ shimpaku admin requests decline req_… --note "Fully booked this month"
    5 min after the slot. You get the link (copy it) and an `.ics`; their status page shows the same
    link and an **Add to calendar** file. Nothing is e-mailed automatically: send the link yourself.
 4. Unanswered requests expire when their times pass; unused approvals expire at the slot end.
-   Name, contact and message are deleted 90 days after the slot or the decline.
+   Name, contact and message are deleted 90 days after the slot or the decline. Requesters can
+   delete their own data any time with **Delete my data** on their status page: it is erased at
+   once, a pending request is cancelled and an approved slot's invite (and any running session) is
+   withdrawn. The row shows as `erased` in the list. No mailbox is needed for this.
 
 ## Ad-hoc tester passes
 
@@ -136,7 +139,10 @@ shimpaku admin invite revoke inv_…                                # also ends 
   actions are cancelled, their token, session and LLM key are revoked, and the fixture is re-seeded.
 - Ask Shim for testers needs `SHIMPAKU_LLM_ADMIN_KEY` (each lease gets its own LiteLLM key, USD 0.50);
   without it they are told the assistant is off.
-- Their note and display name are deleted 90 days after the lease (daily, or `shimpaku admin purge`).
+- Their note and display name are deleted 90 days after the lease (daily, or `shimpaku admin purge`),
+  or at once when they press **Delete my data** on the session banner or on their invite page (works
+  after the lease ended too); that also ends their session. `SHIMPAKU_PRIVACY_CONTACT` is optional:
+  set it only to add an "or write to" line to the notices.
   Tunables: `SHIMPAKU_INVITE_TTL_HOURS`, `SHIMPAKU_LEASE_MINUTES`, `SHIMPAKU_LEASE_MAX_ACTIVE`,
   `SHIMPAKU_LEASE_DEMO_OPS`, `SHIMPAKU_RETENTION_DAYS`, `SHIMPAKU_PRIVACY_CONTACT`,
   `SHIMPAKU_TESTER_LLM_BUDGET_USD`, `SHIMPAKU_TESTER_LLM_RPM`, `SHIMPAKU_RATE_LIMITS`.
