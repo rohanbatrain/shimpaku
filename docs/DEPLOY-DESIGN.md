@@ -48,7 +48,7 @@ pings every 15 s.
 |---|---|---|---|
 | Visitor | nothing | read the replay, or live reads of `sw1` and `leaf2` when the lab is up | write anything; MCP; Ask Shim |
 | Tester | a single-use invite link from the owner, redeemed by tapping "Start demo" with a consent box | for one 30-minute lease: break or seed the fixture, propose/approve/reject/cancel **fixture actions from their own lease**, Ask Shim within a budget, one expiring MCP token (scope `propose`, fixture only) | any other kind, device, port or VLAN; tokens; settings; another tester's action |
-| Operator | local sign-in (argon2id) | everything, as today | — |
+| Operator | local sign-in: argon2id password + TOTP code (required with public view; one-time recovery codes as backup); 30 min idle / 4 h sessions, browser-session cookie | everything, as today | — |
 
 **The fixture** is `add_vlan_to_trunk` on `sw1 ge-0/0/5`, VLAN 999 only. Break and seed run
 through the engine, take the device lock, and are audited. Today they are CLI-only and bypass the

@@ -141,6 +141,26 @@ shimpaku admin invite revoke inv_…                                # also ends 
   `SHIMPAKU_LEASE_DEMO_OPS`, `SHIMPAKU_RETENTION_DAYS`, `SHIMPAKU_PRIVACY_CONTACT`,
   `SHIMPAKU_TESTER_LLM_BUDGET_USD`, `SHIMPAKU_TESTER_LLM_RPM`, `SHIMPAKU_RATE_LIMITS`.
 
+## Demoing from someone else's laptop
+
+When you only have a borrowed machine (a meeting-room PC, an interviewer's laptop):
+
+1. Open `https://app.<domain>`. Everyone sees the live lab read-only; nothing to install.
+2. Click **Operator sign in** (bottom of the side menu; on a phone, in the menu).
+3. Type the password, then the 6-digit code from your authenticator app. No phone? **Use a
+   recovery code** (from your password manager; each works once).
+4. **Never let the browser save the password**: decline "Save password?" every time; don't use
+   the machine's password manager or autofill.
+5. Demo as usual (break, propose, approve, audit).
+6. Press **Sign out** (side menu, or top right on a phone). It clears the app's data in the
+   browser and returns to the read-only view. The session would end anyway after 30 minutes idle,
+   4 hours at most, or when the browser closes, but don't rely on that.
+7. Walked away without signing out? From your own phone or laptop: **Settings → Sign out
+   everywhere**. Think the password was seen? Change it (`shimpaku admin set-password`) on the lab host.
+
+Set-up (once, on the lab host, before public view is on): `shimpaku admin set-password` and
+`shimpaku admin totp enable`.
+
 ## If something goes wrong
 
 | Problem | Do this |

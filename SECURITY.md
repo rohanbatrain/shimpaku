@@ -22,6 +22,8 @@ it plainly so it can be reviewed.
 | Abuse and spend | In-process token buckets per principal and global (`SHIMPAKU_RATE_LIMITS`, default per minute: writes 30/300, demo ops 6/30, Ask Shim 10/60, MCP `tools/call` 60/600, invite redeem 10/60 per address) → 429 with `Retry-After`; 5 breaks and 5 re-seeds per lease. REST bodies over 64 KiB are refused with 413 before parsing (`/mcp`: 1 MiB); until 2026-10-24 a tester could store megabytes of `args` per proposal in the action and audit rows. Each lease's Ask Shim uses its own LiteLLM virtual key (`max_budget` USD 0.50, `duration` = the lease, `rpm_limit`, `models`) minted with `SHIMPAKU_LLM_ADMIN_KEY` and deleted at lease end; the key lives only in memory. With no admin key, testers have no assistant: it never falls back to the operator's key. Limits reset when the daemon restarts; per-IP limits belong to the edge (build step 8) | `api/ratelimit.py`, `api/llm_keys.py`, `api/app.py` |
 | Fault injection as an unaudited write | `demo seed` / `demo break` run through `service.demo_seed` / `service.demo_break`: only the fixture devices (`sw1`, `leaf2`), under the device lock (refused while a `commit confirmed` is pending), one hash-chained audit row per call (refusals and errors included) with the caller's role and lease. Operators, testers with a lease and the system may run them; agents and visitors are refused. The CLI and `POST /api/demo/break|seed` call the same functions. A failed operation's reply and audit row have IP addresses replaced with `<host>` (before 2026-10-24 they carried the device's management address) | `service.py:_demo_op`, `service.py:scrub_hosts`, `actions/fixture.py` |
 | An anonymous visitor (public view) does more than look | Only with `SHIMPAKU_PUBLIC_VIEW=1` and auth mode `local` (default off: a lab without the edge stays closed). A caller with no session is the `visitor` principal: GET routes and SSE only; writes, demo operations, lease tokens, operator routes and `/mcp` are refused (403/401); Ask Shim answers 403 "Request a live session to use Shim" before any LLM call. Guest narrowing applies (management addresses dropped from REST inventory, config reads limited and redacted on MCP). Reads are rate-limited per client address (`read`, 120/1200 per minute; the address comes from uvicorn's trusted-proxy handling, so spoofed `X-Forwarded-For` from others is ignored) and logged at INFO without the address; they are not audit rows | `api/app.py:principal_or_none`, `reader`, `ask` |
+| The operator's password is guessed, phished or typed on a stranger's laptop (public site) | With `SHIMPAKU_PUBLIC_VIEW=1` operator sign-in needs the argon2id password **and** a TOTP code (RFC 6238: SHA-1, 6 digits, 30 s, one step either side) or a one-time recovery code; with TOTP not set up the login is refused (403, "run `shimpaku admin totp enable`"). A code is accepted once: the last accepted time step is stored and anything at or before it is refused, so a code read off a shoulder or a screen recording is dead. Off public view TOTP is optional and enforced once enabled. Sign-in is limited per real client address (5 a minute in the app, behind Caddy's `login` zone: 10 per 10 min per `client_ip`); every failure is an audit row with the reason only (`bad_credentials`, `bad_totp`, `bad_recovery_code`, `code_missing`, `totp_not_enabled`, `rate_limited`), never the password or code; a success is a row with role `operator` and the factor used | `api/app.py:login`, `api/totp.py:TotpStore.verify_code`, `use_recovery` |
+| An operator session left open on a shared computer | In public view operator sessions end after 30 min idle and 4 h absolute (`SHIMPAKU_OPERATOR_IDLE_MIN`, `SHIMPAKU_OPERATOR_MAX_H`; 12 h / 7 d off public view; tester and visitor sessions unchanged). The session cookie never has `Max-Age`/`Expires` (gone when the browser closes). Sign out drops the server session, clears the app's `sessionStorage` and `shimpaku*` `localStorage` keys and reloads the read-only view; `POST /api/logout-all` (operator; "Sign out everywhere" in Settings) deletes every operator session, testers' kept | `api/auth.py:AuthStore.create_session`, `session_record`, `drop_operator_sessions`, `web/src/session.tsx:signOutAndClear` |
 | Session requests: spam, enumeration, a link that works too early or too long | `POST /api/session-requests` needs CSRF, consent and passes the `request` limit (3/20 per minute per address; Caddy 5 per 10 min); at most 200 pending (503). The status token is 256-bit, stored as SHA-256; any unknown token is the same 404. Approval is operator-only (REST and `shimpaku admin requests`) and makes a single-use invite with `not_before` = slot − 10 min and expiry = slot end; redeeming early is 425; the lease is capped at slot end + 5 min. `GET /api/invites/ics` and the status page never consume. Exception to "only hashes stored": the approved invite's token is kept in `session_request.invite_token` so the status page can show the link; it is wiped when the invite is used, the slot ends or the request is declined | `api/requests.py`, `api/lease.py`, `api/app.py` |
 | Tampering with history | Every MCP tool call, and every REST propose, approve, reject and cancel (refusals included), is a hash-chained audit row carrying the caller's `role` and `lease_id`; a verifier detects an edited row. Rows written before `role`/`lease_id` existed are kept as written and still verify. (Before 2026-10-24 REST approvals reached only the approvals table, not the chain.) | `mcp/audit.py`, `service.py:_audit_row` |
 | Benchmark gaming | Ground truth lives in a separate store owned by a separate Unix user; external agents can run as a sandbox user that cannot reach the lab devices directly, only the MCP endpoint | `bench/`, `ops/phase0-root.sh` |
@@ -34,14 +36,34 @@ it plainly so it can be reviewed.
 - Agent bearer tokens are stored hashed, scoped `read` or `propose`, never `approve`; a tester's token expires with its lease.
 - `SHIMPAKU_LLM_ADMIN_KEY` (LiteLLM master key) is used only to mint and delete per-lease keys; neither is logged or written to disk.
 
+- The TOTP secret and the argon2id hashes of the 8 recovery codes live in `<data>/totp.json`
+  (mode 600, beside `admin.hash`); the secret is printed once by `shimpaku admin totp enable`,
+  never logged and never in an API response (tested). Recovery codes are shown once: keep them
+  offline (e.g. a Bitwarden secure note), never on the lab host or the laptop you demo from.
+
+## Operator over the internet
+
+The owner signs in as operator at `https://app.<domain>` (Cloudflare → Caddy → the daemon in
+`auth_mode=local`), sometimes from someone else's laptop. Before turning public view on, run
+`shimpaku admin set-password` and `shimpaku admin totp enable` on the lab host. On a shared
+computer:
+
+- type the password, never let the browser save it (the field has `autocomplete="off"` in
+  public view, but browsers may ignore that: decline the prompt yourself);
+- use the authenticator code from your phone; keep the recovery codes in your password manager;
+- press **Sign out** when done (the session also ends after 30 min idle, 4 h at most, and when
+  the browser closes); if you forgot, **Settings → Sign out everywhere** from any device, or
+  `shimpaku admin totp enable --force` plus a new password if the password was exposed;
+- if a recovery code was used, `shimpaku admin totp status` shows how many are left.
+
 ## Network exposure
 
 - Binds `127.0.0.1` by default. With `SHIMPAKU_AUTH_MODE=off` (every caller is the operator) both the
   daemon (via its MCP endpoint) and `python -m shimpaku.api` refuse any non-loopback bind; before
   2026-10-24 the standalone REST server would serve off mode on `0.0.0.0`. Off mode behind a reverse
   proxy on the same host would still see every peer as loopback: use `local` there.
-- `local` mode: argon2id admin password, session cookie, CSRF double-submit + Origin check,
-  rate-limited sign-in; tester sessions from redeemed invites only.
+- `local` mode: argon2id admin password plus TOTP (required with public view), session cookie,
+  CSRF double-submit + Origin check, rate-limited sign-in; tester sessions from redeemed invites only.
 - `/mcp` answers a missing, invalid, expired or revoked bearer token with HTTP 401 and
   `WWW-Authenticate: Bearer` (MCP 2025-06-18 authorization), a `read` token calling a propose or
   cancel tool with 403, and too many `tools/call` with 429 (`mcp/server.py:McpHttpGate`). With

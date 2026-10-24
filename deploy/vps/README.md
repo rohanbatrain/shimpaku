@@ -88,6 +88,7 @@ every limit keys on and what Caddy sends upstream as the single `X-Forwarded-For
 
 | Zone | Matches | Per client IP |
 |---|---|---|
+| `login` | `POST /api/login`, `POST /api/logout-all` | 10 / 10 min |
 | `invites` | `/api/invites/*` | 10 / min |
 | `demo` | `/api/demo/*` | 10 / min |
 | `actions_write` | `POST /api/actions*` | 20 / min |
@@ -114,8 +115,18 @@ SHIMPAKU_TRUSTED_PROXIES=<edge netbird ip>
 FORWARDED_ALLOW_IPS=<edge netbird ip>   # what uvicorn in shimpakud actually reads today (see below)
 ```
 
-then `shimpaku admin set-password` (stores the argon2id hash in `<data>/admin.hash`) and
-`systemctl --user restart shimpakud`. Restrict the port further with NetBird access policies
+then, **before** setting `SHIMPAKU_PUBLIC_VIEW=1`, on the lab host:
+
+```bash
+shimpaku admin set-password     # argon2id hash in <data>/admin.hash (0600)
+shimpaku admin totp enable      # otpauth:// URI (and a QR if qrcode/segno is installed) + 8 recovery codes
+shimpaku admin totp status      # → TOTP: enabled; 8 recovery codes left
+```
+
+Add the URI to an authenticator app and put the recovery codes in your password manager (not on
+this host). With public view on, operator sign-in is refused until TOTP is enabled, and operator
+sessions last 30 min idle / 4 h at most (`SHIMPAKU_OPERATOR_IDLE_MIN`, `SHIMPAKU_OPERATOR_MAX_H`).
+Then `systemctl --user restart shimpakud`. Restrict the port further with NetBird access policies
 (edge peer → lab peer, TCP 8780 only).
 
 Why both proxy variables: `python -m shimpaku.api` (the replay) passes
