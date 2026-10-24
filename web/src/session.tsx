@@ -3,6 +3,7 @@ import { createContext, useContext } from "react";
 export type Who = {
   mode: "off" | "local";
   demo: boolean;
+  replay: { taken_at: number; version?: string } | null;
   authenticated: boolean;
   user: string | null;
   kind: string | null;

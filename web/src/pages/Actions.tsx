@@ -33,9 +33,9 @@ export default function Actions() {
                       <td><Link to={`/actions/${a.id}`} className="mono" onClick={(e) => e.stopPropagation()}>{a.id}</Link></td>
                       <td><b>{a.title}</b></td>
                       <td><Pill tone={a.tier === "T2" ? "warn" : "neutral"}>{a.tier}</Pill></td>
-                      <td className="mono">{a.device}</td>
-                      <td className="weak">{a.mode}</td>
-                      <td className="mono small">{a.proposed_by}</td>
+                      <td className="mono">{a.device ?? "—"}</td>
+                      <td className="weak">{a.mode ?? "—"}</td>
+                      <td className="mono small">{a.proposed_by ?? "—"}</td>
                       <td className="small weak">{ago(a.created_at)}</td>
                       <td><StatusPill status={a.status} /></td>
                     </tr>

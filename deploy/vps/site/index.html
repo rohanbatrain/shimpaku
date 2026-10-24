@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shimpaku</title>
+<meta name="description" content="A Mist-style assurance NMS for a Junos lab: service levels, blast radius, and an agent that can only propose changes behind guardrails, human approval and commit confirmed.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2301A982'/%3E%3Cpath d='M9 22c3-1 5-4 7-9 2 5 4 8 7 9' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#fbfcfb;--fg:#17201d;--muted:#5b6662;--line:#e2e7e5;--card:#fff;--accent:#01A982;--accent-ink:#00785C;--warn:#8a5a00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1513;--fg:#e8eeeb;--muted:#9aa7a2;--line:#24302c;--card:#151d1a;--accent-ink:#3fd1a8;--warn:#e0b45c}}
+:root[data-theme="dark"]{--bg:#0f1513;--fg:#e8eeeb;--muted:#9aa7a2;--line:#24302c;--card:#151d1a;--accent-ink:#3fd1a8;--warn:#e0b45c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+header{padding:56px 0 32px}
+.tag{display:inline-block;font-size:13px;font-weight:600;color:var(--accent-ink);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+h1{font-size:clamp(34px,6vw,52px);line-height:1.1;margin:16px 0 12px;letter-spacing:-.02em}
+.lede{font-size:clamp(17px,2.4vw,20px);color:var(--muted);max-width:720px;margin:0}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.btn{display:inline-block;padding:11px 18px;border-radius:8px;font-weight:600;text-decoration:none;border:1px solid var(--line);color:var(--fg);background:var(--card)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:focus-visible{outline:3px solid var(--accent-ink);outline-offset:2px}
+section{padding:36px 0;border-top:1px solid var(--line)}
+h2{font-size:24px;margin:0 0 16px;letter-spacing:-.01em}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.num{font-size:30px;font-weight:700;color:var(--accent-ink);line-height:1.2}
+.card p{margin:6px 0 0;color:var(--muted);font-size:14px}
+ol.flow{list-style:none;padding:0;margin:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));counter-reset:s}
+ol.flow li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:14px}
+ol.flow li::before{content:counter(s);display:block;font-weight:700;color:var(--accent-ink)}
+ol.flow b{display:block}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.note{color:var(--warn);font-size:14px}
+footer{padding:32px 0 48px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+a{color:var(--accent-ink)}
+@media (max-width:560px){header{padding-top:36px}td,th{padding:8px 4px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="tag">Independent project · Junos lab · agent-first</span>
+  <h1>Shimpaku</h1>
+  <p class="lede">A Mist-style assurance system for a seven-device vJunos lab. It turns streaming
+  telemetry into service levels, isolates a fault's blast radius, and lets an AI agent
+  <em>propose</em> a fix, but never apply one on its own.</p>
+  <div class="cta">
+    <a class="btn primary" href="https://app.__DOMAIN__/">Open the dashboard</a>
+    <a class="btn" href="__REPO__">Source and evidence</a>
+    <a class="btn" href="__REPO__/blob/main/docs/INCIDENTS.md">What went wrong</a>
+  </div>
+  <p class="note">The public dashboard is a read-only replay recorded from the live lab. The
+  switches are never reachable from the internet.</p>
+</header>
+
+<section>
+  <h2>The write path is the product</h2>
+  <ol class="flow">
+    <li><b>Propose</b>An agent (Claude Code, OpenCode, or the built-in assistant) calls an MCP tool.</li>
+    <li><b>Guardrails</b>Ten checks in Python, over live device facts, not prompt rules.</li>
+    <li><b>Human approval</b>Only a dashboard session can approve. It is not an MCP tool.</li>
+    <li><b>commit confirmed</b>Per-device lock; confirmed only after a fresh health check. If the executor dies, Junos rolls back.</li>
+    <li><b>Validate</b>The symptom is watched for a window. If it comes back, the action is marked <em>recurred</em>.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Evidence, run on the live lab</h2>
+  <div class="grid">
+    <div class="card"><div class="num">0</div><p>unsafe actions executed in a live red team: forged approvals, wildcard and interface-range smuggling, fabric-link disables</p></div>
+    <div class="card"><div class="num">80/80</div><p>fault-injection harness trials (16 scenarios × 5): inject, verify independently, revert, verify the revert</p></div>
+    <div class="card"><div class="num">73–76 s</div><p>measured Junos self-rollback after killing the executor mid-change</p></div>
+    <div class="card"><div class="num">8</div><p>defects found by running it, each written up with its fix and test, including one false "verified"</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>What it is, and is not</h2>
+  <table>
+    <tr><th>Built</th><th>Deliberately not built</th></tr>
+    <tr><td>Service levels in probe-minutes, with <code>n</code> beside every percentage</td><td>Wi-Fi capacity SLEs: virtual radios report no retries</td></tr>
+    <tr><td>Blast-radius isolation with a significance gate</td><td>LSTM anomaly detection: a rate test beat it on false alarms (simulated data)</td></tr>
+    <tr><td>One MCP server as the only path to a device, hash-chained audit</td><td>Any connection to a real Mist account, its data or its look</td></tr>
+    <tr><td>A fault benchmark whose ground truth the system cannot read</td><td>A scored detection result, which is the next milestone</td></tr>
+  </table>
+</section>
+
+<footer>
+  Shimpaku is an independent learning project. It is not affiliated with, endorsed by, or
+  built from materials of Hewlett Packard Enterprise or Juniper Networks beyond their public
+  documentation. All trademarks belong to their owners.
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# <domain>      the static landing page (deploy/vps/site)
+# app.<domain>  the dashboard, served by the read-only replay
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		-Server
+	}
+}
+
+{$SHIMPAKU_DOMAIN} {
+	import common
+	root * /srv/site
+	file_server
+}
+
+app.{$SHIMPAKU_DOMAIN} {
+	import common
+	# MCP is never public: it is the agent write path. The replay app does not serve it either.
+	respond /mcp* 404
+	reverse_proxy replay:8780
+}

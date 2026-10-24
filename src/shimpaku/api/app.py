@@ -29,6 +29,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
+from shimpaku.api import view
 from shimpaku.api.auth import ADMIN_USER, OFF_MODE_USER, SCOPES, AuthStore, Principal, load_admin_hash, verify_password
 from shimpaku.config import settings
 
@@ -36,6 +37,7 @@ log = logging.getLogger("shimpaku.api")
 
 WEB_DIST = Path(__file__).resolve().parents[3] / "web" / "dist"
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+REPLAY_READ_ONLY = "read-only replay: the write path runs only against the private lab"
 ERROR_STATUS = {"not_found": 404, "unknown_device": 404, "bad_state": 409, "forbidden": 403,
                 "bad_argument": 422, "propose_failed": 422, "device_unreachable": 502, "provider_failed": 502}
 
@@ -94,6 +96,9 @@ def create_app(
     if mode not in ("off", "local"):
         raise ValueError(f"SHIMPAKU_AUTH_MODE={mode!r}: supported modes are off and local")
     is_demo = bool(getattr(service, "DEMO", False)) if demo is None else demo
+    # Replay (public host): every visitor is an anonymous reader; nothing signs in or writes.
+    is_replay = bool(getattr(service, "REPLAY", False))
+    replay_info = service.info() if is_replay else None
     auth = AuthStore(statedb)
     ask_fn = assistant or getattr(service, "assistant_ask", None)
     dist = web_dist or WEB_DIST
@@ -142,6 +147,8 @@ def create_app(
 
     # ---- principals ------------------------------------------------------------
     def principal_or_none(request: Request) -> Principal | None:
+        if is_replay:
+            return Principal("anonymous", "visitor", "read")
         authz = request.headers.get("authorization", "")
         if authz.lower().startswith("bearer "):
             p = auth.token_principal(authz[7:].strip())
@@ -177,11 +184,15 @@ def create_app(
         return p
 
     def proposer(p: Principal = Depends(reader)) -> Principal:
+        if is_replay:
+            raise HTTPException(403, REPLAY_READ_ONLY)
         if not p.can_propose:
             raise HTTPException(403, f"{p.name} has scope {p.scope}; proposing needs scope propose")
         return p
 
     def session_user(p: Principal = Depends(reader)) -> Principal:
+        if is_replay:
+            raise HTTPException(403, REPLAY_READ_ONLY)
         if not p.can_approve:
             raise HTTPException(403, "this needs a signed-in dashboard user; tokens cannot do it")
         return p
@@ -201,7 +212,7 @@ def create_app(
         except HTTPException:
             p = None
         return {
-            "mode": mode, "demo": is_demo, "authenticated": p is not None,
+            "mode": mode, "demo": is_demo, "replay": replay_info, "authenticated": p is not None,
             "user": p.name if p else None, "kind": p.kind if p else None, "scope": p.scope if p else None,
             "can_approve": bool(p and p.can_approve), "can_propose": bool(p and p.can_propose),
         }
@@ -211,7 +222,7 @@ def create_app(
         secure = _is_https(request)
         sname, cname = _cookie_names(secure)
         return {
-            "auth_mode": mode, "demo": is_demo, "https": secure, "cookie_secure": secure,
+            "auth_mode": mode, "demo": is_demo, "replay": replay_info, "https": secure, "cookie_secure": secure,
             "session_cookie": sname, "csrf_cookie": cname,
             "cookie_warning": None if secure or mode == "off" else
             "Served over plain http: the session cookie is not Secure and has no __Host- prefix. "
@@ -271,37 +282,37 @@ def create_app(
     # ---- reads -----------------------------------------------------------------
     @app.get("/api/inventory")
     async def inventory(site: str | None = None, p: Principal = Depends(reader)):
-        return await call("inventory_list", site=site)
+        return view.inventory(await call("inventory_list", site=site))
 
     @app.get("/api/sle")
     async def sle(site: str = "campus", window: int = 60, p: Principal = Depends(reader)):
-        return await call("sle_get_summary", site, window_min=max(5, min(window, 7 * 24 * 60)))
+        return view.sle_summary(await call("sle_get_summary", site, window_min=max(5, min(window, 7 * 24 * 60))))
 
     @app.get("/api/incidents")
     async def incidents(status: str | None = None, p: Principal = Depends(reader)):
-        return await call("incident_list", status=status)
+        return view.incident_list(await call("incident_list", status=status))
 
     @app.get("/api/incidents/{incident_id}")
     async def incident(incident_id: str, p: Principal = Depends(reader)):
-        return await call("incident_get", incident_id)
+        return view.incident(await call("incident_get", incident_id))
 
     @app.get("/api/incidents/{incident_id}/blast-radius")
     async def blast(incident_id: str, p: Principal = Depends(reader)):
-        return await call("sle_get_blast_radius", incident_id)
+        return view.blast_radius(await call("sle_get_blast_radius", incident_id))
 
     @app.get("/api/actions")
     async def actions(status: str | None = None, p: Principal = Depends(reader)):
-        return await call("action_list", status=status)
+        return view.action_list(await call("action_list", status=status))
 
     @app.get("/api/actions/{action_id}")
     async def action(action_id: str, p: Principal = Depends(reader)):
-        return await call("action_get", action_id)
+        return view.action(await call("action_get", action_id))
 
     @app.get("/api/audit")
     async def audit(limit: int = 100, tool: str | None = None, action_id: str | None = None,
                     status: str | None = None, p: Principal = Depends(reader)):
-        return await call("audit_query", tool=tool, action_id=action_id, status=status,
-                          limit=max(1, min(limit, 1000)))
+        return view.audit(await call("audit_query", tool=tool, action_id=action_id, status=status,
+                                     limit=max(1, min(limit, 1000))))
 
     @app.get("/api/audit/verify")
     async def audit_verify(p: Principal = Depends(reader)):
@@ -310,11 +321,11 @@ def create_app(
 
     @app.get("/api/topology")
     async def topology(device: str | None = None, p: Principal = Depends(reader)):
-        return await call("topo_get_neighbors", device=device)
+        return view.topology(await call("topo_get_neighbors", device=device))
 
     @app.get("/api/bench/results")
     async def bench(p: Principal = Depends(reader)):
-        return await call("bench_results")
+        return view.bench(await call("bench_results"))
 
     # ---- writes ----------------------------------------------------------------
     @app.post("/api/actions", status_code=201)
@@ -351,6 +362,9 @@ def create_app(
         return EventSourceResponse(gen(), ping=15)
 
     # ---- SSE -------------------------------------------------------------------
+    async def _viewed(fn: Callable[[Any], Any], pending: Any) -> Any:
+        return fn(await pending)
+
     def poller(request: Request, event: str, tick: float, fetch: Callable[[], Any]):
         async def gen():
             last = None
@@ -371,15 +385,15 @@ def create_app(
 
     @app.get("/api/stream/sle")
     async def stream_sle(request: Request, site: str = "campus", window: int = 60, p: Principal = Depends(reader)):
-        return poller(request, "sle", SLE_TICK_S, lambda: call("sle_get_summary", site, window_min=window))
+        return poller(request, "sle", SLE_TICK_S, lambda: _viewed(view.sle_summary, call("sle_get_summary", site, window_min=window)))
 
     @app.get("/api/stream/actions")
     async def stream_actions(request: Request, p: Principal = Depends(reader)):
-        return poller(request, "actions", ACTIONS_TICK_S, lambda: call("action_list"))
+        return poller(request, "actions", ACTIONS_TICK_S, lambda: _viewed(view.action_list, call("action_list")))
 
     @app.get("/api/stream/events")
     async def stream_events(request: Request, p: Principal = Depends(reader)):
-        return poller(request, "incidents", EVENTS_TICK_S, lambda: call("incident_list"))
+        return poller(request, "incidents", EVENTS_TICK_S, lambda: _viewed(view.incident_list, call("incident_list")))
 
     @app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
     async def api_404(rest: str):

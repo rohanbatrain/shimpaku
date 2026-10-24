@@ -7,15 +7,15 @@ import { Empty, Load, Seg, ToneIcon } from "../components/ui";
 import { pct100, sleTone, time } from "../format";
 
 type Sle = {
-  id: string; name: string; domain: string; goal_pct: number; value_pct: number; unit: string; n: number;
+  id: string; name: string; domain: string | null; goal_pct: number | null; value_pct: number; unit: string; n: number;
   series: { t: number; value: number }[]; classifiers: { id: string; name: string; share_pct: number }[]; incident_id?: string | null;
 };
-type Summary = { site: string; window_min: number; sites: string[]; sles: Sle[]; changes: { t: number; kind: string; text: string; ref?: string }[] };
+type Summary = { site: string; window_min: number; sites: string[]; sles: Sle[]; changes: { t: number; kind: string; text: string; ref?: string }[] | null };
 
 const WINDOWS = [{ value: "60", label: "1 h" }, { value: "1440", label: "24 h" }, { value: "10080", label: "7 d" }];
 const KIND = { fault: { c: "#D93A30", l: "Fault" }, action: { c: "#01A982", l: "Action" }, commit: { c: "#5B6B8C", l: "Commit" } } as Record<string, { c: string; l: string }>;
 
-function Changes({ s }: { s: Summary }) {
+function Changes({ s }: { s: Summary & { changes: NonNullable<Summary["changes"]> } }) {
   const now = Date.now() / 1000;
   const start = now - s.window_min * 60;
   return (
@@ -49,7 +49,7 @@ function Changes({ s }: { s: Summary }) {
 
 function SleRow({ s }: { s: Sle }) {
   const nav = useNavigate();
-  const tone = sleTone(s.value_pct, s.goal_pct);
+  const tone = s.goal_pct == null ? "neutral" : sleTone(s.value_pct, s.goal_pct);
   const open = (cls?: string) => s.incident_id && nav(`/root-cause/${s.incident_id}${cls ? `?classifier=${cls}` : ""}`);
   return (
     <div className="sle-row">
@@ -60,12 +60,17 @@ function SleRow({ s }: { s: Sle }) {
           <ToneIcon tone={tone} size="18px" />
         </div>
         <div className="small weak">
-          goal {s.goal_pct}% · n = {s.n} {s.unit}
+          {s.goal_pct == null ? "no goal set" : `goal ${s.goal_pct}%`} · n = {s.n} {s.unit}
         </div>
       </div>
-      <SleChart series={s.series} goal={s.goal_pct} label={`${s.name} over the window; goal ${s.goal_pct}%`} />
+      {s.series?.length ? (
+        <SleChart series={s.series} goal={s.goal_pct ?? 99} label={`${s.name} over the window; goal ${s.goal_pct ?? "not set"}`} />
+      ) : (
+        <div className="small weak" style={{ alignSelf: "center" }}>Per-minute series not collected for this view.</div>
+      )}
       <div>
         <div className="k" style={{ marginBottom: 4 }}>Where failures fall</div>
+        {s.classifiers.length === 0 && <span className="small weak">No failing units in this window.</span>}
         {s.classifiers.map((c) => (
           <div className="cls" key={c.id}>
             {s.incident_id && c.share_pct > 0 ? <button onClick={() => open(c.id)}>{c.name}</button> : <span>{c.name}</span>}
@@ -90,7 +95,7 @@ export default function ServiceLevels() {
   const domain = sp.get("domain") ?? "all";
   const q = useApi<Summary>(`/api/sle?site=${site}&window=${win}`, { url: `/api/stream/sle?site=${site}&window=${win}`, event: "sle" });
   const set = (k: string, v: string) => { sp.set(k, v); if (k === "site") sp.delete("domain"); setSp(sp, { replace: true }); };
-  const domains = useMemo(() => Array.from(new Set(q.data?.sles.map((s) => s.domain) ?? [])), [q.data]);
+  const domains = useMemo(() => Array.from(new Set((q.data?.sles.map((s) => s.domain) ?? []).filter((d): d is string => !!d))), [q.data]);
   const sles = q.data?.sles.filter((s) => domain === "all" || s.domain === domain) ?? [];
 
   return (
@@ -106,7 +111,9 @@ export default function ServiceLevels() {
         <Load q={q} rows={6}>
           {(s) => (
             <>
-              <Changes s={s} />
+              {s.changes ? <Changes s={s as Summary & { changes: NonNullable<Summary["changes"]> }} /> : (
+                <div className="card"><h2>Changes</h2><span className="small weak">Change timeline not collected by the live service.</span></div>
+              )}
               <div className="card flush">
                 <div className="card-h">
                   <h2>Success rate</h2>

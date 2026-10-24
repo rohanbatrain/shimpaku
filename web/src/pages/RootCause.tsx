@@ -12,13 +12,16 @@ type Incident = { id: string; title: string; site: string; sle: string; classifi
 type Node = { name: string; share_pct: number; children: Node[] };
 type Blast = {
   tree: Node[]; timeline: { t: number; fail: number; total: number }[];
-  affected: { kind: string; id: string; name: string; detail: string; impact_pct: number; failure_pct: number; minutes: number }[];
+  affected: { kind: string; id: string; name: string; detail: string | null; impact_pct: number | null; failure_pct: number | null; minutes: number | null }[];
   distribution: { dimension: string; items: { name: string; failures: number; total: number }[] }[];
   evidence: { kind: string; title: string; detail: string; tool: string }[];
-  scores?: { mutual_information?: number; lift?: number };
+  scores?: { mutual_information?: number; lift?: number } | null;
+  verdict?: string | null; scope?: unknown; n?: number; fails?: number;
 };
+const dash = (v: number | null | undefined, unit = "") => (v == null ? "—" : `${v}${unit}`);
 
-function impactText(i: Record<string, number>) {
+function impactText(i: Record<string, number> | null | undefined) {
+  if (!i || Object.keys(i).length === 0) return "—";
   if (i.clients != null) return `${i.clients} of ${i.of_clients} clients · ${i.probe_minutes} probe-min`;
   if (i.devices != null) return `${i.devices} of ${i.of_devices} devices · ${i.device_minutes} device-min`;
   return Object.entries(i).map(([k, v]) => `${k} ${v}`).join(" · ");
@@ -92,7 +95,7 @@ export default function RootCause() {
             <div className="card" style={{ display: "flex", gap: 28, alignItems: "flex-start", flexWrap: "wrap" }}>
               <div style={{ flex: "1 1 420px" }}>
                 <div className="k">Summary</div>
-                <p style={{ margin: "4px 0 0" }}>{i.summary}</p>
+                <p style={{ margin: "4px 0 0" }}>{i.summary ?? "—"}</p>
               </div>
               <div><div className="k">Site</div><b>{i.site}</b></div>
               <div><div className="k">Service level</div><b>{i.sle}</b></div>
@@ -111,7 +114,12 @@ export default function RootCause() {
               <div className="grid2">
                 <div className="card">
                   <h2>Classifier breakdown</h2>
-                  <Tree nodes={b.tree} />
+                  {b.tree.length ? <Tree nodes={b.tree} /> : <span className="small weak">No classified failing units.</span>}
+                  {b.verdict && (
+                    <div className="small weak" style={{ marginTop: 10 }}>
+                      Blast radius verdict: <b>{b.verdict}</b>{b.n != null && <> · {b.fails} failing of {b.n} units</>}
+                    </div>
+                  )}
                   {b.scores && (
                     <div className="small weak" style={{ marginTop: 10 }}>
                       Attribution: mutual information {b.scores.mutual_information ?? "—"} · lift {b.scores.lift ?? "—"}
@@ -121,6 +129,7 @@ export default function RootCause() {
                 <div className="card">
                   <h2>Evidence</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {b.evidence.length === 0 && <span className="small weak">No evidence recorded.</span>}
                     {b.evidence.map((e, j) => (
                       <div key={j} className="ev">
                         <b>{e.title}</b> <span className="chip" style={{ marginLeft: 6 }}>{e.tool}</span>
@@ -147,10 +156,10 @@ export default function RootCause() {
                           <tr key={a.kind + a.id}>
                             <td><b>{a.name}</b></td>
                             <td className="weak">{a.kind}</td>
-                            <td className="mono">{a.detail}</td>
-                            <td className="num">{a.impact_pct}%</td>
-                            <td className="num">{a.failure_pct}%</td>
-                            <td className="num">{a.minutes}</td>
+                            <td className="mono">{a.detail ?? "—"}</td>
+                            <td className="num">{dash(a.impact_pct, "%")}</td>
+                            <td className="num">{dash(a.failure_pct, "%")}</td>
+                            <td className="num">{dash(a.minutes)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -180,7 +189,7 @@ export default function RootCause() {
                       <div className="small weak" style={{ marginBottom: 6 }}>
                         <span style={{ color: "#B3261E" }}>■</span> failing &nbsp; <span style={{ color: "#7fbfa9" }}>■</span> passing — per minute
                       </div>
-                      <FailBars data={b.timeline} />
+                      {b.timeline.length ? <FailBars data={b.timeline} /> : <span className="small weak">Per-minute failure timeline not collected for this incident.</span>}
                     </div>
                   )}
                 </div>
