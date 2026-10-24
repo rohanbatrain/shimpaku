@@ -88,7 +88,32 @@ validation, added a test that fails on the old code, and wrote it up."*
 > write path: proposal, guardrails, human approval, lock, `commit confirmed`, validation. And
 > the README lists what I deliberately didn't build, and why."
 
-## Give someone a tester pass
+## Session requests
+
+With `SHIMPAKU_PUBLIC_VIEW=1` (and `SHIMPAKU_AUTH_MODE=local`) anyone can open the dashboard
+read-only with no sign-in: live service levels, root cause, actions, audit; no writes, no tokens,
+no `/mcp`, no Ask Shim. The top bar shows **Viewing read-only** and **Request a live session**.
+
+1. A visitor fills in `/request`: name, e-mail or LinkedIn URL, a message (≤ 500 chars) and up to
+   three start times (1 h to 30 days ahead), and ticks the notice. They get a status page
+   (`/request/status?s=…`); that link is their only key, so they should keep it.
+2. You see it under **Admin → Session requests** (nav badge = pending count), or on the host:
+
+```bash
+shimpaku admin requests list                                   # pending first, with name/contact/message
+shimpaku admin requests approve req_… --choice 2                # one of their slots, or:
+shimpaku admin requests approve req_… --slot 2026-11-02T15:00+05:30
+shimpaku admin requests decline req_… --note "Fully booked this month"
+```
+
+3. Approving creates a single-use invite bound to a 30-minute slot. The link works from 10 min
+   before the start until the end; the lease ends at the earlier of 30 min after they start and
+   5 min after the slot. You get the link (copy it) and an `.ics`; their status page shows the same
+   link and an **Add to calendar** file. Nothing is e-mailed automatically: send the link yourself.
+4. Unanswered requests expire when their times pass; unused approvals expire at the slot end.
+   Name, contact and message are deleted 90 days after the slot or the decline.
+
+## Ad-hoc tester passes
 
 A tester drives the live lab alone for 30 minutes: break VLAN 999, propose (or let their own
 Claude Code propose) the fix, approve it, watch it validate. Needs `SHIMPAKU_AUTH_MODE=local` and

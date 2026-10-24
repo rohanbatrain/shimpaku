@@ -109,6 +109,7 @@ On the lab host, in `~/.config/shimpaku/env` (the unit no longer hard-codes bind
 SHIMPAKU_BIND=<lab netbird ip>          # reachable on the NetBird interface only, not the LAN
 SHIMPAKU_AUTH_MODE=local                # sign-in required; the code default stays `off`
 SHIMPAKU_PUBLIC_URL=https://app.<domain>   # base for invite links
+SHIMPAKU_PUBLIC_VIEW=1                  # anonymous visitors read live, read-only; they request sessions
 SHIMPAKU_TRUSTED_PROXIES=<edge netbird ip>
 FORWARDED_ALLOW_IPS=<edge netbird ip>   # what uvicorn in shimpakud actually reads today (see below)
 ```
