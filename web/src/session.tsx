@@ -9,6 +9,8 @@ export type Who = {
   kind: string | null;
   can_approve: boolean;
   can_propose: boolean;
+  role?: string | null;
+  lease_id?: string | null;
 };
 
 export const SessionCtx = createContext<{ who: Who; refresh: () => void; openAssistant: (q?: string) => void }>(null as any);

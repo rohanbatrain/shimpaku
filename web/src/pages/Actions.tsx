@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "react-router";
 import { useApi } from "../api";
 import TopBar from "../components/TopBar";
+import { FixturePanel } from "../components/Lease";
+import { useSession } from "../session";
 import { Empty, Load, Pill, StatusPill } from "../components/ui";
 import { ago, statusLabel } from "../format";
 
@@ -9,11 +11,15 @@ type A = { id: string; title: string; kind: string; tier: string; device: string
 export default function Actions() {
   const q = useApi<{ actions: A[] }>("/api/actions", { url: "/api/stream/actions", event: "actions" });
   const nav = useNavigate();
+  const { who } = useSession();
+  const tester = who.role === "tester";
+  const showFixture = !who.replay && (tester || (who.role === "operator" && who.kind === "session"));
   const counts = (q.data?.actions ?? []).reduce<Record<string, number>>((m, a) => ((m[statusLabel(a.status)] = (m[statusLabel(a.status)] ?? 0) + 1), m), {});
   return (
     <>
       <TopBar title="Actions" crumbs="Proposed and executed changes · every commit runs under commit confirmed" />
       <div className="content">
+        {showFixture && <FixturePanel tester={tester} />}
         <div className="grid4">
           {["Open", "Running", "Automatic", "Verified"].map((l) => (
             <div className="card" key={l}>

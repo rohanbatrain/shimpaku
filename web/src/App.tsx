@@ -12,6 +12,8 @@ const Actions = lazy(() => import("./pages/Actions"));
 const ActionDetail = lazy(() => import("./pages/ActionDetail"));
 const Benchmark = lazy(() => import("./pages/Benchmark"));
 const Login = lazy(() => import("./pages/Login"));
+const Start = lazy(() => import("./pages/Start"));
+const LeaseBanner = lazy(() => import("./components/Lease").then((m) => ({ default: m.LeaseBanner })));
 const Agents = lazy(() => import("./pages/Agents"));
 const Settings = lazy(() => import("./pages/Settings"));
 
@@ -59,18 +61,22 @@ function Nav({ who, onSignOut }: { who: Who; onSignOut: () => void }) {
       <NavLink to="/benchmark">
         <BenchIcon {...ic} /> Benchmark
       </NavLink>
-      <div className="sect">Admin</div>
-      <NavLink to="/agents">
-        <Connect {...ic} /> Connected agents
-      </NavLink>
-      <NavLink to="/settings">
-        <SettingsOption {...ic} /> Settings
-      </NavLink>
+      {who.role !== "tester" && (
+        <>
+          <div className="sect">Admin</div>
+          <NavLink to="/agents">
+            <Connect {...ic} /> Connected agents
+          </NavLink>
+          <NavLink to="/settings">
+            <SettingsOption {...ic} /> Settings
+          </NavLink>
+        </>
+      )}
       <div className="grow" />
       <div className="who">
         <Robot size="14px" color="#8FA79C" aria-hidden />
         <span>{who.user ?? "—"}</span>
-        {who.mode === "local" && <button onClick={onSignOut}>Sign out</button>}
+        {who.mode === "local" && who.role !== "tester" && <button onClick={onSignOut}>Sign out</button>}
       </div>
       <div className="foot">{DISCLAIMER}</div>
     </nav>
@@ -115,6 +121,11 @@ export default function App() {
   }, []); // eslint-disable-line
 
   if (!who) return <Loading label="Starting" />;
+  // a full load: the new tester session cookie replaces whatever router state existed
+  const started = () => location.replace("/actions");
+  if (loc.pathname === "/start" && who.role !== "tester") {
+    return <Suspense fallback={<Loading label="Loading" />}><Start onDone={started} /></Suspense>;
+  }
   if (who.mode === "local" && !who.authenticated) {
     return (
       <Suspense fallback={<Loading label="Loading" />}>
@@ -133,10 +144,12 @@ export default function App() {
       <div className={`shell${panel.open ? " with-panel" : ""}`}>
         <Nav who={who} onSignOut={signOut} />
         <main className="main" id="main">
+          {who.role === "tester" && <Suspense fallback={null}><LeaseBanner /></Suspense>}
           <Suspense fallback={<Loading label="Loading" />}>
           <Routes>
             <Route path="/" element={<Navigate to="/sle" replace />} />
             <Route path="/login" element={<Navigate to="/sle" replace />} />
+            <Route path="/start" element={<Navigate to="/actions" replace />} />
             <Route path="/sle" element={<ServiceLevels />} />
             <Route path="/root-cause" element={<RootCauseIndex />} />
             <Route path="/root-cause/:id" element={<RootCause />} />
