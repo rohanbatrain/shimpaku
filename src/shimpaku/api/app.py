@@ -103,6 +103,53 @@ def _is_https(request: Request) -> bool:
     return request.url.scheme == "https"
 
 
+MAX_API_BODY = 64 * 1024  # no REST body needs more; the MCP gate has its own 1 MiB cap
+
+
+class BodyLimit:
+    """ASGI: refuse a request body over ``limit`` bytes with 413 before any route parses it
+    (declared Content-Length or, for chunked bodies, as it streams in)."""
+
+    def __init__(self, app, limit: int = MAX_API_BODY):
+        self.app = app
+        self.limit = limit
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+
+        async def too_large():
+            body = b'{"detail":"request body too large"}'
+            await send({"type": "http.response.start", "status": 413,
+                        "headers": [(b"content-type", b"application/json"),
+                                    (b"content-length", str(len(body)).encode())]})
+            await send({"type": "http.response.body", "body": body})
+
+        for k, v in scope.get("headers", []):
+            if k == b"content-length":
+                try:
+                    if int(v) > self.limit:
+                        return await too_large()
+                except ValueError:
+                    return await too_large()
+        chunks, size = [], 0
+        while True:
+            msg = await receive()
+            if msg["type"] != "http.request":
+                chunks.append(msg)
+                break
+            size += len(msg.get("body", b""))
+            if size > self.limit:
+                return await too_large()
+            chunks.append(msg)
+            if not msg.get("more_body"):
+                break
+
+        async def replay():
+            return chunks.pop(0) if chunks else await receive()
+        return await self.app(scope, replay, send)
+
+
 def create_app(
     service: Any,
     store: Any = None,
@@ -138,6 +185,7 @@ def create_app(
     dist = web_dist or WEB_DIST
 
     app = FastAPI(title="Shimpaku", version="0.0.1", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
+    app.add_middleware(BodyLimit)
     app.state.auth = auth
     app.state.service = service
     app.state.store = store
