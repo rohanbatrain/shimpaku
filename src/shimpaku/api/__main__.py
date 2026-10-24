@@ -7,6 +7,7 @@ The daemon (``shimpakud``) normally builds the app with the real service. Withou
 
 from __future__ import annotations
 
+import ipaddress
 import os
 
 import uvicorn
@@ -15,7 +16,18 @@ from shimpaku.api.app import create_app, demo_enabled
 from shimpaku.config import settings
 
 
+def _loopback(host: str) -> bool:
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return host == "localhost"
+
+
 def main() -> None:
+    # auth_mode=off serves every caller as the operator: loopback only, as the MCP endpoint
+    if settings.auth_mode.lower() == "off" and not _loopback(settings.bind):
+        raise RuntimeError(f"SHIMPAKU_AUTH_MODE=off refuses a non-loopback bind ({settings.bind}); "
+                           "use 127.0.0.1 or set SHIMPAKU_AUTH_MODE=local")
     if os.environ.get("SHIMPAKU_REPLAY"):
         from shimpaku.api import replay as service
         service.load()  # fail at start, not on the first request
