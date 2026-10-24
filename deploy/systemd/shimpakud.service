@@ -1,0 +1,34 @@
+[Unit]
+Description=Shimpaku — Mist-style assurance for one Junos home lab
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# %h expands to the running user's home dir; the unit is installed per-user under
+# ~/.config/systemd/user/, so this works for whichever account runs it (see install.sh).
+WorkingDirectory=%h/src/shimpaku
+Environment=SHIMPAKU_DATA=%h/.local/share/shimpaku
+Environment=SHIMPAKU_BIND=127.0.0.1
+Environment=SHIMPAKU_PORT=8780
+Environment=SHIMPAKU_AUTH_MODE=off
+# Give the gateway key its own line (not inline here) so it never lands in `systemctl status`
+# or journalctl's unit-file dump; EnvironmentFile is read at start, not logged.
+EnvironmentFile=-%h/.config/shimpaku/env
+ExecStart=%h/src/shimpaku/.venv/bin/python -m shimpaku.daemon
+Restart=on-failure
+RestartSec=5
+# SIGTERM triggers the daemon's own graceful shutdown (daemon.py: stop.wait() -> server.should_exit
+# -> cancel collector/analytics/engine tasks -> store.close()); give it real time to take it.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Minimal hardening only: the daemon also shells out to a separate Juniper junos-mcp-server
+# process and writes under paths this unit hasn't fully enumerated (jmcp_dir, audit.jsonl) —
+# ProtectHome/ReadWritePaths is left off rather than risk a silent, hard-to-diagnose EPERM
+# during a demo. The service already binds loopback-only and runs as the unprivileged operator.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

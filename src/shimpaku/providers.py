@@ -37,8 +37,14 @@ def register_all(store) -> None:
                 units = adb.units(cur, end - pd.Timedelta(minutes=window_min), end)
             finally:
                 cur.close()
-        names = (FABRIC, APP) if site in ("fabric", "campus") else (FABRIC, APP)
-        return {"site": site, "window_min": window_min, "sle": {s: summarise(units, s).as_dict() for s in names}}
+        # `units.site` is each unit's own evidence["site"]; without this filter a request for one
+        # site (e.g. "campus") silently included every other site's device-minutes too — caught
+        # live (2026-10-24): /api/sle?site=campus showed a fabric adjacency event that never
+        # touched r1/r2/sw1.
+        if "site" in units.columns:
+            units = units[units["site"] == site]
+        return {"site": site, "window_min": window_min,
+                "sle": {s: summarise(units, s).as_dict() for s in (FABRIC, APP)}}
 
     def _inc_row(r) -> dict:
         return {"incident_id": r[0], "t_open": str(r[1]), "t_detect": str(r[2]) if r[2] else None,
