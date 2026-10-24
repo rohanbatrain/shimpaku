@@ -94,7 +94,8 @@ class Executor:
                 pre = devices.health_snapshot(dev)
                 if ifn:
                     facts = devices.port_facts(dev, ifn)
-                    if facts["live_role"] not in ("access", "unused") or facts["interface_range_lines"] \
+                    allowed = ("trunk",) if kind == "add_vlan_to_trunk" else ("access", "unused")
+                    if facts["live_role"] not in allowed or facts["interface_range_lines"] \
                             or facts["lldp_neighbor"]:
                         raise ExecutionError(f"G1 re-check at execution failed: live role {facts['live_role']}")
                 with Config(dev, mode="exclusive") as cu:
@@ -128,6 +129,14 @@ class Executor:
                         elif kind == "rollback":
                             cu.rollback(rb_id=1)
                             self._commit(a, cu, dev, "rollback 1", n)
+                            expect = None
+                        elif kind == "add_vlan_to_trunk":
+                            vlan = a["args"]["vlan"]
+                            name = f"shimpaku-demo-{vlan}"
+                            cu.load(f"set vlans {name} vlan-id {vlan}\n"
+                                    f"set interfaces {ifn} unit 0 family ethernet-switching "
+                                    f"vlan members {name}", format="set")
+                            self._commit(a, cu, dev, f"add vlan {vlan}", n)
                             expect = None
                         else:
                             raise ExecutionError(f"no executor for {kind}")

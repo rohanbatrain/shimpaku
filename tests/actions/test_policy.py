@@ -170,8 +170,67 @@ def test_g2_bounce_cap():
 
 # ---------------------------------------------------------------- G3
 
-def test_g3_add_vlan_not_offered():
-    blocked(ev("add_vlan_to_trunk", {"device": "sw1", "ifname": "ge-0/0/0"}), "G0")
+def _vlan_args(**over):
+    args = {"device": "sw1", "ifname": "ge-0/0/3", "vlan": 999}
+    args.update(over)
+    return args
+
+
+def _vlan_pol(**over):
+    p = pol(**over)
+    p["test_ports"] = {**p["test_ports"], "sw1": ["ge-0/0/3"]}
+    return p
+
+
+def _trunk_facts(**kw):
+    kw.setdefault("topology_role", "unused")  # the demo port is not in any lab TOML
+    kw.setdefault("port", port(role="trunk"))
+    kw.setdefault("vlan_seen_elsewhere", True)
+    return facts(**kw)
+
+
+def test_g3_happy_path_awaits_approval():
+    d = ev("add_vlan_to_trunk", _vlan_args(), f=_trunk_facts(), p=_vlan_pol())
+    assert d.status == "awaiting_approval", d.reasons
+
+
+def test_g3_outside_demo_vlan_range_blocked():
+    blocked(ev("add_vlan_to_trunk", _vlan_args(vlan=10), f=_trunk_facts(), p=_vlan_pol()), "G3")  # real campus VLAN
+
+
+def test_g3_production_vlan_100_blocked():
+    blocked(ev("add_vlan_to_trunk", _vlan_args(vlan=100), f=_trunk_facts(), p=_vlan_pol()), "G3")  # real fabric VLAN
+
+
+def test_g3_no_corroborating_device_blocked():
+    blocked(ev("add_vlan_to_trunk", _vlan_args(), f=_trunk_facts(vlan_seen_elsewhere=False), p=_vlan_pol()), "G3")
+
+
+def test_g3_correlation_unknown_fails_closed():
+    blocked(ev("add_vlan_to_trunk", _vlan_args(), f=_trunk_facts(vlan_seen_elsewhere=None), p=_vlan_pol()), "G3")
+
+
+def test_g3_non_trunk_port_blocked_by_g1():
+    blocked(ev("add_vlan_to_trunk", _vlan_args(), f=_trunk_facts(port=port(role="access")), p=_vlan_pol()), "G1")
+
+
+def test_g3_fabric_role_blocked_by_g1():
+    blocked(ev("add_vlan_to_trunk", _vlan_args(), f=_trunk_facts(port=port(role="fabric")), p=_vlan_pol()), "G1")
+
+
+def test_g3_out_of_scope_port_blocked():
+    blocked(ev("add_vlan_to_trunk", _vlan_args(ifname="ge-0/0/4"), f=_trunk_facts(), p=_vlan_pol()), "G0")
+
+
+def test_g3_never_self_drives_by_default():
+    d = ev("add_vlan_to_trunk", _vlan_args(), f=_trunk_facts(), p=_vlan_pol())
+    assert d.status == "awaiting_approval"
+
+
+def test_g3_self_drive_toggle_still_needs_g0_g1():
+    p = _vlan_pol(self_drive={"add_vlan_to_trunk": True})
+    d = ev("add_vlan_to_trunk", _vlan_args(), f=_trunk_facts(port=port(role="access")), p=p)
+    blocked(d, "G1")
 
 
 # ---------------------------------------------------------------- G4

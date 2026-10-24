@@ -182,15 +182,26 @@ async def action_propose(kind: str, args: dict, reason: str, caller: Any) -> dic
         return _err("propose_failed", f"{type(e).__name__}: {e}")
 
 
+def _normalise_action_error(a: dict) -> dict:
+    """The executor stores a plain diagnostic string under `error` on a failed action (G1/G5/...
+    re-check messages); the top-level service `error` field is always a `{code, message}` dict
+    (e.g. `not_found`). Both share the key name, so an action's string must be wrapped before it
+    reaches a typed caller (the MCP `ActionResult` model rejects a bare string and raises)."""
+    if isinstance(a.get("error"), str):
+        a = {**a, "error": {"code": "execution_failed", "message": a["error"]}}
+    return a
+
+
 async def action_get(action_id: str) -> dict:
     """One action with its timeline, commits (Junos comment `shimpaku <id> …`) and validation."""
     a = await asyncio.to_thread(_engine().get, action_id)
-    return a if a is not None else _err("not_found", f"no action {action_id!r}")
+    return _normalise_action_error(a) if a is not None else _err("not_found", f"no action {action_id!r}")
 
 
 async def action_list(status: str | None = None) -> dict:
     """Actions, newest first, optionally filtered by status."""
-    return {"actions": await asyncio.to_thread(_engine().list, status)}
+    items = await asyncio.to_thread(_engine().list, status)
+    return {"actions": [_normalise_action_error(a) for a in items]}
 
 
 async def action_approve(action_id: str, user: Any) -> dict:

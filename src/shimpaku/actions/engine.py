@@ -95,10 +95,32 @@ class Engine:
                     f.rollback_diff = dev.cli("show system rollback 1 compare 0", warning=False) or ""
             finally:
                 dev.close()
+            if kind == "add_vlan_to_trunk" and isinstance(args.get("vlan"), int):
+                f.vlan_seen_elsewhere = self._vlan_seen_elsewhere(args["vlan"])
         inc = args.get("incident_id")
         if isinstance(inc, str):
             f.incident = self.incident_lookup(inc)
         return f
+
+    def _vlan_seen_elsewhere(self, vlan: int) -> bool:
+        """G3: is `vlan` already live on the policy's correlation device? Fail closed on any error
+        (unreachable, no such device, malformed reply) — an unconfirmed VLAN is never added."""
+        corr = self.policy.get("vlan_correlation_device")
+        if not isinstance(corr, str) or corr not in devices.inventory().nodes:
+            return False
+        try:
+            dev = devices.open_device(corr, timeout=20)
+        except Exception:  # noqa: BLE001
+            return False
+        try:
+            r = dev.rpc.get_vlan_information()
+            # verified live on vJunos-switch 26.2 (leaf2, 2026-10-24): `get-vlan-information` reply
+            # tags are l2ng-l2rtb-vlan-tag / l2ng-l2rtb-vlan-name, not the documented element names
+            return any(t.text and t.text.strip() == str(vlan) for t in r.findall(".//l2ng-l2rtb-vlan-tag"))
+        except Exception:  # noqa: BLE001
+            return False
+        finally:
+            dev.close()
 
     # ------------------------------------------------------------------ public API (sync)
     def propose(self, kind: str, args: dict, reason: str, caller: Any) -> dict:

@@ -24,24 +24,37 @@ ROLE_RANK = {"unused": 0, "access": 1, "trunk": 2, "routed": 3, "fabric": 4}
 CATALOGUE: dict[str, dict[str, Any]] = {
     "bounce_port": {"tier": "T1", "args": {"device": str, "ifname": str}, "optional": {"incident_id": str}},
     "rerun_deploy": {"tier": "T1", "args": {"topology": str}, "optional": {"incident_id": str}},
+    "add_vlan_to_trunk": {"tier": "T1", "args": {"device": str, "ifname": str, "vlan": int},
+                          "optional": {"incident_id": str}},
     "disable_port": {"tier": "T2", "args": {"device": str, "ifname": str}, "optional": {"incident_id": str}},
     "rollback": {"tier": "T2", "args": {"device": str, "rollback_id": int}, "optional": {"incident_id": str}},
 }
 
 DEFAULT_POLICY: dict[str, Any] = {
     # driver-assist by default; T1 kinds listed here self-drive (never T2, never services: G4/G9)
-    "self_drive": {"bounce_port": False, "rerun_deploy": False},
+    "self_drive": {"bounce_port": False, "rerun_deploy": False, "add_vlan_to_trunk": False},
     "confirm_minutes": 2,
-    "validation_window_s": {"bounce_port": 1800, "disable_port": 1800, "rollback": 1800, "rerun_deploy": 1800},
+    "validation_window_s": {"bounce_port": 1800, "disable_port": 1800, "rollback": 1800, "rerun_deploy": 1800,
+                            "add_vlan_to_trunk": 1800},
+    # G3: Mist's "Missing VLAN" correlates across >=2 APs before adding one back (R9 §1.2, R1 C93).
+    # We have no AP fleet; the honest lab analogue is a second, independent device that already
+    # carries the VLAN (not just a policy allowlist) — `vlan_correlation_device` is queried live,
+    # fail closed on any error. `demo_vlans` additionally bounds *which* VLAN IDs this action may
+    # ever touch, so it can never be pointed at a real production VLAN (10/20/100).
+    "vlan_correlation_device": "leaf2",
+    "demo_vlans": [999],
     "validation_interval_s": 30,
     "bounce_cap_24h": 3,                     # G2
     "max_open_actions": 3,                   # blast-radius cap across the lab
     # Lab write scope (build brief): writes only on these ports. Empty dict = no port writes.
+    # sw1 ge-0/0/5 is a throwaway demo trunk (R9 §1.2 "fault lab" style fixture): never wired to
+    # anything, carries no production traffic, used only to demo "Missing VLAN" add/remove safely.
     "write_scope_ports": {"spine2": ["ge-0/0/9"],
-                          "leaf2": [f"ge-0/0/{i}" for i in range(2, 10)]},
+                          "leaf2": [f"ge-0/0/{i}" for i in range(2, 10)],
+                          "sw1": ["ge-0/0/5"]},
     "write_scope_devices": [],               # devices where whole-device actions (rollback) may run
     # Ports that may be acted on without an incident (lab test ports; G6 otherwise needs evidence)
-    "test_ports": {"spine2": ["ge-0/0/9"], "leaf2": [f"ge-0/0/{i}" for i in range(2, 10)]},
+    "test_ports": {"spine2": ["ge-0/0/9"], "leaf2": [f"ge-0/0/{i}" for i in range(2, 10)], "sw1": ["ge-0/0/5"]},
     "protected_devices": [],                 # never written (e.g. a box under bench control)
     "service_incident_kinds": ["radius", "dns", "dhcp", "ntp", "service"],   # G9
     "client_incident_kinds": ["client", "client-side", "wrong-credentials"],  # G6
@@ -75,6 +88,7 @@ class Facts:
     newest_commit_log: str | None = None      # for rollback / G8
     rollback_diff: str | None = None          # for rollback: what would be undone
     incident: dict | None = None              # incident_get() if incident_id was given
+    vlan_seen_elsewhere: bool | None = None   # G3: vlan confirmed live on a second device
 
 
 @dataclass
@@ -177,24 +191,28 @@ def evaluate(kind: str, args: dict, reason: str, facts: Facts, policy: dict) -> 
     if block and errs:
         return Decision(False, tier, "blocked", block, checked)
 
-    # ---- G1 role: access/unused only, never trunk, fabric or routed; most protective source wins
-    if kind in ("bounce_port", "disable_port"):
+    # ---- G1 role: access/unused only (add_vlan_to_trunk: trunk only), most protective source wins
+    if kind in ("bounce_port", "disable_port", "add_vlan_to_trunk"):
         checked.append("G1")
+        allowed_roles = ("trunk",) if kind == "add_vlan_to_trunk" else ("access", "unused")
         if facts.port is None:
             block.append("G1 live port facts unavailable; refusing (fail closed)")
         else:
             live = facts.port.get("live_role")
             role = effective_role(facts.topology_role, live)
-            if role not in ("access", "unused"):
+            if role not in allowed_roles:
                 src = []
                 if facts.topology_role and facts.topology_role != "unused":
                     src.append(f"topology says {facts.topology_role}")
                 if live and live not in ("access", "unused"):
                     src.append(f"live config says {live}")
                 block.append(f"G1 {dev} {ifn} is a {role} port ({'; '.join(src) or 'unknown role'}); "
-                             "actions only on access ports")
-            if facts.topology_role and live and facts.topology_role != live and \
-                    {facts.topology_role, live} - {"access", "unused"}:
+                             f"{kind} only runs on {' or '.join(allowed_roles)} ports")
+            # add_vlan_to_trunk is only ever offered on throwaway demo ports the topology files
+            # have no opinion on ("unused" there means "not covered", not "must stay unused");
+            # this check instead guards bounce/disable against a stale topology file.
+            if kind in ("bounce_port", "disable_port") and facts.topology_role and live and \
+                    facts.topology_role != live and {facts.topology_role, live} - {"access", "unused"}:
                 block.append(f"G1 role disagreement for {dev} {ifn}: topology={facts.topology_role} "
                              f"live={live}")
             if facts.port.get("interface_range_lines"):
@@ -220,10 +238,17 @@ def evaluate(kind: str, args: dict, reason: str, facts: Facts, policy: dict) -> 
             block.append(f"G2 bounce cap reached: {facts.bounces_24h}/{cap} on {dev} {ifn} in 24 h; "
                          "status stays Open and escalates to a human")
 
-    # ---- G3 add VLAN needs two observers (tool not offered in the MVP)
-    checked.append("G3")
+    # ---- G3 add VLAN needs two independent observers (Mist: >=2 APs; here: a second live device)
     if kind == "add_vlan_to_trunk":
-        block.append("G3 add_vlan_to_trunk is not enabled")
+        checked.append("G3")
+        vlan = args.get("vlan")
+        if vlan not in policy.get("demo_vlans", []):
+            block.append(f"G3 vlan {vlan!r} is outside the demo-safe range {policy.get('demo_vlans')}; "
+                         "refusing to touch a production VLAN")
+        if facts.vlan_seen_elsewhere is not True:
+            block.append(f"G3 vlan {vlan!r} was not confirmed present on "
+                         f"{policy.get('vlan_correlation_device')!r} (a second independent device); "
+                         "refusing a VLAN add with no corroborating evidence")
 
     # ---- G5 one writer per device
     if dev is not None:

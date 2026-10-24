@@ -37,6 +37,7 @@ TIERS: dict[str, str] = {
                          "config_get_diff", "probe_run", "incident_list", "incident_get", "audit_query",
                          "junos_show")},
     "action_propose_bounce_port": "T1", "action_propose_rerun_deploy": "T1",
+    "action_propose_add_vlan_to_trunk": "T1",
     "action_propose_rollback": "T2", "action_propose_disable_port": "T2",
     "action_get": "control", "action_cancel": "control",
 }
@@ -313,6 +314,17 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
     async def action_propose_rerun_deploy(topology: str, reason: str, incident_id: str | None = None) -> ActionResult:
         """T1. Propose re-running the generator deploy to restore drift from the source of truth."""
         return await _propose("rerun_deploy", {"topology": topology, "incident_id": incident_id}, reason)
+
+    @mcp.tool(annotations=T1)
+    async def action_propose_add_vlan_to_trunk(device: str, ifname: str, vlan: int, reason: str,
+                                               incident_id: str | None = None) -> ActionResult:
+        """T1. Propose adding one VLAN back to a trunk port (Mist: "Missing VLAN"). Runs only on
+        trunk ports in the write scope, and only for a VLAN confirmed live on a second,
+        independent device first (lab://policy `vlan_correlation_device`) — there is no AP fleet
+        here to correlate across, so a second device's live state is the evidence instead."""
+        return await _propose("add_vlan_to_trunk",
+                              {"device": device, "ifname": ifname, "vlan": vlan, "incident_id": incident_id},
+                              reason)
 
     @mcp.tool(annotations=T2)
     async def action_propose_disable_port(device: str, ifname: str, reason: str,
