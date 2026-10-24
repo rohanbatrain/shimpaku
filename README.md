@@ -181,3 +181,7 @@ The live demo script is [`DEMO.md`](DEMO.md) (`shimpaku demo seed | break | stat
 
 v2: the client-farm VM (Wi-Fi/wired synthetic clients, `R3`), the full blinded benchmark run,
 self-driving toggles, OIDC auth, and JNCIA-MistAI (JN0-253).
+
+## Licence
+
+MIT; see [LICENSE](LICENSE). Shimpaku is an independent project, not affiliated with HPE or Juniper Networks.
