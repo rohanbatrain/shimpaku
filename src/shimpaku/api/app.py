@@ -436,6 +436,10 @@ def create_app(
                                          "(no LLM admin key is configured)")
             extra["llm_key"] = key
         rate("ask", p)
+        params = inspect.signature(ask_fn).parameters
+        if "role" in params:
+            extra["role"] = p.effective_role
+            extra["lease_id"] = p.lease_id
 
         async def gen():
             try:

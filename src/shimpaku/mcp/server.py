@@ -105,6 +105,10 @@ def caller_from_request(ctx) -> Caller:
     client = (info or {}).get("name") if isinstance(info, dict) else None
     req = ctx.request
     if req is None or not hasattr(req, "headers"):
+        # in-process (Ask Shim in the daemon) sets the asker-derived caller; stdio is the OS user
+        inproc = _caller.get(None)
+        if inproc is not None and inproc.transport == "inproc":
+            return inproc
         return Caller(kind="mcp", name=f"os:{getpass.getuser()}", transport="stdio", client=client)
     headers = req.headers
     label = headers.get("x-shimpaku-client")

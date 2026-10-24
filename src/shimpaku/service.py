@@ -360,3 +360,60 @@ async def policy_get() -> dict:
 async def health() -> dict:
     return {"ok": True, "ts": time.time()}
 
+
+
+# ===================================================================== assistant (dashboard ⌘K)
+
+_mcp_server = None
+
+
+def set_mcp_server(server) -> None:
+    """The daemon's MCP server; Ask Shim talks to it in memory, so it uses the same tools,
+    guardrails and audit as any external agent, without a network hop or a bearer token."""
+    global _mcp_server
+    _mcp_server = server
+
+
+async def assistant_ask(question: str, principal: str, context: dict | None = None, *,
+                        llm_key: str | None = None, role: str | None = None,
+                        lease_id: str | None = None):
+    """Run Shim for a dashboard user and translate its events into the panel's contract
+    (meta, tool, token, error, done). Shim acts as `shim:<principal>` with the asker's role and
+    lease, so a tester's assistant is held to the tester gate; it can propose, never approve."""
+    import time as _t
+
+    from shimpaku.actions.engine import Caller
+    from shimpaku.assistant.llm import LLM
+    from shimpaku.assistant.loop import Assistant
+    from shimpaku.mcp import server as mcp_mod
+
+    if _mcp_server is None:
+        yield {"type": "error", "message": "the assistant is not wired into this daemon"}
+        return
+    caller = Caller(kind="assistant", name=f"shim:{principal}", transport="inproc",
+                    role="tester" if role == "tester" else "agent", lease_id=lease_id)
+    token = mcp_mod._caller.set(caller)
+    factory = (lambda name: LLM(name, key=llm_key)) if llm_key else None
+    started: dict[str, float] = {}
+    streamed = False
+    try:
+        bot = Assistant(_mcp_server, llm_factory=factory)
+        async for ev in bot.ask(question):
+            t = ev.get("type")
+            if t == "route":
+                yield {"type": "meta", "model": ev.get("model", "?")}
+            elif t == "tool_call":
+                started[ev["id"]] = _t.perf_counter()
+            elif t == "tool_result":
+                ms = int((_t.perf_counter() - started.pop(ev["id"], _t.perf_counter())) * 1000)
+                yield {"type": "tool", "name": ev.get("name"), "call": ev.get("name"), "ms": ms,
+                       "ok": bool(ev.get("ok"))}
+            elif t == "token":
+                streamed = True
+                yield ev
+            elif t == "answer" and not streamed and ev.get("text"):
+                yield {"type": "token", "text": ev["text"]}
+            elif t in ("error", "done"):
+                yield {"type": t, **({"message": ev.get("message", "")} if t == "error" else {})}
+    finally:
+        mcp_mod._caller.reset(token)

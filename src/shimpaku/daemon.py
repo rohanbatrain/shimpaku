@@ -69,6 +69,7 @@ async def async_main() -> None:
     devices.Pool()  # module-level pool is created lazily; touch it so failures surface early
 
     mcp_server = build_server()  # wires service.set_audit_log + executor audit internally
+    service.set_mcp_server(mcp_server)  # Ask Shim (dashboard) talks to it in memory
     mcp_app = http_app(mcp_server)
     rest_app = create_app(service, store, settings.sqlite_path)
     leases = rest_app.state.leases
