@@ -88,6 +88,34 @@ validation, added a test that fails on the old code, and wrote it up."*
 > write path: proposal, guardrails, human approval, lock, `commit confirmed`, validation. And
 > the README lists what I deliberately didn't build, and why."
 
+## Give someone a tester pass
+
+A tester drives the live lab alone for 30 minutes: break VLAN 999, propose (or let their own
+Claude Code propose) the fix, approve it, watch it validate. Needs `SHIMPAKU_AUTH_MODE=local` and
+`SHIMPAKU_PUBLIC_URL` (the https base the link is built from) in `~/.config/shimpaku/env`.
+
+```bash
+shimpaku admin invite create --note "Jane Doe, recruiter at X"   # prints the link once
+shimpaku admin invite list                                        # open / redeemed / expired / revoked
+shimpaku admin invite revoke inv_…                                # also ends their lease within seconds
+```
+
+- Send the link. Opening it (or a LinkedIn/WhatsApp preview) does not use it up; it is used when
+  they tick the consent box and press **Start demo**. It must be used within 72 h.
+- If someone else holds the lab, they queue; the banner shows their position and promotes them.
+- On **Actions** they get Break VLAN 999 / Propose the fix / Re-seed, and **Connect your own agent**,
+  which shows their MCP token once as a `claude mcp add --transport http … --header
+  "Authorization: Bearer …"` command. It proposes only the fixture and dies with the lease.
+- They may approve only their own fixture action; it validates for 180 s.
+- When the lease ends (30 min, **End session**, or `POST /api/admin/leases/<id>/revoke`) their open
+  actions are cancelled, their token, session and LLM key are revoked, and the fixture is re-seeded.
+- Ask Shim for testers needs `SHIMPAKU_LLM_ADMIN_KEY` (each lease gets its own LiteLLM key, USD 0.50);
+  without it they are told the assistant is off.
+- Their note and display name are deleted 90 days after the lease (daily, or `shimpaku admin purge`).
+  Tunables: `SHIMPAKU_INVITE_TTL_HOURS`, `SHIMPAKU_LEASE_MINUTES`, `SHIMPAKU_LEASE_MAX_ACTIVE`,
+  `SHIMPAKU_LEASE_DEMO_OPS`, `SHIMPAKU_RETENTION_DAYS`, `SHIMPAKU_PRIVACY_CONTACT`,
+  `SHIMPAKU_TESTER_LLM_BUDGET_USD`, `SHIMPAKU_TESTER_LLM_RPM`, `SHIMPAKU_RATE_LIMITS`.
+
 ## If something goes wrong
 
 | Problem | Do this |
