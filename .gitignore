@@ -7,3 +7,6 @@ var/
 deploy/vps/snapshot/
 deploy/vps/site-built/
 deploy/vps/.env
+
+# operator-only state: settings, generated secrets, logs (never committed)
+.local/
