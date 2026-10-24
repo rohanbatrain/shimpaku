@@ -32,6 +32,7 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .nav .grow { flex: 1; }
 .nav .foot { padding: 12px 18px 0; font-size: 11px; line-height: 15px; color: #8fa79c; border-top: 1px solid #1f3029; margin: 0 0 0; }
 .nav .who { padding: 10px 18px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+.nav .who button.sign-out { background: #c9d8d1; color: var(--nav); border-color: #c9d8d1; font-weight: 650; }
 .nav .who button { margin-left: auto; background: none; border: 1px solid #2c4339; color: #c9d8d1; border-radius: 5px; font: inherit; font-size: 11px; padding: 2px 8px; cursor: pointer; }
 
 .main { overflow: auto; display: flex; flex-direction: column; min-width: 0; }
@@ -129,6 +130,7 @@ ul.tl .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
 .login-wrap { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; }
 .login-art { background: var(--nav); color: #c9d8d1; padding: 48px; display: flex; flex-direction: column; justify-content: space-between; }
 .login-form { display: flex; align-items: center; justify-content: center; padding: 32px; }
+.login-form .linkish { align-self: flex-start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent, #1f6f5c); text-decoration: underline; cursor: pointer; font: inherit; font-size: 12px; }
 .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
 .field label { font-size: 13px; font-weight: 600; }
 .field input, .field select { font: inherit; padding: 8px 10px; border: 1px solid var(--line2); border-radius: 6px; background: var(--front); }
@@ -175,6 +177,7 @@ ul.chg-list li { display: flex; gap: 6px; align-items: center; }
   .appbar-t { flex: 1; font-weight: 650; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .appbar-menu { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: #fff; cursor: pointer; }
   .appbar-menu:hover { background: #16271f; }
+  .appbar-signout { min-height: 36px; padding: 4px 12px; border: 1px solid #c9d8d1; border-radius: 6px; background: #c9d8d1; color: var(--nav); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
   .nav { position: fixed; top: 0; bottom: 0; left: 0; width: min(300px, 84vw); z-index: 40; overflow-y: auto; transform: translateX(-100%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; padding-top: calc(16px + env(safe-area-inset-top, 0px)); padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   .nav.open { transform: none; visibility: visible; transition: transform .2s ease; box-shadow: 8px 0 24px rgba(0,0,0,.3); }
   .nav a { min-height: 44px; }
@@ -210,6 +213,7 @@ ul.chg-list li { display: flex; gap: 6px; align-items: center; }
   .login-wrap { grid-template-columns: minmax(0, 1fr); }
   .login-art { padding: 28px 20px; gap: 20px; }
   .login-form { padding: 24px 16px 40px; }
+  .login-form .linkish { min-height: 36px; }
   .field input, .field select { min-height: 44px; font-size: 16px; }
   .cls { min-height: 40px; }
   .cls button { min-height: 40px; }

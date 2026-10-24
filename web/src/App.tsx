@@ -2,7 +2,7 @@ import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useStat
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
 import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar } from "grommet-icons";
 import { api, useApi } from "./api";
-import { SessionCtx, type Who } from "./session";
+import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
 import "./requests.css";
 const AssistantPanel = lazy(() => import("./components/AssistantPanel"));
@@ -40,13 +40,14 @@ const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Dev
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
-function AppBar({ open, onToggle, btn }: { open: boolean; onToggle: () => void; btn: RefObject<HTMLButtonElement | null> }) {
+function AppBar({ open, onToggle, btn, onSignOut }: { open: boolean; onToggle: () => void; btn: RefObject<HTMLButtonElement | null>; onSignOut?: () => void }) {
   const loc = useLocation();
   const title = TITLES.find(([p]) => loc.pathname.startsWith(p))?.[1] ?? (loc.pathname === "/" ? "Overview" : "Shimpaku");
   return (
     <div className="appbar">
       <Mark size={28} />
       <span className="appbar-t">{title}</span>
+      {onSignOut && <button type="button" className="appbar-signout" onClick={onSignOut}>Sign out</button>}
       <button ref={btn} type="button" className="appbar-menu" onClick={onToggle} aria-expanded={open} aria-controls="main-nav" aria-label={open ? "Close menu" : "Open menu"}>
         {open ? <Close size="20px" color="currentColor" aria-hidden /> : <Menu size="20px" color="currentColor" aria-hidden />}
       </button>
@@ -139,7 +140,7 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
       <div className="who">
         <Robot size="14px" color="#8FA79C" aria-hidden />
         <span>{who.user ?? "—"}</span>
-        {who.mode === "local" && op && <button onClick={onSignOut}>Sign out</button>}
+        {who.mode === "local" && op && <button className="sign-out" onClick={onSignOut}>Sign out</button>}
         {who.role === "visitor" && <button onClick={() => location.assign("/login")}>Operator sign in</button>}
       </div>
       <div className="foot">{DISCLAIMER}</div>
@@ -231,13 +232,14 @@ export default function App() {
       </Suspense>
     );
   }
-  const signOut = () => api("/api/logout", { method: "POST" }).finally(refresh);
+  const signOut = () => { void signOutAndClear(); };
 
   return (
     <SessionCtx.Provider value={{ who, refresh, openAssistant }}>
       <a href="#main" className="sr-only">Skip to content</a>
       <div className={`shell${panel.open ? " with-panel" : ""}${drawer ? " drawer-open" : ""}`}>
-        <AppBar open={drawer} onToggle={() => (drawer ? closeDrawer() : setDrawer(true))} btn={menuBtn} />
+        <AppBar open={drawer} onToggle={() => (drawer ? closeDrawer() : setDrawer(true))} btn={menuBtn}
+          onSignOut={who.mode === "local" && who.role === "operator" ? signOut : undefined} />
         <Nav who={who} onSignOut={signOut} drawer={drawer} onClose={closeDrawer} />
         {drawer && <div className="scrim" onClick={closeDrawer} aria-hidden />}
         <main className="main" id="main">
