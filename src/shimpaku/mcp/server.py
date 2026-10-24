@@ -230,7 +230,11 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
     @mcp.tool(annotations=RO)
     async def inventory_list(site: Literal["campus", "fabric"] | None = None) -> ReadResult:
         """List lab devices (name, site, kind, mgmt IP). Sites: campus (r1 r2 sw1), fabric (spines, leaves)."""
-        return _read(await service.inventory_list(site))
+        out = await service.inventory_list(site)
+        if current_caller().role in ("tester", "visitor") and isinstance(out.get("nodes"), list):
+            # management addresses are for the operator's agents, not a guest's
+            out = {**out, "nodes": [{k: v for k, v in n.items() if k != "mgmt_ip"} for n in out["nodes"]]}
+        return _read(out)
 
     @mcp.tool(annotations=RO)
     async def sle_get_summary(site: Literal["campus", "fabric"], window_min: int = 60) -> ReadResult:
