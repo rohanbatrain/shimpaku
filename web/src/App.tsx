@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Robot, Dashboard, Tree, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
+import { Chat, Robot, Dashboard, Tree, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -83,6 +83,20 @@ function Nav({ who, onSignOut }: { who: Who; onSignOut: () => void }) {
   );
 }
 
+const MAC = typeof navigator !== "undefined" && /Mac/.test(navigator.platform);
+
+// Floating launcher for the assistant panel: eager shell, the panel itself stays lazy.
+// Hidden while the panel is open (the panel has its own close control).
+function AskBubble({ onOpen }: { onOpen: () => void }) {
+  const tip = `Ask Shim ${MAC ? "⌘" : "Ctrl+"}K`;
+  return (
+    <button type="button" className="ask-bubble" onClick={onOpen} aria-label="Ask Shim" title={tip} aria-keyshortcuts="Control+K Meta+K">
+      <Chat size="24px" color="currentColor" aria-hidden />
+      <span className="ask-bubble-tip" aria-hidden>{tip}</span>
+    </button>
+  );
+}
+
 export default function App() {
   const [who, setWho] = useState<Who | null>(null);
   const [panel, setPanel] = useState<{ open: boolean; seed?: string; n: number }>({ open: false, n: 0 });
@@ -162,6 +176,7 @@ export default function App() {
           </Routes>
           </Suspense>
         </main>
+        {!panel.open && <AskBubble onOpen={() => openAssistant()} />}
         {panel.open && <Suspense fallback={null}><AssistantPanel key={panel.n} seed={panel.seed} onClose={() => setPanel((p) => ({ ...p, open: false, seed: undefined }))} /></Suspense>}
       </div>
     </SessionCtx.Provider>
