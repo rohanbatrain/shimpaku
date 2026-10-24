@@ -425,3 +425,10 @@ def test_cli_requests_list_approve_decline(pv, monkeypatch):
     assert out.exit_code == 2
     out = run.invoke(cli_admin.admin_app, ["requests", "decline", rid2, "--note", "sorry"])
     assert out.exit_code == 0 and pv.lm.requests.get(rid2)["status"] == "declined"
+
+
+def test_requests_closed_without_a_privacy_contact(pv, monkeypatch):
+    from shimpaku.config import settings
+    monkeypatch.setattr(settings, "privacy_contact", None)
+    r = send(pv)
+    assert r.status_code == 503 and "privacy contact" in r.json()["detail"]

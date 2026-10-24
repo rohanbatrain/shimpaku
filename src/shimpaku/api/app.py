@@ -690,6 +690,9 @@ def create_app(
         check_csrf(request, None)
         if is_replay or mode != "local":
             raise HTTPException(403, "session requests are taken only by a lab in auth mode local")
+        if not (settings.privacy_contact or "").strip():
+            # the notice must tell a stranger how to ask for deletion (DPDP s.5); no contact, no intake
+            raise HTTPException(503, "session requests are closed: no privacy contact is configured")
         rate("request", f"ip:{client_ip(request)}")
         try:
             out = requests_.create(name=body.name, contact=body.contact, message=body.message,

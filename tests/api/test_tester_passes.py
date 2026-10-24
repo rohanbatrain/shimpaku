@@ -160,7 +160,8 @@ def test_invite_is_single_use(world):
     _, r = redeem(world, tok)
     assert r.status_code == 410 and "already been used" in r.json()["detail"]
     assert client(world).get(f"/api/invites/status?i={tok}").json() == {
-        "valid": False, "reason": "used", "retention_days": 90, "lease_minutes": 30, "contact": None}
+        "valid": False, "reason": "used", "retention_days": 90, "lease_minutes": 30,
+        "contact": __import__("shimpaku.config", fromlist=["settings"]).settings.privacy_contact}
 
 
 def test_invite_expires(world):

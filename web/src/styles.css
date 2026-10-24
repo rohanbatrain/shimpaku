@@ -336,3 +336,8 @@ svg.blast-tree { width: 100%; min-width: 640px; height: auto; display: block; }
   ul.feed li .feed-t { grid-column: 2; }
   .how ol { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* topology: a halo behind every label so links never strike through text */
+.topo .topo-if, .topo .topo-name, .topo .topo-role, .topo .topo-site-s {
+  paint-order: stroke; stroke: var(--topo-halo, #f6f9f8); stroke-width: 5px; stroke-linejoin: round;
+}

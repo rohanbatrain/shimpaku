@@ -113,8 +113,14 @@ export default function TopoMap({ data, selected, onSelect, compact = false }: {
         const c = STATE_COLOR[l.state];
         const [mx, my] = mid(a, b);
         const vert = Math.abs(b[1] - a[1]) > Math.abs(b[0] - a[0]);
-        const off: [number, number] = vert ? [14, 0] : [0, -9];
-        const top = (p: [number, number], q: [number, number]) => (vert ? (p[1] < q[1] ? 86 : 50) : 62);
+        // vertical links: port labels on the outer side of their column, so they never meet the
+        // labels of the crossing diagonals; diagonals: labels further out, clear of the crossing
+        const st = SITES.find((x) => x.id === l.site);
+        const side = st && a[0] < st.x + st.w / 2 ? -1 : 1;
+        const diag = !vert && Math.abs(b[1] - a[1]) > 20;
+        const off: [number, number] = vert ? [side * 12, 0] : [0, diag ? -8 : -9];
+        const anchor = vert ? (side < 0 ? "end" : "start") : "middle";
+        const top = (p: [number, number], q: [number, number]) => (vert ? (p[1] < q[1] ? 92 : 56) : diag ? 96 : 62);
         const la = along(a, b, top(a, b)), lb = along(b, a, top(b, a));
         const hl = selected && (l.a === selected || l.b === selected);
         return (
@@ -130,8 +136,8 @@ export default function TopoMap({ data, selected, onSelect, compact = false }: {
             )}
             {!compact && (
               <>
-                <text x={la[0] + off[0]} y={la[1] + off[1]} className="topo-if" textAnchor={vert ? "start" : "middle"}>{l.a_if}</text>
-                <text x={lb[0] + off[0]} y={lb[1] + off[1]} className="topo-if" textAnchor={vert ? "start" : "middle"}>{l.b_if}</text>
+                <text x={la[0] + off[0]} y={la[1] + off[1]} className="topo-if" textAnchor={anchor}>{l.a_if}</text>
+                <text x={lb[0] + off[0]} y={lb[1] + off[1]} className="topo-if" textAnchor={anchor}>{l.b_if}</text>
               </>
             )}
           </g>
