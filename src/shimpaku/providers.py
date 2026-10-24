@@ -267,8 +267,8 @@ def register_all(store) -> None:
         ifaces: dict[str, dict[float, dict]] = {}
         for (eid, metric), g in df.groupby(["entity_id", "metric"], sort=False):
             ifn = eid.split(":", 1)[1]
-            if ":" in ifn:
-                continue
+            if ":" in ifn or not ifn.startswith(("ge-", "xe-", "et-", "mge-")):
+                continue  # physical ports only (no fxp0 management, lo0 or irb)
             key = IF_RATE_METRICS[metric]
             pts = ifaces.setdefault(ifn, {})
             prev = None
