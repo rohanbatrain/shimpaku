@@ -3,7 +3,9 @@ import json
 import httpx
 import respx
 
-from conftest import ROOT
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]  # not `from conftest import ROOT`: see test_journal_recover.py
 from virga.adapters import FileAdapter, ShimpakuAdapter, make, norm_incident
 from virga.baselines import classify_diff
 from virga.catalogue import load

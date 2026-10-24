@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -169,7 +170,9 @@ def test_journal_is_atomic_and_private(tmp_path):
 
 
 def test_repo_catalogue_selftest_with_fake_lab_respects_allocation(fake_lab, tmp_path):
-    from conftest import ROOT
+    # not `from conftest import ROOT`: tests/mcp/conftest.py has no __init__.py either, so a bare
+    # `conftest` module name collides across test dirs and whichever loads first wins project-wide
+    ROOT = Path(__file__).resolve().parents[2]
 
     cat = load(ROOT / "bench" / "catalogue.yaml")
     lab = fake_lab({"leaf1": BASE, "spine1": [], "r1": [], "leaf2": []}, write_ok={"leaf1", "spine1", "r1"})

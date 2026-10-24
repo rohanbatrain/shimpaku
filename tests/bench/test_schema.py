@@ -3,7 +3,9 @@ import copy
 import pytest
 import yaml
 
-from conftest import ROOT
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]  # not `from conftest import ROOT`: see test_journal_recover.py
 from virga import schema
 from virga.catalogue import CatalogueError, expand_probes, load, scenario_env
 

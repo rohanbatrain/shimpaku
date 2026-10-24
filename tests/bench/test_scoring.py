@@ -4,7 +4,10 @@ import copy
 import json
 import math
 
-from conftest import DATA, ROOT
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]  # not `from conftest import ROOT`: see test_journal_recover.py
+DATA = Path(__file__).parent / "data"
 from virga.catalogue import load
 from virga.publish import _clean, scoreboard_svg, selftest_summary
 from virga.scoring import class_stats, fmt_table, records_to_trials, run_meta, score_system, wilson
