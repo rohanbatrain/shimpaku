@@ -120,7 +120,7 @@ and the TLS expiry, with a public status page.
 - ⚑ **D2 — Cloudflare free in front.** It needs the domain's nameservers. (Recommended.)
 - ⚑ **D3 — LinkedIn sign-in in addition to invite links**, or invite links only. (Recommended:
   invite links only first; LinkedIn later if wanted.)
-- ⚑ **D4 — Tester reads.** Live reads of the whole lab, or `sw1`/`leaf2` only. (Recommended:
+- ✔ **D4 — Tester reads** (built with the recommended default, 2026-10-24). Live reads of the whole lab, or `sw1`/`leaf2` only. (Recommended:
   everything read-only except raw `show` and config reads, which stay limited to the fixture devices.)
 - ⚑ **D5 — Shim budget per lease** in USD. (Suggested: $0.50.)
 

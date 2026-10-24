@@ -13,6 +13,8 @@ at `/mcp`.
 
 from __future__ import annotations
 
+import re
+
 import contextvars
 import getpass
 import ipaddress
@@ -83,6 +85,33 @@ def _act(d: dict) -> ActionResult:
 
 def current_caller() -> Caller:
     return _caller.get(Caller(kind="mcp", name=f"os:{getpass.getuser()}", transport="stdio"))
+
+
+# Guests (testers, visitors) read config only on the fixture's devices, and never secrets (DEPLOY-DESIGN D4).
+_SECRET_LINE = re.compile(r"(encrypted-password|secret|authentication-key|pre-shared-key|community|"
+                          r"ssh-(rsa|ed25519|ecdsa)|plain-text-password)", re.I)
+
+
+def _guest() -> bool:
+    return current_caller().role in ("tester", "visitor")
+
+
+def _guest_device_refusal(device: str) -> dict | None:
+    from shimpaku.actions import fixture
+    if _guest() and device not in (fixture.DEVICE, fixture.CORR_DEVICE):
+        return {"error": {"code": "forbidden",
+                          "message": f"guests read config only on {fixture.DEVICE} and {fixture.CORR_DEVICE}"}}
+    return None
+
+
+def _redact_secrets(obj):
+    if isinstance(obj, str):
+        return "\n".join("<secret line redacted>" if _SECRET_LINE.search(l) else l for l in obj.split("\n"))
+    if isinstance(obj, dict):
+        return {k: _redact_secrets(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_redact_secrets(v) for v in obj]
+    return obj
 
 
 class Denied(Exception):
@@ -254,7 +283,11 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
     @mcp.tool(annotations=RO)
     async def port_get_config(device: str, ifname: str) -> ReadResult:
         """One port's effective config (groups and interface-range expanded), VLANs, LLDP, live role."""
-        return _read(await service.port_get_config(device, ifname))
+        refused = _guest_device_refusal(device)
+        if refused:
+            return _read(refused)
+        out = await service.port_get_config(device, ifname)
+        return _read(_redact_secrets(out) if _guest() else out)
 
     @mcp.tool(annotations=RO)
     async def topo_get_neighbors(device: str | None = None) -> ReadResult:
@@ -269,12 +302,20 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
     @mcp.tool(annotations=RO)
     async def config_get_commits(device: str, n: int = 10) -> ReadResult:
         """Newest Junos commits with user, client, time, log and the pending-confirm flag."""
-        return _read(await service.config_get_commits(device, n))
+        refused = _guest_device_refusal(device)
+        if refused:
+            return _read(refused)
+        out = await service.config_get_commits(device, n)
+        return _read(_redact_secrets(out) if _guest() else out)
 
     @mcp.tool(annotations=RO)
     async def config_get_diff(device: str, rollback: int = 1) -> ReadResult:
         """What the last `rollback` commits changed on a device (show system rollback N compare 0)."""
-        return _read(await service.config_get_diff(device, rollback))
+        refused = _guest_device_refusal(device)
+        if refused:
+            return _read(refused)
+        out = await service.config_get_diff(device, rollback)
+        return _read(_redact_secrets(out) if _guest() else out)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def probe_run(target: str, kind: Literal["ping", "dhcp", "dns", "http", "arp"] = "ping") -> ReadResult:

@@ -47,9 +47,10 @@ it plainly so it can be reviewed.
 
 ## Known gaps for testers
 
-- Reads are not narrowed for testers yet (DEPLOY-DESIGN D4 is open): a tester session or token can read
-  every device's config and the allowlisted `show` commands, as the operator can. Only management
-  addresses are withheld (`inventory_list` drops `mgmt_ip` for tester callers; the REST view never had it).
+- Guest config reads (DEPLOY-DESIGN D4): a tester or visitor reads port config, commits and config
+  diffs only on the fixture's devices (`sw1`, `leaf2`), and every line that could carry a secret
+  (passwords, keys, SNMP communities) is redacted. Health, routing, counters, topology and service levels
+  stay lab-wide and read-only. Management addresses are withheld (`inventory_list` drops `mgmt_ip`).
 - Ask Shim acts with the asker's role: a tester's Shim is held to the tester gate, and a principal that
   cannot propose (a `read` token) gets a `visitor` Shim that cannot propose or cancel (before 2026-10-24
   it was an `agent` and could propose).

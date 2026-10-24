@@ -10,6 +10,8 @@ is used as-is; this file only wires them together and owns the top-level lifecyc
 
 from __future__ import annotations
 
+import os
+
 import asyncio
 import logging
 import signal
@@ -88,7 +90,11 @@ async def async_main() -> None:
         # tester leases: timeouts, end-of-lease cleanup, queue promotion, daily retention purge
         tasks.append(asyncio.create_task(leases.run_forever(), name="leases"))
 
-        config = uvicorn.Config(dispatcher, host=settings.bind, port=settings.port, log_level="info")
+        config = uvicorn.Config(dispatcher, host=settings.bind, port=settings.port, log_level="info",
+                            # behind the edge: trust its X-Forwarded-* so cookies are Secure/__Host- and
+                            # rate limits see real client IPs (same as api/__main__.py)
+                            proxy_headers=True,
+                            forwarded_allow_ips=os.environ.get("SHIMPAKU_TRUSTED_PROXIES", "127.0.0.1"))
         server = uvicorn.Server(config)
         stop = asyncio.Event()
         loop = asyncio.get_running_loop()
