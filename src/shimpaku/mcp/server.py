@@ -13,6 +13,8 @@ at `/mcp`.
 
 from __future__ import annotations
 
+import re
+
 import contextvars
 import getpass
 import ipaddress
@@ -42,7 +44,7 @@ TIERS: dict[str, str] = {
     "action_get": "control", "action_cancel": "control",
 }
 
-# token -> {"id", "client_name", "scopes": [...]}. Plugged in by the API (B-web owns tokens).
+# token -> {"id", "client_name", "scopes": [...], "role"?, "lease_id"?}. Plugged in by the API (B-web owns tokens).
 TokenVerifier = Callable[[str], dict | None]
 _token_verifier: TokenVerifier | None = None
 
@@ -85,6 +87,33 @@ def current_caller() -> Caller:
     return _caller.get(Caller(kind="mcp", name=f"os:{getpass.getuser()}", transport="stdio"))
 
 
+# Guests (testers, visitors) read config only on the fixture's devices, and never secrets (DEPLOY-DESIGN D4).
+_SECRET_LINE = re.compile(r"(encrypted-password|secret|authentication-key|pre-shared-key|community|"
+                          r"ssh-(rsa|ed25519|ecdsa)|plain-text-password)", re.I)
+
+
+def _guest() -> bool:
+    return current_caller().role in ("tester", "visitor")
+
+
+def _guest_device_refusal(device: str) -> dict | None:
+    from shimpaku.actions import fixture
+    if _guest() and device not in (fixture.DEVICE, fixture.CORR_DEVICE):
+        return {"error": {"code": "forbidden",
+                          "message": f"guests read config only on {fixture.DEVICE} and {fixture.CORR_DEVICE}"}}
+    return None
+
+
+def _redact_secrets(obj):
+    if isinstance(obj, str):
+        return "\n".join("<secret line redacted>" if _SECRET_LINE.search(l) else l for l in obj.split("\n"))
+    if isinstance(obj, dict):
+        return {k: _redact_secrets(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_redact_secrets(v) for v in obj]
+    return obj
+
+
 class Denied(Exception):
     pass
 
@@ -105,6 +134,10 @@ def caller_from_request(ctx) -> Caller:
     client = (info or {}).get("name") if isinstance(info, dict) else None
     req = ctx.request
     if req is None or not hasattr(req, "headers"):
+        # in-process (Ask Shim in the daemon) sets the asker-derived caller; stdio is the OS user
+        inproc = _caller.get(None)
+        if inproc is not None and inproc.transport == "inproc":
+            return inproc
         return Caller(kind="mcp", name=f"os:{getpass.getuser()}", transport="stdio", client=client)
     headers = req.headers
     label = headers.get("x-shimpaku-client")
@@ -116,8 +149,11 @@ def caller_from_request(ctx) -> Caller:
         tok = _token_verifier(auth[7:].strip())
         if not tok:
             raise Denied("invalid or expired token")
+        # role/lease_id come only from the verified token record (a tester token carries
+        # role="tester" and its lease); absent, the token is the operator's agent.
         return Caller(kind="mcp", name=tok.get("client_name", "token"), token_id=str(tok.get("id")),
-                      transport="http", client=label or client)
+                      transport="http", client=label or client, role=tok.get("role"),
+                      lease_id=tok.get("lease_id"))
     if settings.auth_mode == "off" and _is_loopback(peer):
         return Caller(kind="mcp", name=f"loopback:{label or client or 'anonymous'}", transport="http",
                       client=label or client)
@@ -223,7 +259,11 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
     @mcp.tool(annotations=RO)
     async def inventory_list(site: Literal["campus", "fabric"] | None = None) -> ReadResult:
         """List lab devices (name, site, kind, mgmt IP). Sites: campus (r1 r2 sw1), fabric (spines, leaves)."""
-        return _read(await service.inventory_list(site))
+        out = await service.inventory_list(site)
+        if current_caller().role in ("tester", "visitor") and isinstance(out.get("nodes"), list):
+            # management addresses are for the operator's agents, not a guest's
+            out = {**out, "nodes": [{k: v for k, v in n.items() if k != "mgmt_ip"} for n in out["nodes"]]}
+        return _read(out)
 
     @mcp.tool(annotations=RO)
     async def sle_get_summary(site: Literal["campus", "fabric"], window_min: int = 60) -> ReadResult:
@@ -243,7 +283,11 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
     @mcp.tool(annotations=RO)
     async def port_get_config(device: str, ifname: str) -> ReadResult:
         """One port's effective config (groups and interface-range expanded), VLANs, LLDP, live role."""
-        return _read(await service.port_get_config(device, ifname))
+        refused = _guest_device_refusal(device)
+        if refused:
+            return _read(refused)
+        out = await service.port_get_config(device, ifname)
+        return _read(_redact_secrets(out) if _guest() else out)
 
     @mcp.tool(annotations=RO)
     async def topo_get_neighbors(device: str | None = None) -> ReadResult:
@@ -258,12 +302,20 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
     @mcp.tool(annotations=RO)
     async def config_get_commits(device: str, n: int = 10) -> ReadResult:
         """Newest Junos commits with user, client, time, log and the pending-confirm flag."""
-        return _read(await service.config_get_commits(device, n))
+        refused = _guest_device_refusal(device)
+        if refused:
+            return _read(refused)
+        out = await service.config_get_commits(device, n)
+        return _read(_redact_secrets(out) if _guest() else out)
 
     @mcp.tool(annotations=RO)
     async def config_get_diff(device: str, rollback: int = 1) -> ReadResult:
         """What the last `rollback` commits changed on a device (show system rollback N compare 0)."""
-        return _read(await service.config_get_diff(device, rollback))
+        refused = _guest_device_refusal(device)
+        if refused:
+            return _read(refused)
+        out = await service.config_get_diff(device, rollback)
+        return _read(_redact_secrets(out) if _guest() else out)
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def probe_run(target: str, kind: Literal["ping", "dhcp", "dns", "http", "arp"] = "ping") -> ReadResult:
@@ -441,3 +493,100 @@ def http_app(server: MCPServer | None = None):
                                     allowed_origins=[f"http://{h}" for h in hosts])
     return server.streamable_http_app(streamable_http_path="/mcp", transport_security=sec,
                                       host=settings.bind)
+
+
+# ------------------------------------------------------------------ HTTP auth gate for /mcp
+_WRITE_TOOLS = {t for t, tier in TIERS.items() if tier in ("T1", "T2")} | {"action_cancel"}
+MAX_MCP_BODY = 1 << 20
+
+
+class McpHttpGate:
+    """ASGI wrapper in front of the Streamable HTTP app: authentication failures are HTTP, not
+    JSON-RPC.
+
+    MCP 2025-06-18, basic/authorization, "Access Token Usage" → "Token Handling": the client
+    sends ``Authorization: Bearer`` on every request and "Invalid or expired tokens MUST receive
+    a HTTP 401 response"; "Error Handling": 401 when authorization is required or the token is
+    invalid, 403 for insufficient scopes; "Authorization Server Location": a 401 carries
+    ``WWW-Authenticate``. We do not publish RFC 9728 metadata (static bearer tokens only), so the
+    header is a plain ``Bearer`` challenge (RFC 6750 §3 error codes).
+
+    Also here, because they need the JSON-RPC method: scope (a ``read`` token cannot call a
+    propose/cancel tool → 403) and the ``mcp`` rate limit on ``tools/call`` (429, Retry-After).
+    """
+
+    def __init__(self, app, verifier: TokenVerifier | None, limiter=None, auth_mode: str | None = None):
+        self.app = app
+        self.verifier = verifier
+        self.limiter = limiter
+        self._mode = auth_mode
+
+    @property
+    def mode(self) -> str:
+        return (self._mode or settings.auth_mode).lower()
+
+    @staticmethod
+    async def _reply(send, status: int, detail: str, headers: dict[str, str] | None = None) -> None:
+        body = json.dumps({"detail": detail}).encode()
+        hs = [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]
+        hs += [(k.lower().encode(), v.encode()) for k, v in (headers or {}).items()]
+        await send({"type": "http.response.start", "status": status, "headers": hs})
+        await send({"type": "http.response.body", "body": body})
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
+        auth = headers.get("authorization", "")
+        peer = (scope.get("client") or (None,))[0]
+        rec: dict | None = None
+        if auth.lower().startswith("bearer "):
+            rec = self.verifier(auth[7:].strip()) if self.verifier else None
+            if not rec:
+                return await self._reply(send, 401, "invalid, expired or revoked token",
+                                         {"WWW-Authenticate": 'Bearer error="invalid_token"'})
+        elif not (self.mode == "off" and _is_loopback(peer)):
+            return await self._reply(send, 401, "authorization required", {"WWW-Authenticate": "Bearer"})
+
+        if scope.get("method") != "POST":
+            return await self.app(scope, receive, send)
+        chunks, size = [], 0
+        while True:
+            msg = await receive()
+            if msg["type"] == "http.disconnect":
+                return
+            chunks.append(msg.get("body", b""))
+            size += len(chunks[-1])
+            if size > MAX_MCP_BODY:
+                return await self._reply(send, 413, "request too large")
+            if not msg.get("more_body"):
+                break
+        body = b"".join(chunks)
+        try:
+            parsed = json.loads(body) if body else None
+        except ValueError:
+            parsed = None  # the SDK answers malformed JSON-RPC itself
+        msgs = parsed if isinstance(parsed, list) else [parsed]
+        calls = [m.get("params", {}).get("name") for m in msgs
+                 if isinstance(m, dict) and m.get("method") == "tools/call" and isinstance(m.get("params"), dict)]
+        if calls and rec is not None and "propose" not in (rec.get("scopes") or []) \
+                and any(c in _WRITE_TOOLS for c in calls):
+            return await self._reply(send, 403, "token scope read cannot propose or cancel",
+                                     {"WWW-Authenticate": 'Bearer error="insufficient_scope", scope="propose"'})
+        if calls and self.limiter is not None:
+            key = f"mcp-token:{rec['id']}" if rec else f"mcp-peer:{peer}"
+            for _ in calls:
+                wait = self.limiter.check("mcp", key)
+                if wait is not None:
+                    return await self._reply(send, 429, f"rate limit (mcp); retry in {wait} s",
+                                             {"Retry-After": str(wait)})
+        sent = False
+
+        async def replay():
+            nonlocal sent
+            if not sent:
+                sent = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return await receive()
+
+        return await self.app(scope, replay, send)

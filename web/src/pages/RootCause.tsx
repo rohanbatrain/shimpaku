@@ -12,13 +12,16 @@ type Incident = { id: string; title: string; site: string; sle: string; classifi
 type Node = { name: string; share_pct: number; children: Node[] };
 type Blast = {
   tree: Node[]; timeline: { t: number; fail: number; total: number }[];
-  affected: { kind: string; id: string; name: string; detail: string; impact_pct: number; failure_pct: number; minutes: number }[];
+  affected: { kind: string; id: string; name: string; detail: string | null; impact_pct: number | null; failure_pct: number | null; minutes: number | null }[];
   distribution: { dimension: string; items: { name: string; failures: number; total: number }[] }[];
   evidence: { kind: string; title: string; detail: string; tool: string }[];
-  scores?: { mutual_information?: number; lift?: number };
+  scores?: { mutual_information?: number; lift?: number } | null;
+  verdict?: string | null; scope?: unknown; n?: number; fails?: number;
 };
+const dash = (v: number | null | undefined, unit = "") => (v == null ? "—" : `${v}${unit}`);
 
-function impactText(i: Record<string, number>) {
+function impactText(i: Record<string, number> | null | undefined) {
+  if (!i || Object.keys(i).length === 0) return "—";
   if (i.clients != null) return `${i.clients} of ${i.of_clients} clients · ${i.probe_minutes} probe-min`;
   if (i.devices != null) return `${i.devices} of ${i.of_devices} devices · ${i.device_minutes} device-min`;
   return Object.entries(i).map(([k, v]) => `${k} ${v}`).join(" · ");
@@ -74,6 +77,44 @@ function Tree({ nodes, depth = 0 }: { nodes: Node[]; depth?: number }) {
   );
 }
 
+
+/** The classifier tree as a horizontal node-link diagram: band widths are the real shares of bad units. */
+function BlastTree({ b }: { b: Blast }) {
+  const rows: { g: Node; c: Node; gi: number }[] = [];
+  b.tree.forEach((g, gi) => (g.children?.length ? g.children : [{ name: "—", share_pct: g.share_pct, children: [] }]).forEach((c) => rows.push({ g, c, gi })));
+  const RH = 44, top = 18, H = Math.max(rows.length * RH + top * 2, 120), W = 920;
+  const X0 = 150, X1 = 470, X2 = 760;
+  const rootY = H / 2;
+  const bw = (p: number) => Math.max(2, (p / 100) * 26);
+  const gY = (gi: number) => { const r = rows.map((x, i) => [x, i] as const).filter(([x]) => x.gi === gi).map(([, i]) => i); return top + ((r[0] + r[r.length - 1]) / 2) * RH + RH / 2; };
+  const curve = (x1: number, y1: number, x2: number, y2: number) => `M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}`;
+  const tone = (p: number) => (p >= 50 ? "#D93A30" : p >= 20 ? "#D99A06" : "#7FBFA9");
+  return (
+    <svg className="blast-tree" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Blast radius: ${b.fails ?? "?"} failing of ${b.n ?? "?"} units, by classifier`}>
+      {b.tree.map((g, gi) => <path key={"r" + gi} d={curve(X0 + 6, rootY, X1 - 8, gY(gi))} stroke={tone(g.share_pct)} strokeOpacity=".55" strokeWidth={bw(g.share_pct)} fill="none" />)}
+      {rows.map((r, i) => <path key={"c" + i} d={curve(X1 + 8, gY(r.gi), X2 - 8, top + i * RH + RH / 2)} stroke={tone(r.c.share_pct)} strokeOpacity=".55" strokeWidth={bw(r.c.share_pct)} fill="none" />)}
+      <g transform={`translate(${X0} ${rootY})`}>
+        <rect x="-140" y="-26" width="146" height="52" rx="8" fill="#0E1A16" />
+        <text x="-67" y="-5" textAnchor="middle" className="bt-root">{b.fails != null && b.n != null ? `${b.fails} of ${b.n}` : "Bad units"}</text>
+        <text x="-67" y="13" textAnchor="middle" className="bt-root-s">{b.verdict ? `verdict: ${b.verdict}` : "failing units"}</text>
+      </g>
+      {b.tree.map((g, gi) => (
+        <g key={"g" + gi} transform={`translate(${X1} ${gY(gi)})`}>
+          <circle r="7" fill={tone(g.share_pct)} stroke="#fff" strokeWidth="2" />
+          <text x="0" y="-12" textAnchor="middle" className="bt-l"><tspan fontWeight="600">{g.name}</tspan></text>
+          <text x="0" y="22" textAnchor="middle" className="bt-v">{g.share_pct}%</text>
+        </g>
+      ))}
+      {rows.map((r, i) => (
+        <g key={"l" + i} transform={`translate(${X2} ${top + i * RH + RH / 2})`}>
+          <circle r="5" fill={tone(r.c.share_pct)} stroke="#fff" strokeWidth="2" />
+          <text x="14" y="4" className="bt-l">{r.c.name} <tspan className="bt-v" dx="6">{r.c.share_pct}%</tspan></text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 export default function RootCause() {
   const { id = "" } = useParams();
   const inc = useApi<Incident>(`/api/incidents/${id}`);
@@ -92,7 +133,7 @@ export default function RootCause() {
             <div className="card" style={{ display: "flex", gap: 28, alignItems: "flex-start", flexWrap: "wrap" }}>
               <div style={{ flex: "1 1 420px" }}>
                 <div className="k">Summary</div>
-                <p style={{ margin: "4px 0 0" }}>{i.summary}</p>
+                <p style={{ margin: "4px 0 0" }}>{i.summary ?? "—"}</p>
               </div>
               <div><div className="k">Site</div><b>{i.site}</b></div>
               <div><div className="k">Service level</div><b>{i.sle}</b></div>
@@ -108,10 +149,24 @@ export default function RootCause() {
         <Load q={br} rows={6}>
           {(b) => (
             <>
+              {b.tree.length > 0 && (
+                <div className="card">
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                    <h2 style={{ margin: 0 }}>Blast radius</h2>
+                    <span className="small weak">share of bad units per classifier → sub-classifier; band width = share</span>
+                  </div>
+                  <div className="blast-scroll"><BlastTree b={b} /></div>
+                </div>
+              )}
               <div className="grid2">
                 <div className="card">
                   <h2>Classifier breakdown</h2>
-                  <Tree nodes={b.tree} />
+                  {b.tree.length ? <Tree nodes={b.tree} /> : <span className="small weak">No classified failing units.</span>}
+                  {b.verdict && (
+                    <div className="small weak" style={{ marginTop: 10 }}>
+                      Blast radius verdict: <b>{b.verdict}</b>{b.n != null && <> · {b.fails} failing of {b.n} units</>}
+                    </div>
+                  )}
                   {b.scores && (
                     <div className="small weak" style={{ marginTop: 10 }}>
                       Attribution: mutual information {b.scores.mutual_information ?? "—"} · lift {b.scores.lift ?? "—"}
@@ -121,6 +176,7 @@ export default function RootCause() {
                 <div className="card">
                   <h2>Evidence</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {b.evidence.length === 0 && <span className="small weak">No evidence recorded.</span>}
                     {b.evidence.map((e, j) => (
                       <div key={j} className="ev">
                         <b>{e.title}</b> <span className="chip" style={{ marginLeft: 6 }}>{e.tool}</span>
@@ -147,10 +203,10 @@ export default function RootCause() {
                           <tr key={a.kind + a.id}>
                             <td><b>{a.name}</b></td>
                             <td className="weak">{a.kind}</td>
-                            <td className="mono">{a.detail}</td>
-                            <td className="num">{a.impact_pct}%</td>
-                            <td className="num">{a.failure_pct}%</td>
-                            <td className="num">{a.minutes}</td>
+                            <td className="mono">{a.detail ?? "—"}</td>
+                            <td className="num">{dash(a.impact_pct, "%")}</td>
+                            <td className="num">{dash(a.failure_pct, "%")}</td>
+                            <td className="num">{dash(a.minutes)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -180,7 +236,7 @@ export default function RootCause() {
                       <div className="small weak" style={{ marginBottom: 6 }}>
                         <span style={{ color: "#B3261E" }}>■</span> failing &nbsp; <span style={{ color: "#7fbfa9" }}>■</span> passing — per minute
                       </div>
-                      <FailBars data={b.timeline} />
+                      {b.timeline.length ? <FailBars data={b.timeline} /> : <span className="small weak">Per-minute failure timeline not collected for this incident.</span>}
                     </div>
                   )}
                 </div>

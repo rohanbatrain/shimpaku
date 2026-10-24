@@ -1,18 +1,28 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Robot, Dashboard, Tree, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar } from "grommet-icons";
 import { api, useApi } from "./api";
-import { SessionCtx, type Who } from "./session";
+import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
-import AssistantPanel from "./components/AssistantPanel";
-import ServiceLevels from "./pages/ServiceLevels";
-import RootCause, { RootCauseIndex } from "./pages/RootCause";
-import Actions from "./pages/Actions";
-import ActionDetail from "./pages/ActionDetail";
-import Benchmark from "./pages/Benchmark";
-import Login from "./pages/Login";
-import Agents from "./pages/Agents";
-import Settings from "./pages/Settings";
+import "./requests.css";
+const AssistantPanel = lazy(() => import("./components/AssistantPanel"));
+const ServiceLevels = lazy(() => import("./pages/ServiceLevels"));
+const Overview = lazy(() => import("./pages/Overview"));
+const Topology = lazy(() => import("./pages/Topology"));
+const Device = lazy(() => import("./pages/Device"));
+const RootCause = lazy(() => import("./pages/RootCause"));
+const RootCauseIndex = lazy(() => import("./pages/RootCause").then((m) => ({ default: m.RootCauseIndex })));
+const Actions = lazy(() => import("./pages/Actions"));
+const ActionDetail = lazy(() => import("./pages/ActionDetail"));
+const Benchmark = lazy(() => import("./pages/Benchmark"));
+const Login = lazy(() => import("./pages/Login"));
+const Start = lazy(() => import("./pages/Start"));
+const LeaseBanner = lazy(() => import("./components/Lease").then((m) => ({ default: m.LeaseBanner })));
+const Agents = lazy(() => import("./pages/Agents"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Request = lazy(() => import("./pages/Request"));
+const RequestStatus = lazy(() => import("./pages/RequestStatus"));
+const SessionRequests = lazy(() => import("./pages/SessionRequests"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -26,12 +36,57 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-function Nav({ who, onSignOut }: { who: Who; onSignOut: () => void }) {
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"]];
+const MOBILE = "(max-width: 900px)";
+
+// ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
+function AppBar({ open, onToggle, btn, onSignOut }: { open: boolean; onToggle: () => void; btn: RefObject<HTMLButtonElement | null>; onSignOut?: () => void }) {
+  const loc = useLocation();
+  const title = TITLES.find(([p]) => loc.pathname.startsWith(p))?.[1] ?? (loc.pathname === "/" ? "Overview" : "Shimpaku");
+  return (
+    <div className="appbar">
+      <Mark size={28} />
+      <span className="appbar-t">{title}</span>
+      {onSignOut && <button type="button" className="appbar-signout" onClick={onSignOut}>Sign out</button>}
+      <button ref={btn} type="button" className="appbar-menu" onClick={onToggle} aria-expanded={open} aria-controls="main-nav" aria-label={open ? "Close menu" : "Open menu"}>
+        {open ? <Close size="20px" color="currentColor" aria-hidden /> : <Menu size="20px" color="currentColor" aria-hidden />}
+      </button>
+    </div>
+  );
+}
+
+function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => void; drawer: boolean; onClose: () => void }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!drawer) return;
+    const el = ref.current;
+    const items = () => Array.from(el?.querySelectorAll<HTMLElement>("a[href], button") ?? []);
+    items()[0]?.focus();
+    const k = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); onClose(); return; }
+      if (e.key !== "Tab") return;
+      const f = items(); if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", k, true);
+    return () => document.removeEventListener("keydown", k, true);
+  }, [drawer, onClose]);
   const acts = useApi<{ actions: { status: string }[] }>("/api/actions", { url: "/api/stream/actions", event: "actions" });
   const open = acts.data?.actions.filter((a) => ["proposed", "awaiting_approval"].includes(a.status)).length ?? 0;
+  const op = who.role === "operator";
+  const reqs = useApi<{ pending: number }>(op && who.mode === "local" ? "/api/admin/session-requests?status=pending" : null);
+  useEffect(() => {
+    if (!op || who.mode !== "local") return;
+    const t = setInterval(reqs.reload, 30000);
+    window.addEventListener("shimpaku:requests", reqs.reload); // a decision on the Session requests page
+    return () => { clearInterval(t); window.removeEventListener("shimpaku:requests", reqs.reload); };
+  }, [op, who.mode, reqs.reload]);
+  const pending = reqs.data?.pending ?? 0;
   const ic = { size: "16px", color: "currentColor" } as const;
   return (
-    <nav className="nav" aria-label="Main">
+    <nav ref={ref} id="main-nav" className={`nav${drawer ? " open" : ""}`} aria-label="Main">
       <div className="brand">
         <Mark />
         <div>
@@ -40,6 +95,12 @@ function Nav({ who, onSignOut }: { who: Who; onSignOut: () => void }) {
         </div>
       </div>
       <div className="sect">Monitor</div>
+      <NavLink to="/" end>
+        <Home {...ic} /> Overview
+      </NavLink>
+      <NavLink to="/topology">
+        <Cluster {...ic} /> Topology
+      </NavLink>
       <NavLink to="/sle">
         <Dashboard {...ic} /> Service levels
       </NavLink>
@@ -58,21 +119,46 @@ function Nav({ who, onSignOut }: { who: Who; onSignOut: () => void }) {
       <NavLink to="/benchmark">
         <BenchIcon {...ic} /> Benchmark
       </NavLink>
-      <div className="sect">Admin</div>
-      <NavLink to="/agents">
-        <Connect {...ic} /> Connected agents
-      </NavLink>
-      <NavLink to="/settings">
-        <SettingsOption {...ic} /> Settings
-      </NavLink>
+      {op && (
+        <>
+          <div className="sect">Admin</div>
+          <NavLink to="/agents">
+            <Connect {...ic} /> Connected agents
+          </NavLink>
+          <NavLink to="/settings">
+            <SettingsOption {...ic} /> Settings
+          </NavLink>
+          {who.mode === "local" && (
+            <NavLink to="/admin/requests">
+              <Calendar {...ic} /> Session requests
+              {pending > 0 && <span className="count" aria-label={`${pending} pending`}>{pending}</span>}
+            </NavLink>
+          )}
+        </>
+      )}
       <div className="grow" />
       <div className="who">
         <Robot size="14px" color="#8FA79C" aria-hidden />
         <span>{who.user ?? "—"}</span>
-        {who.mode === "local" && <button onClick={onSignOut}>Sign out</button>}
+        {who.mode === "local" && op && <button className="sign-out" onClick={onSignOut}>Sign out</button>}
+        {who.role === "visitor" && <button onClick={() => location.assign("/login")}>Operator sign in</button>}
       </div>
       <div className="foot">{DISCLAIMER}</div>
     </nav>
+  );
+}
+
+const MAC = typeof navigator !== "undefined" && /Mac/.test(navigator.platform);
+
+// Floating launcher for the assistant panel: eager shell, the panel itself stays lazy.
+// Hidden while the panel is open (the panel has its own close control).
+function AskBubble({ onOpen }: { onOpen: () => void }) {
+  const tip = `Ask Shim ${MAC ? "⌘" : "Ctrl+"}K`;
+  return (
+    <button type="button" className="ask-bubble" onClick={onOpen} aria-label="Ask Shim" title={tip} aria-keyshortcuts="Control+K Meta+K">
+      <Chat size="24px" color="currentColor" aria-hidden />
+      <span className="ask-bubble-tip" aria-hidden>{tip}</span>
+    </button>
   );
 }
 
@@ -81,6 +167,16 @@ export default function App() {
   const [panel, setPanel] = useState<{ open: boolean; seed?: string; n: number }>({ open: false, n: 0 });
   const nav = useNavigate();
   const loc = useLocation();
+  const [drawer, setDrawer] = useState(false);
+  const menuBtn = useRef<HTMLButtonElement>(null);
+  const closeDrawer = useCallback(() => { setDrawer(false); menuBtn.current?.focus(); }, []);
+  useEffect(() => setDrawer(false), [loc.pathname]);
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE);
+    const h = () => !mq.matches && setDrawer(false);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
 
   const refresh = useCallback(() => {
     api<Who>("/api/whoami").then(setWho).catch(() => setWho(null));
@@ -114,25 +210,47 @@ export default function App() {
   }, []); // eslint-disable-line
 
   if (!who) return <Loading label="Starting" />;
+  // a full load: the new tester session cookie replaces whatever router state existed
+  const started = () => location.replace("/actions");
+  // public pages: no sign-in, outside the app shell
+  if (loc.pathname === "/request" || loc.pathname === "/request/status") {
+    return <Suspense fallback={<Loading label="Loading" />}>{loc.pathname === "/request" ? <Request /> : <RequestStatus />}</Suspense>;
+  }
+  if (loc.pathname === "/login" && who.role === "visitor") {
+    return <Suspense fallback={<Loading label="Loading" />}><Login onDone={() => location.assign("/sle")} /></Suspense>;
+  }
+  if (loc.pathname === "/start" && who.role !== "tester") {
+    return <Suspense fallback={<Loading label="Loading" />}><Start onDone={started} /></Suspense>;
+  }
   if (who.mode === "local" && !who.authenticated) {
     return (
+      <Suspense fallback={<Loading label="Loading" />}>
       <Routes>
         <Route path="/login" element={<Login onDone={() => { refresh(); nav("/sle"); }} />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      </Suspense>
     );
   }
-  const signOut = () => api("/api/logout", { method: "POST" }).finally(refresh);
+  const signOut = () => { void signOutAndClear(); };
 
   return (
     <SessionCtx.Provider value={{ who, refresh, openAssistant }}>
       <a href="#main" className="sr-only">Skip to content</a>
-      <div className={`shell${panel.open ? " with-panel" : ""}`}>
-        <Nav who={who} onSignOut={signOut} />
+      <div className={`shell${panel.open ? " with-panel" : ""}${drawer ? " drawer-open" : ""}`}>
+        <AppBar open={drawer} onToggle={() => (drawer ? closeDrawer() : setDrawer(true))} btn={menuBtn}
+          onSignOut={who.mode === "local" && who.role === "operator" ? signOut : undefined} />
+        <Nav who={who} onSignOut={signOut} drawer={drawer} onClose={closeDrawer} />
+        {drawer && <div className="scrim" onClick={closeDrawer} aria-hidden />}
         <main className="main" id="main">
+          {who.role === "tester" && <Suspense fallback={null}><LeaseBanner /></Suspense>}
+          <Suspense fallback={<Loading label="Loading" />}>
           <Routes>
-            <Route path="/" element={<Navigate to="/sle" replace />} />
+            <Route path="/" element={<Overview />} />
+            <Route path="/topology" element={<Topology />} />
+            <Route path="/devices/:name" element={<Device />} />
             <Route path="/login" element={<Navigate to="/sle" replace />} />
+            <Route path="/start" element={<Navigate to="/actions" replace />} />
             <Route path="/sle" element={<ServiceLevels />} />
             <Route path="/root-cause" element={<RootCauseIndex />} />
             <Route path="/root-cause/:id" element={<RootCause />} />
@@ -141,10 +259,13 @@ export default function App() {
             <Route path="/benchmark" element={<Benchmark />} />
             <Route path="/agents" element={<Agents />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/admin/requests" element={<SessionRequests />} />
             <Route path="*" element={<div className="content"><h1>Not found</h1><p className="weak">No page at {loc.pathname}.</p></div>} />
           </Routes>
+          </Suspense>
         </main>
-        {panel.open && <AssistantPanel key={panel.n} seed={panel.seed} onClose={() => setPanel((p) => ({ ...p, open: false, seed: undefined }))} />}
+        {!panel.open && <AskBubble onOpen={() => openAssistant()} />}
+        {panel.open && <Suspense fallback={null}><AssistantPanel key={panel.n} seed={panel.seed} onClose={() => setPanel((p) => ({ ...p, open: false, seed: undefined }))} /></Suspense>}
       </div>
     </SessionCtx.Provider>
   );

@@ -3,7 +3,7 @@ name = "shimpaku"
 version = "0.1.0"
 description = "Mist-style service-level assurance for one Junos lab: telemetry, SLEs, guardrailed actions, an MCP server and a fault-injection benchmark."
 readme = "README.md"
-license = "LicenseRef-Proprietary"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
   "duckdb>=1.1", "pyarrow>=17", "pandas>=2.2", "numpy>=2", "scipy>=1.13", "statsmodels>=0.14",

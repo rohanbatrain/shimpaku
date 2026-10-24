@@ -1,12 +1,24 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
+import { signOutAndClear, useSession } from "../session";
 import { useApi } from "../api";
 import TopBar from "../components/TopBar";
 import { Load, Pill } from "../components/ui";
 
-type S = { auth_mode: string; demo: boolean; https: boolean; cookie_secure: boolean; session_cookie: string; csrf_cookie: string; cookie_warning: string | null; bind: string; port: number; mcp_url: string; mcp_loopback_only: boolean; models: Record<string, string>; token_scopes: string[]; admin_configured: boolean };
+type S = { auth_mode: string; demo: boolean; https: boolean; cookie_secure: boolean; session_cookie: string; csrf_cookie: string; cookie_warning: string | null; bind: string; port: number; mcp_url: string; mcp_loopback_only: boolean; models: Record<string, string>; token_scopes: string[]; admin_configured: boolean; public_view?: boolean; totp_enabled?: boolean; operator_session?: { idle_min: number; max_h: number } };
+
+function fmtDur(min: number): string {
+  return min >= 60 ? `${+(min / 60).toFixed(1)} h` : `${min} min`;
+}
 
 export default function Settings() {
   const q = useApi<S>("/api/settings");
+  const { who } = useSession();
+  const [busy, setBusy] = useState(false);
+  const everywhere = () => {
+    if (!confirm("Sign out every operator session, on every browser, including this one?")) return;
+    setBusy(true);
+    void signOutAndClear(true);
+  };
   return (
     <>
       <TopBar title="Settings" crumbs="Read-only: set by environment on the host" />
@@ -27,8 +39,15 @@ export default function Settings() {
                     <dt>Transport</dt><dd>{s.https ? "https" : "http"}</dd>
                     <dt>Session cookie</dt><dd className="mono">{s.session_cookie}{s.cookie_secure ? "; Secure" : ""}; HttpOnly; SameSite=Lax; Path=/</dd>
                     <dt>CSRF</dt><dd><span className="mono">{s.csrf_cookie}</span> double-submit in <span className="mono">X-CSRF-Token</span>, plus an Origin check</dd>
-                    <dt>Sessions</dt><dd>12 h idle, 7 d absolute · sign-in limited to 5 per minute</dd>
+                    <dt>Two-factor</dt><dd>{s.totp_enabled ? "TOTP on (authenticator code or one-time recovery code)" : s.public_view ? <span className="tone-warn">required on the public site — run shimpaku admin totp enable</span> : "off — shimpaku admin totp enable"}</dd>
+                    <dt>Sessions</dt><dd>{s.operator_session ? `${fmtDur(s.operator_session.idle_min)} idle, ${fmtDur(s.operator_session.max_h * 60)} absolute` : "12 h idle, 7 d absolute"} · browser-session cookie · sign-in limited to 5 per minute</dd>
                   </dl>
+                  {who.mode === "local" && who.role === "operator" && (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                      <button className="btn" onClick={() => void signOutAndClear()}>Sign out</button>
+                      <button className="btn danger" onClick={everywhere} disabled={busy}>Sign out everywhere</button>
+                    </div>
+                  )}
                 </div>
                 <div className="card">
                   <h2>Service</h2>

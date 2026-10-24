@@ -9,9 +9,10 @@ Type=simple
 # ~/.config/systemd/user/, so this works for whichever account runs it (see install.sh).
 WorkingDirectory=%h/src/shimpaku
 Environment=SHIMPAKU_DATA=%h/.local/share/shimpaku
-Environment=SHIMPAKU_BIND=127.0.0.1
 Environment=SHIMPAKU_PORT=8780
-Environment=SHIMPAKU_AUTH_MODE=off
+# SHIMPAKU_BIND (default 127.0.0.1) and SHIMPAKU_AUTH_MODE (default off) come from the env file
+# below, never from this unit: behind the public edge they must be the NetBird address and
+# `local` (deploy/vps/README.md, "Lab host behind the edge").
 # Give the gateway key its own line (not inline here) so it never lands in `systemctl status`
 # or journalctl's unit-file dump; EnvironmentFile is read at start, not logged.
 EnvironmentFile=-%h/.config/shimpaku/env
@@ -26,7 +27,7 @@ TimeoutStopSec=30
 # Minimal hardening only: the daemon also shells out to a separate Juniper junos-mcp-server
 # process and writes under paths this unit hasn't fully enumerated (jmcp_dir, audit.jsonl) —
 # ProtectHome/ReadWritePaths is left off rather than risk a silent, hard-to-diagnose EPERM
-# during a demo. The service already binds loopback-only and runs as the unprivileged operator.
+# during a demo. The service binds loopback unless the env file names the NetBird address and runs as the unprivileged operator.
 NoNewPrivileges=true
 PrivateTmp=true
 

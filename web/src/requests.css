@@ -1,0 +1,34 @@
+/* Public view and live-session requests (pages/Request*.tsx, pages/SessionRequests.tsx). */
+.badge-view { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: var(--info-bg); color: var(--info); border: 1px solid currentColor; white-space: nowrap; }
+.btn.req-cta { white-space: nowrap; }
+.field textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--line2); border-radius: 6px; background: var(--front); resize: vertical; min-height: 84px; }
+.field .hint { font-size: 12px; color: var(--tw); }
+.slot-row { display: flex; gap: 8px; align-items: center; }
+.slot-row input { flex: 1; min-width: 0; }
+.req-list { display: flex; flex-direction: column; }
+.req { padding: 16px 18px; border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px 24px; }
+.req:first-child { border-top: 0; }
+.req h3 { margin: 0; font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.req .contact { overflow-wrap: anywhere; }
+.req .msg { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; }
+.req fieldset { border: 0; padding: 0; margin: 0 0 10px; min-width: 0; }
+.req legend { font-size: 13px; font-weight: 600; padding: 0; margin-bottom: 4px; }
+.req .choice { display: flex; gap: 8px; align-items: center; min-height: 32px; font-size: 13px; }
+.req .choice input[type="datetime-local"] { font: inherit; padding: 4px 8px; border: 1px solid var(--line2); border-radius: 6px; min-width: 0; }
+.req .acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.req .acts input { font: inherit; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 6px; flex: 1; min-width: 140px; }
+.req .link { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; background: var(--neutral-bg); padding: 6px 8px; border-radius: 6px; }
+.status-kv { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 6px 12px; margin: 0 0 14px; font-size: 14px; }
+.status-kv dt { color: var(--tw); }
+.status-kv dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .req { grid-template-columns: minmax(0, 1fr); padding: 14px 16px; }
+  .req .choice { min-height: 44px; }
+  .req .choice input[type="radio"] { width: 20px; height: 20px; }
+  .req .choice input[type="datetime-local"], .req .acts input, .field textarea { min-height: 44px; font-size: 16px; }
+  .badge-view { font-size: 11px; padding: 1px 7px; }
+}
+@media (max-width: 600px) {
+  .status-kv { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .status-kv dd { margin-bottom: 8px; }
+}

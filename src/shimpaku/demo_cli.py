@@ -3,7 +3,9 @@
 The fixture is a throwaway trunk (`sw1 ge-0/0/5`, wired to nothing) carrying two demo VLANs:
 998 stays as a keepalive (Junos refuses a trunk with zero members), 999 is the one the demo
 removes and the agent restores. VLAN 999 is also defined on the correlation device (`leaf2`),
-which is what guardrail G3 checks before an add is allowed. Every write takes the device lock.
+which is what guardrail G3 checks before an add is allowed. `seed` and `break` call the audited
+service operations (`service.demo_seed` / `service.demo_break`): each takes the device lock and
+writes a hash-chained audit row with the caller's role (here: operator, over `cli`).
 
     shimpaku demo seed     # idempotent: create the fixture
     shimpaku demo break    # inject the fault: VLAN 999 removed from the trunk
@@ -18,38 +20,41 @@ import json
 import typer
 
 from shimpaku import devices
+from shimpaku.actions import fixture
 from shimpaku.config import settings
-from shimpaku.lock import device_lock
 
 app = typer.Typer(help="Missing-VLAN fault-lab fixture (see DEMO.md).", no_args_is_help=True)
 
-TRUNK_DEV, TRUNK_IF, CORR_DEV = "sw1", "ge-0/0/5", "leaf2"
-KEEP, DEMO = 998, 999
+# One definition of the fixture, shared with the engine's tester gate (actions/fixture.py).
+TRUNK_DEV, TRUNK_IF, CORR_DEV = fixture.DEVICE, fixture.IFNAME, fixture.CORR_DEVICE
+KEEP, DEMO = fixture.KEEP_VLAN, fixture.VLAN
+_name = fixture.vlan_name
 
 
-def _name(vlan: int) -> str:
-    return f"shimpaku-demo-{vlan}"
+def _cli_caller():
+    """The person at the lab host's shell: the operator, over the CLI transport."""
+    import getpass
+
+    from shimpaku.actions.engine import Caller
+    return Caller(kind="cli", name=f"os:{getpass.getuser()}", transport="cli", role="operator")
 
 
-def _apply(dev_name: str, lines: list[str], why: str) -> None:
-    from jnpr.junos.utils.config import Config
+def _run(op: str) -> dict:
+    """Run the audited service operation (the same one the daemon exposes) from the CLI."""
+    import asyncio
+
+    from shimpaku import service
+    from shimpaku.mcp.audit import AuditLog
 
     settings.require_device_password()
-    dev = devices.open_device(dev_name)
-    try:
-        with device_lock(dev_name, "shimpaku-demo", why, dev=dev, wait=120, db=settings.lock_db):
-            with Config(dev, mode="exclusive") as cu:
-                cu.load("\n".join(lines), format="set", merge=True)
-                diff = cu.diff()
-                if not diff:
-                    typer.echo(f"{dev_name}: no change needed")
-                    return
-                typer.echo(f"{dev_name}:{diff}")
-                cu.commit(confirm=3, comment=f"shimpaku demo: {why}")
-                cu.commit(comment=f"shimpaku demo: {why} (confirm)")  # confirms the first
-        typer.echo(f"{dev_name}: committed and confirmed")
-    finally:
-        dev.close()
+    if service._audit is None:
+        service.set_audit_log(AuditLog(settings.ensure_data() and settings.sqlite_path,
+                                       settings.data / "audit.jsonl"))
+    out = asyncio.run(service.demo_seed(_cli_caller()) if op == "seed" else service.demo_break(_cli_caller()))
+    if isinstance(out.get("error"), dict):
+        typer.echo(f"refused: {out['error']['message']}", err=True)
+        raise typer.Exit(1)
+    return out
 
 
 def _trunk_config() -> str:
@@ -64,36 +69,18 @@ def _trunk_config() -> str:
 @app.command()
 def seed() -> None:
     """Create the fixture (safe to re-run)."""
-    _apply(TRUNK_DEV, [
-        f"set vlans {_name(KEEP)} vlan-id {KEEP}",
-        f"set vlans {_name(DEMO)} vlan-id {DEMO}",
-        f"set interfaces {TRUNK_IF} unit 0 family ethernet-switching interface-mode trunk",
-        f"set interfaces {TRUNK_IF} unit 0 family ethernet-switching vlan members {_name(KEEP)}",
-        f"set interfaces {TRUNK_IF} unit 0 family ethernet-switching vlan members {_name(DEMO)}",
-    ], "seed missing-vlan fixture")
-    _apply(CORR_DEV, [f"set vlans {_name(DEMO)} vlan-id {DEMO}"], "seed correlation vlan")
+    for w in _run("seed")["writes"]:
+        typer.echo(f"{w['device']}:{w['diff']}\n{w['device']}: committed and confirmed" if w["changed"]
+                   else f"{w['device']}: no change needed")
 
 
 @app.command("break")
 def break_() -> None:
     """Inject the fault: remove VLAN 999 from the trunk (VLAN 998 keeps the trunk valid)."""
-    from jnpr.junos.utils.config import Config
-
-    settings.require_device_password()
-    dev = devices.open_device(TRUNK_DEV)
-    try:
-        with device_lock(TRUNK_DEV, "shimpaku-demo", "inject missing vlan", dev=dev, wait=120,
-                         db=settings.lock_db):
-            with Config(dev, mode="exclusive") as cu:
-                cu.load(f"delete interfaces {TRUNK_IF} unit 0 family ethernet-switching vlan members "
-                        f"{_name(DEMO)}", format="set", ignore_warning=True)
-                if not cu.diff():
-                    typer.echo("already broken: VLAN 999 is not on the trunk")
-                    return
-                cu.commit(comment="demo fault: vlan 999 missing from trunk")
-        typer.echo(f"fault injected: VLAN {DEMO} removed from {TRUNK_DEV} {TRUNK_IF}")
-    finally:
-        dev.close()
+    if not _run("break")["changed"]:
+        typer.echo(f"already broken: VLAN {DEMO} is not on the trunk")
+        return
+    typer.echo(f"fault injected: VLAN {DEMO} removed from {TRUNK_DEV} {TRUNK_IF}")
 
 
 @app.command()

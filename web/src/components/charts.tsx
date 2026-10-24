@@ -1,4 +1,4 @@
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { time } from "../format";
 
 const tip = ({ active, payload, label, fmt }: any) =>
@@ -51,6 +51,28 @@ export function FailBars({ data, height = 160 }: { data: { t: number; fail: numb
           <Bar dataKey="fail" name="Failing" stackId="a" fill="#D93A30" isAnimationActive={false} />
           <Bar dataKey="ok" name="Passing" stackId="a" fill="#B9DCCF" radius={[3, 3, 0, 0]} isAnimationActive={false} />
         </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export const bps = (v?: number | null) =>
+  v == null ? "—" : v >= 1e9 ? `${(v / 1e9).toFixed(2)} Gb/s` : v >= 1e6 ? `${(v / 1e6).toFixed(2)} Mb/s` : v >= 1e3 ? `${(v / 1e3).toFixed(1)} kb/s` : `${v.toFixed(0)} b/s`;
+
+/** One interface's traffic: in and out bit rates on one axis (from stored gNMI counters). */
+export function TrafficChart({ series, height = 150, label }: { series: { t: number; in_bps?: number; out_bps?: number }[]; height?: number; label: string }) {
+  return (
+    <div role="img" aria-label={label} style={{ width: "100%", height }}>
+      <ResponsiveContainer>
+        <LineChart data={series} margin={{ top: 6, right: 8, bottom: 0, left: 4 }}>
+          <CartesianGrid vertical={false} stroke="#EEF1F0" />
+          <XAxis dataKey="t" tickFormatter={time} tick={{ fontSize: 11, fill: "#56645E" }} minTickGap={50} axisLine={{ stroke: "#DCE2DF" }} tickLine={false} />
+          <YAxis tickFormatter={(v) => bps(v)} tick={{ fontSize: 11, fill: "#56645E" }} axisLine={false} tickLine={false} width={68} />
+          <Tooltip content={((p: any) => tip({ ...p, fmt: (v: number) => bps(v) })) as any} cursor={{ stroke: "#56645E", strokeWidth: 1 }} />
+          <Legend iconType="plainline" wrapperStyle={{ fontSize: 12, color: "#56645E" }} />
+          <Line type="monotone" dataKey="in_bps" name="In" stroke="#00896A" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls={false} />
+          <Line type="monotone" dataKey="out_bps" name="Out" stroke="#4A62B8" strokeWidth={2} strokeDasharray="6 3" dot={false} isAnimationActive={false} connectNulls={false} />
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );

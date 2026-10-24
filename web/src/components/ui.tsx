@@ -101,6 +101,16 @@ export function DemoBadge({ on }: { on?: boolean }) {
   ) : null;
 }
 
+export function ReplayBadge({ replay }: { replay?: { taken_at: number } | null }) {
+  if (!replay) return null;
+  const when = new Date(replay.taken_at * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC";
+  return (
+    <span className="badge-demo" title="Recorded from the live lab at this time; read-only, no device is contacted">
+      Replay · recorded {when}
+    </span>
+  );
+}
+
 export function Diff({ text }: { text: string }) {
   return (
     <div className="diff" role="region" aria-label="Configuration diff" tabIndex={0}>

@@ -88,6 +88,85 @@ validation, added a test that fails on the old code, and wrote it up."*
 > write path: proposal, guardrails, human approval, lock, `commit confirmed`, validation. And
 > the README lists what I deliberately didn't build, and why."
 
+## Session requests
+
+With `SHIMPAKU_PUBLIC_VIEW=1` (and `SHIMPAKU_AUTH_MODE=local`) anyone can open the dashboard
+read-only with no sign-in: live service levels, root cause, actions, audit; no writes, no tokens,
+no `/mcp`, no Ask Shim. The top bar shows **Viewing read-only** and **Request a live session**.
+
+1. A visitor fills in `/request`: name, e-mail or LinkedIn URL, a message (≤ 500 chars) and up to
+   three start times (1 h to 30 days ahead), and ticks the notice. They get a status page
+   (`/request/status?s=…`); that link is their only key, so they should keep it.
+2. You see it under **Admin → Session requests** (nav badge = pending count), or on the host:
+
+```bash
+shimpaku admin requests list                                   # pending first, with name/contact/message
+shimpaku admin requests approve req_… --choice 2                # one of their slots, or:
+shimpaku admin requests approve req_… --slot 2026-11-02T15:00+05:30
+shimpaku admin requests decline req_… --note "Fully booked this month"
+```
+
+3. Approving creates a single-use invite bound to a 30-minute slot. The link works from 10 min
+   before the start until the end; the lease ends at the earlier of 30 min after they start and
+   5 min after the slot. You get the link (copy it) and an `.ics`; their status page shows the same
+   link and an **Add to calendar** file. Nothing is e-mailed automatically: send the link yourself.
+4. Unanswered requests expire when their times pass; unused approvals expire at the slot end.
+   Name, contact and message are deleted 90 days after the slot or the decline. Requesters can
+   delete their own data any time with **Delete my data** on their status page: it is erased at
+   once, a pending request is cancelled and an approved slot's invite (and any running session) is
+   withdrawn. The row shows as `erased` in the list. No mailbox is needed for this.
+
+## Ad-hoc tester passes
+
+A tester drives the live lab alone for 30 minutes: break VLAN 999, propose (or let their own
+Claude Code propose) the fix, approve it, watch it validate. Needs `SHIMPAKU_AUTH_MODE=local` and
+`SHIMPAKU_PUBLIC_URL` (the https base the link is built from) in `~/.config/shimpaku/env`.
+
+```bash
+shimpaku admin invite create --note "Jane Doe, recruiter at X"   # prints the link once
+shimpaku admin invite list                                        # open / redeemed / expired / revoked
+shimpaku admin invite revoke inv_…                                # also ends their lease within seconds
+```
+
+- Send the link. Opening it (or a LinkedIn/WhatsApp preview) does not use it up; it is used when
+  they tick the consent box and press **Start demo**. It must be used within 72 h.
+- If someone else holds the lab, they queue; the banner shows their position and promotes them.
+- On **Actions** they get Break VLAN 999 / Propose the fix / Re-seed, and **Connect your own agent**,
+  which shows their MCP token once as a `claude mcp add --transport http … --header
+  "Authorization: Bearer …"` command. It proposes only the fixture and dies with the lease.
+- They may approve only their own fixture action; it validates for 180 s.
+- When the lease ends (30 min, **End session**, or `POST /api/admin/leases/<id>/revoke`) their open
+  actions are cancelled, their token, session and LLM key are revoked, and the fixture is re-seeded.
+- Ask Shim for testers needs `SHIMPAKU_LLM_ADMIN_KEY` (each lease gets its own LiteLLM key, USD 0.50);
+  without it they are told the assistant is off.
+- Their note and display name are deleted 90 days after the lease (daily, or `shimpaku admin purge`),
+  or at once when they press **Delete my data** on the session banner or on their invite page (works
+  after the lease ended too); that also ends their session. `SHIMPAKU_PRIVACY_CONTACT` is optional:
+  set it only to add an "or write to" line to the notices.
+  Tunables: `SHIMPAKU_INVITE_TTL_HOURS`, `SHIMPAKU_LEASE_MINUTES`, `SHIMPAKU_LEASE_MAX_ACTIVE`,
+  `SHIMPAKU_LEASE_DEMO_OPS`, `SHIMPAKU_RETENTION_DAYS`, `SHIMPAKU_PRIVACY_CONTACT`,
+  `SHIMPAKU_TESTER_LLM_BUDGET_USD`, `SHIMPAKU_TESTER_LLM_RPM`, `SHIMPAKU_RATE_LIMITS`.
+
+## Demoing from someone else's laptop
+
+When you only have a borrowed machine (a meeting-room PC, an interviewer's laptop):
+
+1. Open `https://app.<domain>`. Everyone sees the live lab read-only; nothing to install.
+2. Click **Operator sign in** (bottom of the side menu; on a phone, in the menu).
+3. Type the password, then the 6-digit code from your authenticator app. No phone? **Use a
+   recovery code** (from your password manager; each works once).
+4. **Never let the browser save the password**: decline "Save password?" every time; don't use
+   the machine's password manager or autofill.
+5. Demo as usual (break, propose, approve, audit).
+6. Press **Sign out** (side menu, or top right on a phone). It clears the app's data in the
+   browser and returns to the read-only view. The session would end anyway after 30 minutes idle,
+   4 hours at most, or when the browser closes, but don't rely on that.
+7. Walked away without signing out? From your own phone or laptop: **Settings → Sign out
+   everywhere**. Think the password was seen? Change it (`shimpaku admin set-password`) on the lab host.
+
+Set-up (once, on the lab host, before public view is on): `shimpaku admin set-password` and
+`shimpaku admin totp enable`.
+
 ## If something goes wrong
 
 | Problem | Do this |

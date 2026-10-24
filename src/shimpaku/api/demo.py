@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import random
 import time
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 DEMO = True
 _T0 = time.time()
@@ -375,7 +375,94 @@ async def topo_get_neighbors(device: str | None = None) -> dict:
              ("leaf1", "ge-0/0/0", "spine1", "ge-0/0/0", "up"), ("leaf1", "ge-0/0/1", "spine2", "ge-0/0/0", "down"),
              ("leaf2", "ge-0/0/0", "spine1", "ge-0/0/1", "up"), ("leaf2", "ge-0/0/1", "spine2", "ge-0/0/1", "up")]
     out = [{"a": a, "a_if": ai, "b": b, "b_if": bi, "state": st} for a, ai, b, bi, st in edges if not device or device in (a, b)]
-    return {"demo": DEMO, "nodes": [d[0] for d in _DEVICES], "edges": out}
+    # raw shapes too (service.topo_get_neighbors), for /api/viz/topology
+    roles = {"r1-r2": "routed", "r1-sw1": "trunk"}
+    intended, lldp = [], []
+    for a, ai, b, bi, st in edges:
+        link = f"{a}-{b}"
+        for me, mi, peer in ((a, ai, b), (b, bi, a)):
+            if device and me != device:
+                continue
+            intended.append({"device": me, "ifname": mi, "peer": peer, "link": link, "role": roles.get(link, "fabric")})
+            if st == "up":
+                lldp.append({"device": me, "local_if": mi, "remote_system": peer, "remote_port": link})
+    return {"demo": DEMO, "nodes": [d[0] for d in _DEVICES], "edges": out, "intended": intended, "lldp": lldp}
+
+
+# ---- device views (/api/viz/*): raw service shapes, canned -------------------------------------
+_DOWN = ("leaf1", "ge-0/0/1")  # the demo fabric fault: leaf1–spine2 underlay
+
+
+def _adj(device: str) -> dict:
+    ports = {e["ifname"]: e["peer"] for e in _INTENDED if e["device"] == device}
+    ospf, bfd = [], []
+    for ifn, peer in sorted(ports.items()):
+        if (device, ifn) == _DOWN or (device == "spine2" and peer == "leaf1"):
+            bfd.append({"neighbor": f"10.0.21.{1 if device == 'leaf1' else 2}", "state": "Down", "interface": f"{ifn}.0"})
+            continue
+        if device == "sw1" or (device == "r1" and peer == "sw1"):
+            continue
+        ospf.append({"address": "10.0.0.1", "interface": f"{ifn}.0", "state": "Full", "neighbor_id": peer})
+        if device not in ("r1", "r2"):
+            bfd.append({"neighbor": "10.0.0.1", "state": "Up", "interface": f"{ifn}.0"})
+    return {"device": device, "ospf": ospf, "bgp": [], "bfd": bfd}
+
+
+_INTENDED: list[dict] = []
+
+
+async def routing_get_health(device: str | None = None) -> dict:
+    if not _INTENDED:
+        _INTENDED.extend((await topo_get_neighbors())["intended"])
+    names = [device] if device else [d[0] for d in _DEVICES]
+    return {"demo": DEMO, "devices": [_adj(n) for n in names]}
+
+
+async def device_get_health(device: str | None = None, window_min: int = 60) -> dict:
+    out = []
+    for i, (name, _site, _role, _ip) in enumerate(_DEVICES):
+        if device and name != device:
+            continue
+        bad = 12 if name in ("leaf1", "spine2") else 0
+        n = window_min
+        out.append({"device": name, "cpu_pct": 9.0 + i * 2, "mem_pct": 38.0 + i, "sampled_at": _ago(0.2),
+                    "minutes": {"n": n, "good": n - bad, "bad": bad},
+                    "classifiers": [{"classifier": "Adjacency", "sub_classifier": "Neighbour down", "minutes": bad}] if bad else [],
+                    "last": {"minute": _ago(1), "status": "bad" if bad else "good", "classifier": "Adjacency" if bad else None,
+                             "sub_classifier": "Neighbour down" if bad else None},
+                    "ports": {"ge-0/0/0": "up", "ge-0/0/1": "up"}})
+    return {"demo": DEMO, "window_min": window_min, "devices": out}
+
+
+async def port_get_config(device: str, ifname: str) -> dict:
+    return {"demo": DEMO, "device": device, "ifname": ifname, "admin": "up", "oper": "down", "vlan_present": True}
+
+
+async def iface_get_errors(device: str, ifname: str | None = None) -> dict:
+    rows = []
+    for k in range(3 if device.startswith(("leaf", "spine")) else 2):
+        rows.append({"ifname": f"ge-0/0/{k}", "admin": "up", "oper": "down" if (device, f"ge-0/0/{k}") == _DOWN else "up",
+                     "description": None, "input_errors": 0, "input_drops": 0, "framing_errors": 0, "fcs_errors": None,
+                     "output_errors": 0, "output_drops": 0, "carrier_transitions": 1 + k,
+                     "input_packets": 120000 + 7919 * k, "output_packets": 98000 + 4513 * k, "mtu": "1514"})
+    return {"demo": DEMO, "device": device, "interfaces": rows}
+
+
+async def iface_get_history(device: str, window_min: int = 60) -> dict:
+    rnd = random.Random(device)
+    step = max(1, window_min // 60)
+    ifaces = []
+    for k in range(2):
+        base = rnd.uniform(40_000, 160_000)
+        ser = [{"t": _ago(m), "in_bps": round(base * rnd.uniform(.7, 1.3), 1), "out_bps": round(base * rnd.uniform(.5, 1.1), 1),
+                "in_pps": round(base / 900, 1), "out_pps": round(base / 1100, 1)} for m in range(window_min, 0, -step)]
+        ifaces.append({"ifname": f"ge-0/0/{k}", "series": ser})
+    return {"demo": DEMO, "device": device, "window_min": window_min, "step_s": step * 60, "first_sample": _ago(window_min),
+            "last_sample": _ago(0.2), "source": "demo: canned", "interfaces": ifaces}
+
+
+async def audit_verify() -> dict:
+    return {"demo": DEMO, "ok": True, "rows": 4}
 
 
 async def audit_query(limit: int = 50, **_: object) -> dict:
@@ -413,8 +500,19 @@ async def bench_results() -> dict:
 
 
 # ---- assistant ------------------------------------------------------------------
-async def assistant_ask(question: str, principal: str, context: dict | None = None) -> AsyncIterator[dict]:
-    """Canned streamed answer: events ``tool`` → ``evidence`` → ``token``… → ``done``."""
+async def demo_seed(caller: Any = None) -> dict:
+    """Stand-in for service.demo_seed: no device, nothing written."""
+    return {"op": "seed", "changed": True, "writes": [{"device": "sw1", "changed": True, "diff": "(demo: no device)"}]}
+
+
+async def demo_break(caller: Any = None) -> dict:
+    """Stand-in for service.demo_break: no device, nothing written."""
+    return {"op": "break", "changed": True, "writes": [{"device": "sw1", "changed": True, "diff": "(demo: no device)"}]}
+
+
+async def assistant_ask(question: str, principal: str, context: dict | None = None,
+                        llm_key: str | None = None) -> AsyncIterator[dict]:
+    """Canned streamed answer (no LLM; a tester's per-lease key is accepted and unused): events ``tool`` → ``evidence`` → ``token``… → ``done``."""
     q = question.lower()
     fabric = any(w in q for w in ("fabric", "leaf", "spine", "ospf", "bfd"))
     tools = (["sle_get_summary(fabric, 60)", "routing_get_health(leaf1)", "iface_get_errors(leaf1, ge-0/0/1)", "config_get_commits(leaf1)"]

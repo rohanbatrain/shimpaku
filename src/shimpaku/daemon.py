@@ -10,6 +10,8 @@ is used as-is; this file only wires them together and owns the top-level lifecyc
 
 from __future__ import annotations
 
+import os
+
 import asyncio
 import logging
 import signal
@@ -21,7 +23,7 @@ from shimpaku.analytics.loop import run_analytics_loop
 from shimpaku.api.app import create_app
 from shimpaku.collector import Collector
 from shimpaku.config import settings
-from shimpaku.mcp.server import build_server, http_app
+from shimpaku.mcp.server import McpHttpGate, build_server, http_app, set_token_verifier
 
 log = logging.getLogger("shimpaku.daemon")
 
@@ -69,9 +71,14 @@ async def async_main() -> None:
     devices.Pool()  # module-level pool is created lazily; touch it so failures surface early
 
     mcp_server = build_server()  # wires service.set_audit_log + executor audit internally
+    service.set_mcp_server(mcp_server)  # Ask Shim (dashboard) talks to it in memory
     mcp_app = http_app(mcp_server)
     rest_app = create_app(service, store, settings.sqlite_path)
-    dispatcher = CombinedASGI(mcp_app, rest_app)
+    leases = rest_app.state.leases
+    # bearer tokens on /mcp verify against the AuthStore (expiry, revocation) and, for a
+    # tester's token, its lease being active; 401/403/429 are answered before the MCP app
+    set_token_verifier(leases.verify_token)
+    dispatcher = CombinedASGI(McpHttpGate(mcp_app, leases.verify_token, rest_app.state.limiter), rest_app)
 
     from shimpaku.actions.engine import engine
 
@@ -80,8 +87,14 @@ async def async_main() -> None:
         tasks.append(asyncio.create_task(Collector(store, topo).run(), name="collector"))
         tasks.append(asyncio.create_task(run_analytics_loop(store), name="analytics"))
         tasks.append(engine().start())
+        # tester leases: timeouts, end-of-lease cleanup, queue promotion, daily retention purge
+        tasks.append(asyncio.create_task(leases.run_forever(), name="leases"))
 
-        config = uvicorn.Config(dispatcher, host=settings.bind, port=settings.port, log_level="info")
+        config = uvicorn.Config(dispatcher, host=settings.bind, port=settings.port, log_level="info",
+                            # behind the edge: trust its X-Forwarded-* so cookies are Secure/__Host- and
+                            # rate limits see real client IPs (same as api/__main__.py)
+                            proxy_headers=True,
+                            forwarded_allow_ips=os.environ.get("SHIMPAKU_TRUSTED_PROXIES", "127.0.0.1"))
         server = uvicorn.Server(config)
         stop = asyncio.Event()
         loop = asyncio.get_running_loop()

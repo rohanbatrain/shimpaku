@@ -8,6 +8,7 @@ from shimpaku.assistant import loop
 from shimpaku.assistant.fixture import SCENARIOS, MockLab
 from shimpaku.assistant.llm import LLM, LLMError
 from shimpaku.assistant.loop import Assistant, claims_execution, parse_answer
+from shimpaku.config import settings
 
 from .scripted import BAD_S09, F, ScriptedModel, mock_gateway, sse
 
@@ -43,7 +44,7 @@ async def test_s01_stream_trace_and_structured_answer():
     assert ans["corrected"] is False
     # the key goes in the header and nowhere else
     assert all(KEY not in json.dumps(e) for e in evs)
-    assert m.requests[0]["model"] == "tokenharbor-claude-haiku-5.5-free"
+    assert m.requests[0]["model"] == settings.models()["diagnose"]
     # action_approve is never offered to the model
     names = {t["function"]["name"] for t in m.requests[0]["tools"]}
     assert "action_approve" not in names and "action_propose_rollback" in names
@@ -96,7 +97,7 @@ async def test_auto_routing_escalates_triage_before_a_proposal():
         evs = await collect(a, SC["S07"]["prompt"])
     routes = [e for e in evs if e["type"] == "route"]
     assert routes[0]["role"] == "triage" and routes[1]["role"] == "diagnose"
-    assert m.requests[0]["model"] == "nvidia-glm-flash" and m.requests[1]["model"] == "tokenharbor-claude-haiku-5.5-free"
+    assert m.requests[0]["model"] == settings.models()["triage"] and m.requests[1]["model"] == settings.models()["diagnose"]
 
 
 @pytest.mark.asyncio

@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from shimpaku import devices, lock
+from shimpaku.actions import fixture
 from shimpaku.actions import policy as pol
 from shimpaku.actions.executor import Executor
 from shimpaku.actions.state import LIVE, ActionStore, StateError
@@ -23,27 +24,48 @@ from shimpaku.config import settings
 log = logging.getLogger("shimpaku.actions")
 
 
+ROLES = ("operator", "tester", "visitor", "agent", "system")
+_DEFAULT_ROLE = {"dashboard": "operator", "mcp": "agent", "assistant": "agent", "system": "system"}
+
+
 @dataclass(frozen=True)
 class Caller:
-    """Who is calling. Built by the transport (MCP middleware, API session), never from tool args."""
+    """Who is calling. Built by the transport (MCP middleware, API session), never from tool args.
 
-    kind: str                 # dashboard | mcp | assistant | system | test
+    `role` is what the caller may do (operator | tester | visitor | agent | system); when the
+    transport gives none it is derived from `kind` (dashboard → operator, mcp/assistant → agent,
+    system → system, anything else → visitor, which can do nothing). `lease_id` binds a tester
+    (and anything acting for one) to one demo lease; it is None for everyone else."""
+
+    kind: str                 # dashboard | mcp | assistant | system | cli | test
     name: str
     token_id: str | None = None
     transport: str | None = None
     client: str | None = None
+    role: str | None = None
+    lease_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.role is None:
+            role = _DEFAULT_ROLE.get(self.kind, "visitor")
+        else:  # an unrecognised explicit role grants nothing (fail closed), never the kind's default
+            role = self.role if self.role in ROLES else "visitor"
+        object.__setattr__(self, "role", role)
 
     def as_dict(self) -> dict:
-        return {k: v for k, v in self.__dict__.items() if v is not None}
+        """Audit/storage form. `role` and `lease_id` are always present (lease_id may be null)."""
+        out = {k: v for k, v in self.__dict__.items() if v is not None}
+        out["lease_id"] = self.lease_id
+        return out
 
     @classmethod
     def coerce(cls, c: Any) -> "Caller":
         if isinstance(c, Caller):
             return c
         if isinstance(c, dict):
-            return cls(**{k: c.get(k) for k in ("kind", "name", "token_id", "transport", "client")
-                          if c.get(k) is not None} | {"kind": c.get("kind", "unknown"),
-                                                       "name": c.get("name", "unknown")})
+            keys = ("kind", "name", "token_id", "transport", "client", "role", "lease_id")
+            return cls(**{k: c.get(k) for k in keys if c.get(k) is not None}
+                       | {"kind": c.get("kind", "unknown"), "name": c.get("name", "unknown")})
         return cls(kind="unknown", name=str(c))
 
 
@@ -123,18 +145,40 @@ class Engine:
             dev.close()
 
     # ------------------------------------------------------------------ public API (sync)
+    def _role_gate(self, kind: str, args: Any, caller: Caller) -> list[str]:
+        """T0, before any device is touched: what this caller's role may propose at all.
+        Operators, agents and the system are unchanged (policy G0–G9 decides). A tester may
+        propose only the demo fixture, and only under a lease. A visitor proposes nothing."""
+        if caller.role == "visitor":
+            return ["T0 a visitor cannot propose actions"]
+        if caller.role != "tester":
+            return []
+        if not caller.lease_id:
+            return ["T0 tester scope: no lease; a tester acts only inside a lease"]
+        if not fixture.is_fixture(kind, args):
+            return [f"T0 tester scope: a tester may propose only {fixture.KIND} on {fixture.DEVICE} "
+                    f"{fixture.IFNAME} vlan {fixture.VLAN}"]
+        return []
+
     def propose(self, kind: str, args: dict, reason: str, caller: Any) -> dict:
         caller = Caller.coerce(caller)
         reason_c = pol.clean_text(reason)
-        try:
-            facts = self.facts_fn(kind, args if isinstance(args, dict) else {})
-        except Exception as e:  # noqa: BLE001
+        args_d = args if isinstance(args, dict) else {}
+        gate = self._role_gate(kind, args, caller)
+        policy = fixture.tester_policy(self.policy) if caller.role == "tester" else self.policy
+        if gate:
+            # refused on role alone: no facts are collected, no device is opened
             facts = pol.Facts()
-            log.warning("facts collection failed: %s", type(e).__name__)
-        decision = pol.evaluate(kind, args if isinstance(args, dict) else {}, reason_c, facts, self.policy)
+            decision = pol.Decision(False, pol.CATALOGUE.get(kind, {}).get("tier", "T2"), "blocked", gate, ["T0"])
+        else:
+            try:
+                facts = self.facts_fn(kind, args_d)
+            except Exception as e:  # noqa: BLE001
+                facts = pol.Facts()
+                log.warning("facts collection failed: %s", type(e).__name__)
+            decision = pol.evaluate(kind, args_d, reason_c, facts, policy)
         clean_args, _ = pol.validate_args(kind, args)
-        safe_args = {k: (pol.clean_text(v, 80) if isinstance(v, str) else v) for k, v in
-                     (args.items() if isinstance(args, dict) else [])}
+        safe_args = {k: (pol.clean_text(v, 80) if isinstance(v, str) else v) for k, v in args_d.items()}
         aid = self.store.new_id()
         self.store.insert({
             "id": aid, "kind": str(kind)[:40], "tier": decision.tier,
@@ -142,29 +186,56 @@ class Engine:
             "ifname": clean_args.get("ifname") if not decision.status == "blocked" else safe_args.get("ifname"),
             "args": safe_args, "reason": reason_c, "caller": caller.as_dict(),
             "incident_id": clean_args.get("incident_id"), "status": "open",
-            "policy": {**decision.as_dict(), "facts": _facts_summary(facts)},
+            "policy": {**decision.as_dict(), "facts": _facts_summary(facts),
+                       **self._window_for(caller)},
         })
         a = self.store.transition(aid, decision.status, "; ".join(decision.reasons))
         return self.view(a)
 
-    def approve(self, action_id: str, caller: Any) -> dict:
-        """Only a logged-in dashboard user may approve (R7 §2.6: an agent's yes is not a human's)."""
-        caller = Caller.coerce(caller)
+    def _window_for(self, caller: Caller) -> dict:
+        """A per-action validation window, fixed at propose time: testers get
+        `tester_validation_window_s` (180 s by default); everyone else stores none, so the
+        executor uses the per-kind `validation_window_s` exactly as before."""
+        if caller.role != "tester":
+            return {}
+        return {"validation_window_s": int(self.policy.get("tester_validation_window_s", 180))}
+
+    def _decision_refusal(self, action_id: str, caller: Caller, verb: str) -> str | None:
+        """Who may approve/reject: a dashboard session whose role is operator (any action) or
+        tester (only the fixture action proposed under the tester's own lease)."""
         if caller.kind != "dashboard":
-            self.store.record_approval(action_id, "refused", caller.name, f"{caller.kind}:{caller.transport}")
-            raise ApprovalRefused(f"approval refused: caller kind {caller.kind!r} is not a dashboard session")
+            return f"{verb} refused: caller kind {caller.kind!r} is not a dashboard session"
+        if caller.role == "operator":
+            return None
+        if caller.role != "tester":
+            return f"{verb} refused: role {caller.role!r} may not {verb}"
+        a = self.store.get(action_id)
+        if a is None:
+            raise KeyError(action_id)
+        return _tester_scope_refusal(a, caller, verb)
+
+    def approve(self, action_id: str, caller: Any) -> dict:
+        """Only a logged-in dashboard user may approve (R7 §2.6: an agent's yes is not a human's);
+        a tester only their own lease's fixture action."""
+        caller = Caller.coerce(caller)
+        why = self._decision_refusal(action_id, caller, "approval")
+        if why:
+            self.store.record_approval(action_id, "refused", caller.name,
+                                       f"{caller.kind}:{caller.transport}:{caller.role}")
+            raise ApprovalRefused(why)
         a = self.store.transition(action_id, "approved", f"approved by {caller.name}",
                                   expect={"awaiting_approval"})
-        self.store.record_approval(action_id, "approved", caller.name, "dashboard")
+        self.store.record_approval(action_id, "approved", caller.name, _via(caller))
         return self.view(a)
 
     def reject(self, action_id: str, caller: Any) -> dict:
         caller = Caller.coerce(caller)
-        if caller.kind != "dashboard":
-            raise ApprovalRefused("only a dashboard user may reject")
+        why = self._decision_refusal(action_id, caller, "rejection")
+        if why:
+            raise ApprovalRefused("only a dashboard user may reject" if caller.kind != "dashboard" else why)
         a = self.store.transition(action_id, "rejected", f"rejected by {caller.name}",
                                   expect={"awaiting_approval"})
-        self.store.record_approval(action_id, "rejected", caller.name, "dashboard")
+        self.store.record_approval(action_id, "rejected", caller.name, _via(caller))
         return self.view(a)
 
     def cancel(self, action_id: str, caller: Any) -> dict:
@@ -172,7 +243,13 @@ class Engine:
         a = self.store.get(action_id)
         if a is None:
             raise KeyError(action_id)
-        if caller.kind != "dashboard" and a["caller"].get("name") != caller.name:
+        if caller.role == "visitor":
+            raise ApprovalRefused("a visitor cannot cancel actions")
+        if caller.role == "tester":
+            why = _tester_scope_refusal(a, caller, "cancel")
+            if why:
+                raise ApprovalRefused(why)
+        elif caller.kind != "dashboard" and a["caller"].get("name") != caller.name:
             raise ApprovalRefused("only the proposer or a dashboard user may cancel")
         a = self.store.transition(action_id, "cancelled", f"cancelled by {caller.kind}:{caller.name}",
                                   expect={"open", "awaiting_approval", "approved", "automatic"})
@@ -228,6 +305,21 @@ class Engine:
     def start(self) -> asyncio.Task:
         self._task = asyncio.get_running_loop().create_task(self.run_forever())
         return self._task
+
+
+def _via(caller: Caller) -> str:
+    return "dashboard" if caller.role == "operator" else f"dashboard:{caller.role}"
+
+
+def _tester_scope_refusal(a: dict, caller: Caller, verb: str) -> str | None:
+    """A tester acts only on the fixture action created under their own (non-empty) lease."""
+    if not caller.lease_id:
+        return f"{verb} refused: tester has no lease"
+    if not fixture.is_fixture(a.get("kind"), {k: v for k, v in (a.get("args") or {}).items()}):
+        return f"{verb} refused: a tester may act only on the demo fixture action"
+    if (a.get("caller") or {}).get("lease_id") != caller.lease_id:
+        return f"{verb} refused: the action was not created under this tester's lease"
+    return None
 
 
 def _facts_summary(f: pol.Facts) -> dict:

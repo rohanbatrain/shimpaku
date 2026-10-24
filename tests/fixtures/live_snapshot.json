@@ -1,0 +1,7055 @@
+{
+ "format": 1,
+ "taken_at": 1792838011.6084561,
+ "version": "0.0.1",
+ "inventory": {
+  "nodes": [
+   {
+    "name": "r1",
+    "site": "campus",
+    "kind": "vjunos-router",
+    "topology": "day-02-switching"
+   },
+   {
+    "name": "r2",
+    "site": "campus",
+    "kind": "vjunos-router",
+    "topology": "day-02-switching"
+   },
+   {
+    "name": "sw1",
+    "site": "campus",
+    "kind": "vjunos-switch",
+    "topology": "day-02-switching"
+   },
+   {
+    "name": "spine1",
+    "site": "fabric",
+    "kind": "vjunos-switch",
+    "topology": "day-06-datacenter"
+   },
+   {
+    "name": "spine2",
+    "site": "fabric",
+    "kind": "vjunos-switch",
+    "topology": "day-06-datacenter"
+   },
+   {
+    "name": "leaf1",
+    "site": "fabric",
+    "kind": "vjunos-switch",
+    "topology": "day-06-datacenter"
+   },
+   {
+    "name": "leaf2",
+    "site": "fabric",
+    "kind": "vjunos-switch",
+    "topology": "day-06-datacenter"
+   }
+  ],
+  "sites": [
+   "campus",
+   "fabric"
+  ]
+ },
+ "sle": {
+  "campus": {
+   "60": {
+    "site": "campus",
+    "window_min": 60,
+    "sle": {
+     "fabric_health": {
+      "sle": "fabric_health",
+      "good": 177,
+      "bad": 0,
+      "n": 177,
+      "pct": 100.0,
+      "label": "100.0% (n = 177)",
+      "classifiers": []
+     },
+     "app_reachability": {
+      "sle": "app_reachability",
+      "good": 59,
+      "bad": 0,
+      "n": 59,
+      "pct": 100.0,
+      "label": "100.0% (n = 59)",
+      "classifiers": []
+     }
+    }
+   },
+   "1440": {
+    "site": "campus",
+    "window_min": 1440,
+    "sle": {
+     "fabric_health": {
+      "sle": "fabric_health",
+      "good": 319,
+      "bad": 22,
+      "n": 341,
+      "pct": 93.55,
+      "label": "93.5% (n = 341)",
+      "classifiers": [
+       {
+        "classifier": "Resources",
+        "sub_classifier": "CPU",
+        "units": 22,
+        "share_pct": 100.0
+       }
+      ]
+     },
+     "app_reachability": {
+      "sle": "app_reachability",
+      "good": 115,
+      "bad": 0,
+      "n": 115,
+      "pct": 100.0,
+      "label": "100.0% (n = 115)",
+      "classifiers": []
+     }
+    }
+   },
+   "10080": {
+    "site": "campus",
+    "window_min": 10080,
+    "sle": {
+     "fabric_health": {
+      "sle": "fabric_health",
+      "good": 319,
+      "bad": 22,
+      "n": 341,
+      "pct": 93.55,
+      "label": "93.5% (n = 341)",
+      "classifiers": [
+       {
+        "classifier": "Resources",
+        "sub_classifier": "CPU",
+        "units": 22,
+        "share_pct": 100.0
+       }
+      ]
+     },
+     "app_reachability": {
+      "sle": "app_reachability",
+      "good": 115,
+      "bad": 0,
+      "n": 115,
+      "pct": 100.0,
+      "label": "100.0% (n = 115)",
+      "classifiers": []
+     }
+    }
+   }
+  },
+  "fabric": {
+   "60": {
+    "site": "fabric",
+    "window_min": 60,
+    "sle": {
+     "fabric_health": {
+      "sle": "fabric_health",
+      "good": 236,
+      "bad": 0,
+      "n": 236,
+      "pct": 100.0,
+      "label": "100.0% (n = 236)",
+      "classifiers": []
+     },
+     "app_reachability": {
+      "sle": "app_reachability",
+      "good": 118,
+      "bad": 0,
+      "n": 118,
+      "pct": 100.0,
+      "label": "100.0% (n = 118)",
+      "classifiers": []
+     }
+    }
+   },
+   "1440": {
+    "site": "fabric",
+    "window_min": 1440,
+    "sle": {
+     "fabric_health": {
+      "sle": "fabric_health",
+      "good": 429,
+      "bad": 29,
+      "n": 458,
+      "pct": 93.67,
+      "label": "93.7% (n = 458)",
+      "classifiers": [
+       {
+        "classifier": "Resources",
+        "sub_classifier": "CPU",
+        "units": 26,
+        "share_pct": 89.7
+       },
+       {
+        "classifier": "Adjacency",
+        "sub_classifier": "Neighbour down",
+        "units": 3,
+        "share_pct": 10.3
+       }
+      ]
+     },
+     "app_reachability": {
+      "sle": "app_reachability",
+      "good": 229,
+      "bad": 1,
+      "n": 230,
+      "pct": 99.57,
+      "label": "99.6% (n = 230)",
+      "classifiers": [
+       {
+        "classifier": "Latency",
+        "sub_classifier": "Network",
+        "units": 1,
+        "share_pct": 100.0
+       }
+      ]
+     }
+    }
+   },
+   "10080": {
+    "site": "fabric",
+    "window_min": 10080,
+    "sle": {
+     "fabric_health": {
+      "sle": "fabric_health",
+      "good": 429,
+      "bad": 29,
+      "n": 458,
+      "pct": 93.67,
+      "label": "93.7% (n = 458)",
+      "classifiers": [
+       {
+        "classifier": "Resources",
+        "sub_classifier": "CPU",
+        "units": 26,
+        "share_pct": 89.7
+       },
+       {
+        "classifier": "Adjacency",
+        "sub_classifier": "Neighbour down",
+        "units": 3,
+        "share_pct": 10.3
+       }
+      ]
+     },
+     "app_reachability": {
+      "sle": "app_reachability",
+      "good": 229,
+      "bad": 1,
+      "n": 230,
+      "pct": 99.57,
+      "label": "99.6% (n = 230)",
+      "classifiers": [
+       {
+        "classifier": "Latency",
+        "sub_classifier": "Network",
+        "units": 1,
+        "share_pct": 100.0
+       }
+      ]
+     }
+    }
+   }
+  }
+ },
+ "incidents": {
+  "incidents": [
+   {
+    "incident_id": "INC-20261024-0839-fabric",
+    "t_open": "2026-10-24 08:39:00",
+    "t_detect": "2026-10-24 08:41:03.001075",
+    "t_close": "2026-10-24 08:44:00",
+    "sle": "app_reachability",
+    "root_causes": [
+     {
+      "fault_class": "link-down",
+      "entity": "leaf1:bfd:10.0.11.1",
+      "layer": "L1",
+      "why": "leaf1:bfd:10.0.11.1 lost with the local port up: far end or one-sided failure",
+      "rule": "R3-far-end",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "sle": "app_reachability",
+      "classifier": "Latency",
+      "sub_classifier": "Network",
+      "score": 1.0
+     },
+     {
+      "fault_class": "link-down",
+      "entity": "leaf1:bfd:10.0.21.1",
+      "layer": "L1",
+      "why": "leaf1:bfd:10.0.21.1 lost with the local port up: far end or one-sided failure",
+      "rule": "R3-far-end",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.5
+     },
+     {
+      "fault_class": "link-down",
+      "entity": "leaf2:bfd:10.0.12.1",
+      "layer": "L1",
+      "why": "leaf2:bfd:10.0.12.1 lost with the local port up: far end or one-sided failure",
+      "rule": "R3-far-end",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.333
+     },
+     {
+      "fault_class": "link-down",
+      "entity": "leaf2:bfd:10.0.22.1",
+      "layer": "L1",
+      "why": "leaf2:bfd:10.0.22.1 lost with the local port up: far end or one-sided failure",
+      "rule": "R3-far-end",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.25
+     },
+     {
+      "fault_class": "link-down",
+      "entity": "spine2:bfd:10.0.21.2",
+      "layer": "L1",
+      "why": "spine2:bfd:10.0.21.2 lost with the local port up: far end or one-sided failure",
+      "rule": "R3-far-end",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.2
+     },
+     {
+      "fault_class": "link-down",
+      "entity": "spine2:bfd:10.0.22.2",
+      "layer": "L1",
+      "why": "spine2:bfd:10.0.22.2 lost with the local port up: far end or one-sided failure",
+      "rule": "R3-far-end",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.167
+     },
+     {
+      "fault_class": "app-latency",
+      "entity": "probe:rpm:leaf1:shimpaku/vxlan-l2->10.100.0.42",
+      "layer": "L1",
+      "why": "probe latency with no device counter moving",
+      "rule": "R7-lossy",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.143
+     },
+     {
+      "fault_class": "host-contention",
+      "entity": "leaf2",
+      "layer": "node",
+      "why": "CPU above threshold",
+      "rule": "R8-resources",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.125
+     },
+     {
+      "fault_class": "host-contention",
+      "entity": "spine1",
+      "layer": "node",
+      "why": "CPU above threshold",
+      "rule": "R8-resources",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.111
+     },
+     {
+      "fault_class": "host-contention",
+      "entity": "leaf1",
+      "layer": "node",
+      "why": "CPU above threshold",
+      "rule": "R8-resources",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.1
+     },
+     {
+      "fault_class": "host-contention",
+      "entity": "spine2",
+      "layer": "node",
+      "why": "CPU above threshold",
+      "rule": "R8-resources",
+      "rule_tree": "rt-2026.10.24-1",
+      "minutes": 14,
+      "score": 0.091
+     }
+    ],
+    "status": "closed"
+   }
+  ]
+ },
+ "incident": {
+  "INC-20261024-0839-fabric": {
+   "incident_id": "INC-20261024-0839-fabric",
+   "t_open": "2026-10-24 08:39:00",
+   "t_detect": "2026-10-24 08:41:03.001075",
+   "t_close": "2026-10-24 08:44:00",
+   "sle": "app_reachability",
+   "root_causes": [
+    {
+     "fault_class": "link-down",
+     "entity": "leaf1:bfd:10.0.11.1",
+     "layer": "L1",
+     "why": "leaf1:bfd:10.0.11.1 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "sle": "app_reachability",
+     "classifier": "Latency",
+     "sub_classifier": "Network",
+     "score": 1.0
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "leaf1:bfd:10.0.21.1",
+     "layer": "L1",
+     "why": "leaf1:bfd:10.0.21.1 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.5
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "leaf2:bfd:10.0.12.1",
+     "layer": "L1",
+     "why": "leaf2:bfd:10.0.12.1 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.333
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "leaf2:bfd:10.0.22.1",
+     "layer": "L1",
+     "why": "leaf2:bfd:10.0.22.1 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.25
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "spine2:bfd:10.0.21.2",
+     "layer": "L1",
+     "why": "spine2:bfd:10.0.21.2 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.2
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "spine2:bfd:10.0.22.2",
+     "layer": "L1",
+     "why": "spine2:bfd:10.0.22.2 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.167
+    },
+    {
+     "fault_class": "app-latency",
+     "entity": "probe:rpm:leaf1:shimpaku/vxlan-l2->10.100.0.42",
+     "layer": "L1",
+     "why": "probe latency with no device counter moving",
+     "rule": "R7-lossy",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.143
+    },
+    {
+     "fault_class": "host-contention",
+     "entity": "leaf2",
+     "layer": "node",
+     "why": "CPU above threshold",
+     "rule": "R8-resources",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.125
+    },
+    {
+     "fault_class": "host-contention",
+     "entity": "spine1",
+     "layer": "node",
+     "why": "CPU above threshold",
+     "rule": "R8-resources",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.111
+    },
+    {
+     "fault_class": "host-contention",
+     "entity": "leaf1",
+     "layer": "node",
+     "why": "CPU above threshold",
+     "rule": "R8-resources",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.1
+    },
+    {
+     "fault_class": "host-contention",
+     "entity": "spine2",
+     "layer": "node",
+     "why": "CPU above threshold",
+     "rule": "R8-resources",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.091
+    }
+   ],
+   "status": "closed",
+   "actions": []
+  }
+ },
+ "blast": {
+  "INC-20261024-0839-fabric": {
+   "incident_id": "INC-20261024-0839-fabric",
+   "blast_radius": {
+    "rule": {
+     "min_support": 3,
+     "q": 0.05,
+     "min_rr": 3.0,
+     "min_cov": 0.5
+    },
+    "n": 20,
+    "fails": 1,
+    "verdict": "diffuse",
+    "scope": null,
+    "group": [],
+    "table": [
+     {
+      "feature": "node",
+      "value": "leaf1",
+      "n": 10,
+      "fails": 1,
+      "rate": 0.1,
+      "rr_laplace": 2.0,
+      "coverage": 1.0,
+      "p_fisher": 0.5,
+      "log10_bf": -0.459536,
+      "support_ok": false,
+      "q_bh": 1.0
+     },
+     {
+      "feature": "node",
+      "value": "leaf2",
+      "n": 10,
+      "fails": 0,
+      "rate": 0.0,
+      "rr_laplace": 0.5,
+      "coverage": 0.0,
+      "p_fisher": 1.0,
+      "log10_bf": -0.459536,
+      "support_ok": false,
+      "q_bh": 1.0
+     },
+     {
+      "feature": "target",
+      "value": "10.100.0.42",
+      "n": 10,
+      "fails": 1,
+      "rate": 0.1,
+      "rr_laplace": 2.0,
+      "coverage": 1.0,
+      "p_fisher": 0.5,
+      "log10_bf": -0.459536,
+      "support_ok": false,
+      "q_bh": 1.0
+     },
+     {
+      "feature": "target",
+      "value": "10.255.0.41",
+      "n": 10,
+      "fails": 0,
+      "rate": 0.0,
+      "rr_laplace": 0.5,
+      "coverage": 0.0,
+      "p_fisher": 1.0,
+      "log10_bf": -0.459536,
+      "support_ok": false,
+      "q_bh": 1.0
+     }
+    ],
+    "affected": [
+     "leaf1",
+     "leaf2",
+     "rpm:leaf1:shimpaku/vxlan-l2",
+     "spine1",
+     "spine2"
+    ],
+    "classifiers": [
+     {
+      "sle": "app_reachability",
+      "classifier": "Latency",
+      "sub_classifier": "Network",
+      "units": 1
+     },
+     {
+      "sle": "fabric_health",
+      "classifier": "Adjacency",
+      "sub_classifier": "Neighbour down",
+      "units": 3
+     },
+     {
+      "sle": "fabric_health",
+      "classifier": "Resources",
+      "sub_classifier": "CPU",
+      "units": 10
+     }
+    ],
+    "triggers": [
+     {
+      "trigger": "binomial",
+      "sle": "fabric_health",
+      "p": 1.9553589999999998e-05,
+      "p_hat": 0.01
+     }
+    ]
+   },
+   "root_causes": [
+    {
+     "fault_class": "link-down",
+     "entity": "leaf1:bfd:10.0.11.1",
+     "layer": "L1",
+     "why": "leaf1:bfd:10.0.11.1 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "sle": "app_reachability",
+     "classifier": "Latency",
+     "sub_classifier": "Network",
+     "score": 1.0
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "leaf1:bfd:10.0.21.1",
+     "layer": "L1",
+     "why": "leaf1:bfd:10.0.21.1 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.5
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "leaf2:bfd:10.0.12.1",
+     "layer": "L1",
+     "why": "leaf2:bfd:10.0.12.1 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.333
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "leaf2:bfd:10.0.22.1",
+     "layer": "L1",
+     "why": "leaf2:bfd:10.0.22.1 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.25
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "spine2:bfd:10.0.21.2",
+     "layer": "L1",
+     "why": "spine2:bfd:10.0.21.2 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.2
+    },
+    {
+     "fault_class": "link-down",
+     "entity": "spine2:bfd:10.0.22.2",
+     "layer": "L1",
+     "why": "spine2:bfd:10.0.22.2 lost with the local port up: far end or one-sided failure",
+     "rule": "R3-far-end",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.167
+    },
+    {
+     "fault_class": "app-latency",
+     "entity": "probe:rpm:leaf1:shimpaku/vxlan-l2->10.100.0.42",
+     "layer": "L1",
+     "why": "probe latency with no device counter moving",
+     "rule": "R7-lossy",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.143
+    },
+    {
+     "fault_class": "host-contention",
+     "entity": "leaf2",
+     "layer": "node",
+     "why": "CPU above threshold",
+     "rule": "R8-resources",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.125
+    },
+    {
+     "fault_class": "host-contention",
+     "entity": "spine1",
+     "layer": "node",
+     "why": "CPU above threshold",
+     "rule": "R8-resources",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.111
+    },
+    {
+     "fault_class": "host-contention",
+     "entity": "leaf1",
+     "layer": "node",
+     "why": "CPU above threshold",
+     "rule": "R8-resources",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.1
+    },
+    {
+     "fault_class": "host-contention",
+     "entity": "spine2",
+     "layer": "node",
+     "why": "CPU above threshold",
+     "rule": "R8-resources",
+     "rule_tree": "rt-2026.10.24-1",
+     "minutes": 14,
+     "score": 0.091
+    }
+   ]
+  }
+ },
+ "actions": {
+  "actions": [
+   {
+    "id": "act-20261024-634f65",
+    "kind": "add_vlan_to_trunk",
+    "tier": "T1",
+    "device": "sw1",
+    "ifname": "ge-0/0/5",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "vlan": 999
+    },
+    "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+    "caller": {
+     "kind": "mcp",
+     "name": "loopback:mcp",
+     "transport": "http",
+     "client": "mcp"
+    },
+    "incident_id": null,
+    "status": "verified",
+    "policy": {
+     "allowed": true,
+     "tier": "T1",
+     "status": "awaiting_approval",
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "facts": {
+      "topology_role": "unused",
+      "live_role": "trunk",
+      "admin": "up",
+      "oper": "down",
+      "pending_confirm": false,
+      "lease_holder": null,
+      "reachable": true,
+      "bounces_24h": 0,
+      "newest_commit_log": "demo fault: vlan 999 missing from trunk",
+      "open_actions_device": 0
+     }
+    },
+    "timeline": [
+     {
+      "from": "open",
+      "note": "T1 self-driving is off; a dashboard user must approve",
+      "to": "awaiting_approval",
+      "ts": 1792833766.086749
+     },
+     {
+      "from": "awaiting_approval",
+      "note": "approved by operator",
+      "to": "approved",
+      "ts": 1792833766.4622898
+     },
+     {
+      "from": "approved",
+      "note": "executor picked up",
+      "to": "running",
+      "ts": 1792833767.8940413
+     },
+     {
+      "from": "running",
+      "note": "lease taken on sw1 (lock db ~/shimpaku/locks.db)",
+      "to": "running",
+      "ts": 1792833769.1615784
+     },
+     {
+      "from": "running",
+      "note": "commit: shimpaku act-20261024-634f65 add vlan 999",
+      "to": "running",
+      "ts": 1792833788.7744412
+     },
+     {
+      "from": "running",
+      "note": "fresh-session health check: {'reachable': True, 'pending_confirm': True, 'health': {'ospf_full': 0, 'bgp_established': 0, 'bfd_up': 0}, 'admin': 'up', 'ok': True}",
+      "to": "running",
+      "ts": 1792833792.1742408
+     },
+     {
+      "from": "running",
+      "note": "commit: shimpaku act-20261024-634f65 confirm",
+      "to": "running",
+      "ts": 1792833797.7825687
+     },
+     {
+      "from": "running",
+      "note": "confirmed; validating for 1800 s",
+      "to": "validating",
+      "ts": 1792833798.247939
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833831.9196882
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833864.1240425
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833893.6822262
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833925.1545663
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833957.456919
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833987.677511
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834017.2228293
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834049.0513647
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834080.176353
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834111.370092
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834146.1301079
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834175.3869352
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834205.7911358
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834235.7703001
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834267.4502664
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834299.0215626
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834330.782534
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834363.010506
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834393.1295793
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834424.4953592
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834454.6929364
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834484.6687503
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834516.1355317
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834547.6578453
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834579.1814008
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834610.7874806
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834642.0680096
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834673.7763255
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834705.7686768
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834737.05668
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834768.881578
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834798.5904095
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834829.957634
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834861.578328
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834893.4521682
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834925.3155797
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834956.617544
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792834988.290667
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835020.1490078
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835051.9327998
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835084.5082588
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835115.171256
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835145.7414176
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835175.4673114
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835207.1876996
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835238.6191013
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835270.1959443
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835302.3059733
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835332.272688
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835364.3957686
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835394.1557515
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835426.3481839
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835456.4000962
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835485.9814947
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835517.914233
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835549.5053399
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792835581.1116517
+     },
+     {
+      "from": "validating",
+      "note": "healthy for the whole window",
+      "to": "verified",
+      "ts": 1792835603.0560586
+     }
+    ],
+    "commits": [
+     {
+      "comment": "shimpaku act-20261024-634f65 add vlan 999",
+      "confirm_min": 2,
+      "junos_index0_time": "2026-10-24 09:23:05 UTC",
+      "junos_log": "shimpaku act-20261024-634f65 add vlan 999",
+      "leg": "add vlan 999",
+      "seconds": 17.61,
+      "ts": 1792833788.7739203
+     },
+     {
+      "comment": "shimpaku act-20261024-634f65 confirm",
+      "confirm_min": null,
+      "junos_index0_time": "2026-10-24 09:23:15 UTC",
+      "junos_log": "shimpaku act-20261024-634f65 confirm",
+      "leg": "confirm",
+      "seconds": 5.61,
+      "ts": 1792833797.7822187
+     }
+    ],
+    "validation": {
+     "checks": [
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834077.0809839,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834108.2059429,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834139.5915618,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834170.164129,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834201.4159553,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834231.8205128,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834263.8023992,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834295.4805348,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834327.0505295,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834359.0360909,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834389.0404544,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834419.1620045,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834450.522846,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834480.719809,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834512.7013676,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834544.1690547,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834575.6883004,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834607.213763,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834638.8222015,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834670.1024473,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834701.8094583,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834733.802733,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834765.1069489,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834795.1319656,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834826.6232662,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834858.1986518,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834889.6146064,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834921.4854705,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834953.3494554,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792834984.6509347,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835016.3301013,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835048.1822948,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835079.9694705,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835110.53905,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835141.2054882,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835171.7741835,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835203.5033166,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835235.2248328,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835266.6529503,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835298.229765,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835328.3455875,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835360.314432,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835390.4290457,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835422.1923914,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835452.396377,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835482.4384813,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835514.020269,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835545.9522452,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835577.5438309,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792835599.1417985,
+       "vlan_ok": true
+      }
+     ],
+     "ends": 1792835598.247745,
+     "expect_admin": null,
+     "expect_vlan": "shimpaku-demo-999",
+     "next_check": null,
+     "pre": {
+      "bfd_up": 0,
+      "bgp_established": 0,
+      "ospf_full": 0
+     },
+     "starts": 1792833798.247745
+    },
+    "error": null,
+    "created": 1792833766.082306,
+    "updated": 1792835603.056069
+   },
+   {
+    "id": "act-20261024-acdfc3",
+    "kind": "add_vlan_to_trunk",
+    "tier": "T1",
+    "device": "sw1",
+    "ifname": "ge-0/0/5",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "vlan": 999
+    },
+    "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+    "caller": {
+     "kind": "mcp",
+     "name": "loopback:mcp",
+     "transport": "http",
+     "client": "mcp"
+    },
+    "incident_id": null,
+    "status": "recurred",
+    "policy": {
+     "allowed": true,
+     "tier": "T1",
+     "status": "awaiting_approval",
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "facts": {
+      "topology_role": "unused",
+      "live_role": "trunk",
+      "admin": "up",
+      "oper": "down",
+      "pending_confirm": false,
+      "lease_holder": null,
+      "reachable": true,
+      "bounces_24h": 0,
+      "newest_commit_log": "demo fault: vlan 999 missing from trunk",
+      "open_actions_device": 0
+     }
+    },
+    "timeline": [
+     {
+      "from": "open",
+      "note": "T1 self-driving is off; a dashboard user must approve",
+      "to": "awaiting_approval",
+      "ts": 1792833647.6607938
+     },
+     {
+      "from": "awaiting_approval",
+      "note": "approved by operator",
+      "to": "approved",
+      "ts": 1792833648.044997
+     },
+     {
+      "from": "approved",
+      "note": "executor picked up",
+      "to": "running",
+      "ts": 1792833649.5552547
+     },
+     {
+      "from": "running",
+      "note": "lease taken on sw1 (lock db ~/shimpaku/locks.db)",
+      "to": "running",
+      "ts": 1792833650.925971
+     },
+     {
+      "from": "running",
+      "note": "commit: shimpaku act-20261024-acdfc3 add vlan 999",
+      "to": "running",
+      "ts": 1792833670.855891
+     },
+     {
+      "from": "running",
+      "note": "fresh-session health check: {'reachable': True, 'pending_confirm': True, 'health': {'ospf_full': 0, 'bgp_established': 0, 'bfd_up': 0}, 'admin': 'up', 'ok': True}",
+      "to": "running",
+      "ts": 1792833674.5103843
+     },
+     {
+      "from": "running",
+      "note": "commit: shimpaku act-20261024-acdfc3 confirm",
+      "to": "running",
+      "ts": 1792833679.9354992
+     },
+     {
+      "from": "running",
+      "note": "confirmed; validating for 1800 s",
+      "to": "validating",
+      "ts": 1792833680.547823
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833714.4155223
+     },
+     {
+      "from": "validating",
+      "note": "symptom back during validation; re-open triage",
+      "to": "recurred",
+      "ts": 1792833747.8749576
+     }
+    ],
+    "commits": [
+     {
+      "comment": "shimpaku act-20261024-acdfc3 add vlan 999",
+      "confirm_min": 2,
+      "junos_index0_time": "2026-10-24 09:21:07 UTC",
+      "junos_log": "shimpaku act-20261024-acdfc3 add vlan 999",
+      "leg": "add vlan 999",
+      "seconds": 16.71,
+      "ts": 1792833670.8555455
+     },
+     {
+      "comment": "shimpaku act-20261024-acdfc3 confirm",
+      "confirm_min": null,
+      "junos_index0_time": "2026-10-24 09:21:17 UTC",
+      "junos_log": "shimpaku act-20261024-acdfc3 confirm",
+      "leg": "confirm",
+      "seconds": 5.42,
+      "ts": 1792833679.9351707
+     }
+    ],
+    "validation": {
+     "checks": [
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833710.5769465,
+       "vlan_ok": true
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": false,
+       "pending_confirm": false,
+       "ts": 1792833742.4476144,
+       "vlan_ok": false
+      }
+     ],
+     "ends": 1792835480.5476353,
+     "expect_admin": null,
+     "expect_vlan": "shimpaku-demo-999",
+     "next_check": null,
+     "pre": {
+      "bfd_up": 0,
+      "bgp_established": 0,
+      "ospf_full": 0
+     },
+     "starts": 1792833680.5476353
+    },
+    "error": null,
+    "created": 1792833647.6557,
+    "updated": 1792833747.874967
+   },
+   {
+    "id": "act-20261024-60e123",
+    "kind": "add_vlan_to_trunk",
+    "tier": "T1",
+    "device": "sw1",
+    "ifname": "ge-0/0/5",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "vlan": 999
+    },
+    "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+    "caller": {
+     "kind": "mcp",
+     "name": "loopback:mcp",
+     "transport": "http",
+     "client": "mcp"
+    },
+    "incident_id": null,
+    "status": "blocked",
+    "policy": {
+     "allowed": false,
+     "tier": "T1",
+     "status": "blocked",
+     "reasons": [
+      "G5 sw1 already has an action in flight"
+     ],
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9"
+     ],
+     "facts": {
+      "topology_role": "unused",
+      "live_role": "trunk",
+      "admin": "up",
+      "oper": "down",
+      "pending_confirm": false,
+      "lease_holder": null,
+      "reachable": true,
+      "bounces_24h": 0,
+      "newest_commit_log": "demo fault: vlan 999 missing from trunk",
+      "open_actions_device": 1
+     }
+    },
+    "timeline": [
+     {
+      "from": "open",
+      "note": "G5 sw1 already has an action in flight",
+      "to": "blocked",
+      "ts": 1792833409.6269813
+     }
+    ],
+    "commits": [],
+    "validation": null,
+    "error": null,
+    "created": 1792833409.624602,
+    "updated": 1792833409.626989
+   },
+   {
+    "id": "act-20261024-9b7065",
+    "kind": "add_vlan_to_trunk",
+    "tier": "T1",
+    "device": "sw1",
+    "ifname": "ge-0/0/5",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "vlan": 999
+    },
+    "reason": "Missing VLAN demo: trunk member removed, agent proposes restoring it",
+    "caller": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "incident_id": null,
+    "status": "verified",
+    "policy": {
+     "allowed": true,
+     "tier": "T1",
+     "status": "awaiting_approval",
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "facts": {
+      "topology_role": "unused",
+      "live_role": "trunk",
+      "admin": "up",
+      "oper": "down",
+      "pending_confirm": false,
+      "lease_holder": null,
+      "reachable": true,
+      "bounces_24h": 0,
+      "newest_commit_log": "demo fault: vlan 999 missing from sw1 ge-0/0/5 trunk",
+      "open_actions_device": 0
+     }
+    },
+    "timeline": [
+     {
+      "from": "open",
+      "note": "T1 self-driving is off; a dashboard user must approve",
+      "to": "awaiting_approval",
+      "ts": 1792831609.081975
+     },
+     {
+      "from": "awaiting_approval",
+      "note": "approved by operator",
+      "to": "approved",
+      "ts": 1792831609.1535852
+     },
+     {
+      "from": "approved",
+      "note": "executor picked up",
+      "to": "running",
+      "ts": 1792831610.333677
+     },
+     {
+      "from": "running",
+      "note": "lease taken on sw1 (lock db ~/shimpaku/locks.db)",
+      "to": "running",
+      "ts": 1792831611.5305326
+     },
+     {
+      "from": "running",
+      "note": "commit: shimpaku act-20261024-9b7065 add vlan 999",
+      "to": "running",
+      "ts": 1792831631.40565
+     },
+     {
+      "from": "running",
+      "note": "fresh-session health check: {'reachable': True, 'pending_confirm': True, 'health': {'ospf_full': 0, 'bgp_established': 0, 'bfd_up': 0}, 'admin': 'up', 'ok': True}",
+      "to": "running",
+      "ts": 1792831633.224816
+     },
+     {
+      "from": "running",
+      "note": "commit: shimpaku act-20261024-9b7065 confirm",
+      "to": "running",
+      "ts": 1792831639.3848581
+     },
+     {
+      "from": "running",
+      "note": "confirmed; validating for 1800 s",
+      "to": "validating",
+      "ts": 1792831640.4713874
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831672.4231706
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831704.3360384
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831736.3814898
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831766.4275048
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831796.69285
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831826.9692965
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831856.864764
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831888.8852234
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831918.8763325
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831951.8314977
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792831982.1306045
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832012.3025541
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832042.506168
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832072.332292
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832104.3054898
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832136.1723976
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832168.2269917
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832198.0576603
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832230.501121
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832261.4102917
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832292.6307533
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832322.5460498
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832354.5674286
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832384.4464126
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832416.2444565
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832448.2041993
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832480.3380835
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832511.097819
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832541.484899
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832572.1876082
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832602.1942337
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832632.3320587
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832662.1999586
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832693.9701443
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832725.9290748
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832757.879766
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832789.7400186
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832821.9603825
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832851.9094157
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832883.8346217
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832915.7100754
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832947.5497162
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792832979.424726
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833011.9004369
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833042.2052681
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833072.326611
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833102.5420947
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833132.6161082
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833162.5255463
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833194.3542418
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833226.3052704
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833258.2762432
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833290.5088942
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833320.5816576
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833351.1109817
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833381.9334211
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833411.9988315
+     },
+     {
+      "from": "validating",
+      "note": "validation check ok",
+      "to": "validating",
+      "ts": 1792833442.1299644
+     },
+     {
+      "from": "validating",
+      "note": "healthy for the whole window",
+      "to": "verified",
+      "ts": 1792833446.188445
+     }
+    ],
+    "commits": [
+     {
+      "comment": "shimpaku act-20261024-9b7065 add vlan 999",
+      "confirm_min": 2,
+      "junos_index0_time": "2026-10-24 08:47:07 UTC",
+      "junos_log": "shimpaku act-20261024-9b7065 add vlan 999",
+      "leg": "add vlan 999",
+      "seconds": 17.71,
+      "ts": 1792831631.4052618
+     },
+     {
+      "comment": "shimpaku act-20261024-9b7065 confirm",
+      "confirm_min": null,
+      "junos_index0_time": "2026-10-24 08:47:16 UTC",
+      "junos_log": "shimpaku act-20261024-9b7065 confirm",
+      "leg": "confirm",
+      "seconds": 6.16,
+      "ts": 1792831639.3844774
+     }
+    ],
+    "validation": {
+     "checks": [
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792831948.9055102
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792831979.8582494
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832010.1605191
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832040.3344414
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832070.5359452
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832102.367616
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832134.3388264
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832166.201558
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832196.2546177
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832228.0907955
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832258.5316458
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832289.443936
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832320.660531
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832352.5769954
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832382.598021
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832414.4783394
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832446.2925553
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832478.246065
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832508.3699694
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832539.1368554
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832569.5149312
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832600.2194078
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832630.223759
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832660.3625016
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832692.2364166
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832724.0038486
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832755.9648354
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832787.9164517
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832819.7755084
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832849.9944038
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832881.9467657
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832913.872279
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832945.744839
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792832977.5851214
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833009.4717422
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833040.1420019
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833070.2394478
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833100.5739906
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833130.5750377
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833160.6454833
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833192.5687509
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833224.3980293
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833256.3442833
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833288.3124135
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833318.5419455
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833348.618439
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833379.5197012
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833409.9751685
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833440.044584
+      },
+      {
+       "admin": "up",
+       "health": {
+        "bfd_up": 0,
+        "bgp_established": 0,
+        "ospf_full": 0
+       },
+       "health_ok": true,
+       "ok": true,
+       "pending_confirm": false,
+       "ts": 1792833444.1458724
+      }
+     ],
+     "ends": 1792833440.471199,
+     "expect_admin": null,
+     "next_check": null,
+     "pre": {
+      "bfd_up": 0,
+      "bgp_established": 0,
+      "ospf_full": 0
+     },
+     "starts": 1792831640.471199
+    },
+    "error": null,
+    "created": 1792831609.07564,
+    "updated": 1792833446.188457
+   }
+  ]
+ },
+ "action": {
+  "act-20261024-634f65": {
+   "id": "act-20261024-634f65",
+   "kind": "add_vlan_to_trunk",
+   "tier": "T1",
+   "device": "sw1",
+   "ifname": "ge-0/0/5",
+   "args": {
+    "device": "sw1",
+    "ifname": "ge-0/0/5",
+    "vlan": 999
+   },
+   "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+   "caller": {
+    "kind": "mcp",
+    "name": "loopback:mcp",
+    "transport": "http",
+    "client": "mcp"
+   },
+   "incident_id": null,
+   "status": "verified",
+   "policy": {
+    "allowed": true,
+    "tier": "T1",
+    "status": "awaiting_approval",
+    "reasons": [
+     "T1 self-driving is off; a dashboard user must approve"
+    ],
+    "checked": [
+     "G0",
+     "G1",
+     "G3",
+     "G5",
+     "blast",
+     "G6",
+     "G7",
+     "G8",
+     "G9",
+     "G4"
+    ],
+    "facts": {
+     "topology_role": "unused",
+     "live_role": "trunk",
+     "admin": "up",
+     "oper": "down",
+     "pending_confirm": false,
+     "lease_holder": null,
+     "reachable": true,
+     "bounces_24h": 0,
+     "newest_commit_log": "demo fault: vlan 999 missing from trunk",
+     "open_actions_device": 0
+    }
+   },
+   "timeline": [
+    {
+     "from": "open",
+     "note": "T1 self-driving is off; a dashboard user must approve",
+     "to": "awaiting_approval",
+     "ts": 1792833766.086749
+    },
+    {
+     "from": "awaiting_approval",
+     "note": "approved by operator",
+     "to": "approved",
+     "ts": 1792833766.4622898
+    },
+    {
+     "from": "approved",
+     "note": "executor picked up",
+     "to": "running",
+     "ts": 1792833767.8940413
+    },
+    {
+     "from": "running",
+     "note": "lease taken on sw1 (lock db ~/shimpaku/locks.db)",
+     "to": "running",
+     "ts": 1792833769.1615784
+    },
+    {
+     "from": "running",
+     "note": "commit: shimpaku act-20261024-634f65 add vlan 999",
+     "to": "running",
+     "ts": 1792833788.7744412
+    },
+    {
+     "from": "running",
+     "note": "fresh-session health check: {'reachable': True, 'pending_confirm': True, 'health': {'ospf_full': 0, 'bgp_established': 0, 'bfd_up': 0}, 'admin': 'up', 'ok': True}",
+     "to": "running",
+     "ts": 1792833792.1742408
+    },
+    {
+     "from": "running",
+     "note": "commit: shimpaku act-20261024-634f65 confirm",
+     "to": "running",
+     "ts": 1792833797.7825687
+    },
+    {
+     "from": "running",
+     "note": "confirmed; validating for 1800 s",
+     "to": "validating",
+     "ts": 1792833798.247939
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833831.9196882
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833864.1240425
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833893.6822262
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833925.1545663
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833957.456919
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833987.677511
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834017.2228293
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834049.0513647
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834080.176353
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834111.370092
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834146.1301079
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834175.3869352
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834205.7911358
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834235.7703001
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834267.4502664
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834299.0215626
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834330.782534
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834363.010506
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834393.1295793
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834424.4953592
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834454.6929364
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834484.6687503
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834516.1355317
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834547.6578453
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834579.1814008
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834610.7874806
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834642.0680096
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834673.7763255
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834705.7686768
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834737.05668
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834768.881578
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834798.5904095
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834829.957634
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834861.578328
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834893.4521682
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834925.3155797
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834956.617544
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792834988.290667
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835020.1490078
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835051.9327998
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835084.5082588
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835115.171256
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835145.7414176
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835175.4673114
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835207.1876996
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835238.6191013
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835270.1959443
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835302.3059733
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835332.272688
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835364.3957686
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835394.1557515
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835426.3481839
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835456.4000962
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835485.9814947
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835517.914233
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835549.5053399
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792835581.1116517
+    },
+    {
+     "from": "validating",
+     "note": "healthy for the whole window",
+     "to": "verified",
+     "ts": 1792835603.0560586
+    }
+   ],
+   "commits": [
+    {
+     "comment": "shimpaku act-20261024-634f65 add vlan 999",
+     "confirm_min": 2,
+     "junos_index0_time": "2026-10-24 09:23:05 UTC",
+     "junos_log": "shimpaku act-20261024-634f65 add vlan 999",
+     "leg": "add vlan 999",
+     "seconds": 17.61,
+     "ts": 1792833788.7739203
+    },
+    {
+     "comment": "shimpaku act-20261024-634f65 confirm",
+     "confirm_min": null,
+     "junos_index0_time": "2026-10-24 09:23:15 UTC",
+     "junos_log": "shimpaku act-20261024-634f65 confirm",
+     "leg": "confirm",
+     "seconds": 5.61,
+     "ts": 1792833797.7822187
+    }
+   ],
+   "validation": {
+    "checks": [
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834077.0809839,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834108.2059429,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834139.5915618,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834170.164129,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834201.4159553,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834231.8205128,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834263.8023992,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834295.4805348,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834327.0505295,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834359.0360909,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834389.0404544,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834419.1620045,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834450.522846,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834480.719809,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834512.7013676,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834544.1690547,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834575.6883004,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834607.213763,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834638.8222015,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834670.1024473,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834701.8094583,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834733.802733,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834765.1069489,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834795.1319656,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834826.6232662,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834858.1986518,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834889.6146064,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834921.4854705,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834953.3494554,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792834984.6509347,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835016.3301013,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835048.1822948,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835079.9694705,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835110.53905,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835141.2054882,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835171.7741835,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835203.5033166,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835235.2248328,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835266.6529503,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835298.229765,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835328.3455875,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835360.314432,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835390.4290457,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835422.1923914,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835452.396377,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835482.4384813,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835514.020269,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835545.9522452,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835577.5438309,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792835599.1417985,
+      "vlan_ok": true
+     }
+    ],
+    "ends": 1792835598.247745,
+    "expect_admin": null,
+    "expect_vlan": "shimpaku-demo-999",
+    "next_check": null,
+    "pre": {
+     "bfd_up": 0,
+     "bgp_established": 0,
+     "ospf_full": 0
+    },
+    "starts": 1792833798.247745
+   },
+   "error": null,
+   "created": 1792833766.082306,
+   "updated": 1792835603.056069
+  },
+  "act-20261024-acdfc3": {
+   "id": "act-20261024-acdfc3",
+   "kind": "add_vlan_to_trunk",
+   "tier": "T1",
+   "device": "sw1",
+   "ifname": "ge-0/0/5",
+   "args": {
+    "device": "sw1",
+    "ifname": "ge-0/0/5",
+    "vlan": 999
+   },
+   "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+   "caller": {
+    "kind": "mcp",
+    "name": "loopback:mcp",
+    "transport": "http",
+    "client": "mcp"
+   },
+   "incident_id": null,
+   "status": "recurred",
+   "policy": {
+    "allowed": true,
+    "tier": "T1",
+    "status": "awaiting_approval",
+    "reasons": [
+     "T1 self-driving is off; a dashboard user must approve"
+    ],
+    "checked": [
+     "G0",
+     "G1",
+     "G3",
+     "G5",
+     "blast",
+     "G6",
+     "G7",
+     "G8",
+     "G9",
+     "G4"
+    ],
+    "facts": {
+     "topology_role": "unused",
+     "live_role": "trunk",
+     "admin": "up",
+     "oper": "down",
+     "pending_confirm": false,
+     "lease_holder": null,
+     "reachable": true,
+     "bounces_24h": 0,
+     "newest_commit_log": "demo fault: vlan 999 missing from trunk",
+     "open_actions_device": 0
+    }
+   },
+   "timeline": [
+    {
+     "from": "open",
+     "note": "T1 self-driving is off; a dashboard user must approve",
+     "to": "awaiting_approval",
+     "ts": 1792833647.6607938
+    },
+    {
+     "from": "awaiting_approval",
+     "note": "approved by operator",
+     "to": "approved",
+     "ts": 1792833648.044997
+    },
+    {
+     "from": "approved",
+     "note": "executor picked up",
+     "to": "running",
+     "ts": 1792833649.5552547
+    },
+    {
+     "from": "running",
+     "note": "lease taken on sw1 (lock db ~/shimpaku/locks.db)",
+     "to": "running",
+     "ts": 1792833650.925971
+    },
+    {
+     "from": "running",
+     "note": "commit: shimpaku act-20261024-acdfc3 add vlan 999",
+     "to": "running",
+     "ts": 1792833670.855891
+    },
+    {
+     "from": "running",
+     "note": "fresh-session health check: {'reachable': True, 'pending_confirm': True, 'health': {'ospf_full': 0, 'bgp_established': 0, 'bfd_up': 0}, 'admin': 'up', 'ok': True}",
+     "to": "running",
+     "ts": 1792833674.5103843
+    },
+    {
+     "from": "running",
+     "note": "commit: shimpaku act-20261024-acdfc3 confirm",
+     "to": "running",
+     "ts": 1792833679.9354992
+    },
+    {
+     "from": "running",
+     "note": "confirmed; validating for 1800 s",
+     "to": "validating",
+     "ts": 1792833680.547823
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833714.4155223
+    },
+    {
+     "from": "validating",
+     "note": "symptom back during validation; re-open triage",
+     "to": "recurred",
+     "ts": 1792833747.8749576
+    }
+   ],
+   "commits": [
+    {
+     "comment": "shimpaku act-20261024-acdfc3 add vlan 999",
+     "confirm_min": 2,
+     "junos_index0_time": "2026-10-24 09:21:07 UTC",
+     "junos_log": "shimpaku act-20261024-acdfc3 add vlan 999",
+     "leg": "add vlan 999",
+     "seconds": 16.71,
+     "ts": 1792833670.8555455
+    },
+    {
+     "comment": "shimpaku act-20261024-acdfc3 confirm",
+     "confirm_min": null,
+     "junos_index0_time": "2026-10-24 09:21:17 UTC",
+     "junos_log": "shimpaku act-20261024-acdfc3 confirm",
+     "leg": "confirm",
+     "seconds": 5.42,
+     "ts": 1792833679.9351707
+    }
+   ],
+   "validation": {
+    "checks": [
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833710.5769465,
+      "vlan_ok": true
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": false,
+      "pending_confirm": false,
+      "ts": 1792833742.4476144,
+      "vlan_ok": false
+     }
+    ],
+    "ends": 1792835480.5476353,
+    "expect_admin": null,
+    "expect_vlan": "shimpaku-demo-999",
+    "next_check": null,
+    "pre": {
+     "bfd_up": 0,
+     "bgp_established": 0,
+     "ospf_full": 0
+    },
+    "starts": 1792833680.5476353
+   },
+   "error": null,
+   "created": 1792833647.6557,
+   "updated": 1792833747.874967
+  },
+  "act-20261024-60e123": {
+   "id": "act-20261024-60e123",
+   "kind": "add_vlan_to_trunk",
+   "tier": "T1",
+   "device": "sw1",
+   "ifname": "ge-0/0/5",
+   "args": {
+    "device": "sw1",
+    "ifname": "ge-0/0/5",
+    "vlan": 999
+   },
+   "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+   "caller": {
+    "kind": "mcp",
+    "name": "loopback:mcp",
+    "transport": "http",
+    "client": "mcp"
+   },
+   "incident_id": null,
+   "status": "blocked",
+   "policy": {
+    "allowed": false,
+    "tier": "T1",
+    "status": "blocked",
+    "reasons": [
+     "G5 sw1 already has an action in flight"
+    ],
+    "checked": [
+     "G0",
+     "G1",
+     "G3",
+     "G5",
+     "blast",
+     "G6",
+     "G7",
+     "G8",
+     "G9"
+    ],
+    "facts": {
+     "topology_role": "unused",
+     "live_role": "trunk",
+     "admin": "up",
+     "oper": "down",
+     "pending_confirm": false,
+     "lease_holder": null,
+     "reachable": true,
+     "bounces_24h": 0,
+     "newest_commit_log": "demo fault: vlan 999 missing from trunk",
+     "open_actions_device": 1
+    }
+   },
+   "timeline": [
+    {
+     "from": "open",
+     "note": "G5 sw1 already has an action in flight",
+     "to": "blocked",
+     "ts": 1792833409.6269813
+    }
+   ],
+   "commits": [],
+   "validation": null,
+   "error": null,
+   "created": 1792833409.624602,
+   "updated": 1792833409.626989
+  },
+  "act-20261024-9b7065": {
+   "id": "act-20261024-9b7065",
+   "kind": "add_vlan_to_trunk",
+   "tier": "T1",
+   "device": "sw1",
+   "ifname": "ge-0/0/5",
+   "args": {
+    "device": "sw1",
+    "ifname": "ge-0/0/5",
+    "vlan": 999
+   },
+   "reason": "Missing VLAN demo: trunk member removed, agent proposes restoring it",
+   "caller": {
+    "kind": "mcp",
+    "name": "loopback:anonymous",
+    "transport": "http"
+   },
+   "incident_id": null,
+   "status": "verified",
+   "policy": {
+    "allowed": true,
+    "tier": "T1",
+    "status": "awaiting_approval",
+    "reasons": [
+     "T1 self-driving is off; a dashboard user must approve"
+    ],
+    "checked": [
+     "G0",
+     "G1",
+     "G3",
+     "G5",
+     "blast",
+     "G6",
+     "G7",
+     "G8",
+     "G9",
+     "G4"
+    ],
+    "facts": {
+     "topology_role": "unused",
+     "live_role": "trunk",
+     "admin": "up",
+     "oper": "down",
+     "pending_confirm": false,
+     "lease_holder": null,
+     "reachable": true,
+     "bounces_24h": 0,
+     "newest_commit_log": "demo fault: vlan 999 missing from sw1 ge-0/0/5 trunk",
+     "open_actions_device": 0
+    }
+   },
+   "timeline": [
+    {
+     "from": "open",
+     "note": "T1 self-driving is off; a dashboard user must approve",
+     "to": "awaiting_approval",
+     "ts": 1792831609.081975
+    },
+    {
+     "from": "awaiting_approval",
+     "note": "approved by operator",
+     "to": "approved",
+     "ts": 1792831609.1535852
+    },
+    {
+     "from": "approved",
+     "note": "executor picked up",
+     "to": "running",
+     "ts": 1792831610.333677
+    },
+    {
+     "from": "running",
+     "note": "lease taken on sw1 (lock db ~/shimpaku/locks.db)",
+     "to": "running",
+     "ts": 1792831611.5305326
+    },
+    {
+     "from": "running",
+     "note": "commit: shimpaku act-20261024-9b7065 add vlan 999",
+     "to": "running",
+     "ts": 1792831631.40565
+    },
+    {
+     "from": "running",
+     "note": "fresh-session health check: {'reachable': True, 'pending_confirm': True, 'health': {'ospf_full': 0, 'bgp_established': 0, 'bfd_up': 0}, 'admin': 'up', 'ok': True}",
+     "to": "running",
+     "ts": 1792831633.224816
+    },
+    {
+     "from": "running",
+     "note": "commit: shimpaku act-20261024-9b7065 confirm",
+     "to": "running",
+     "ts": 1792831639.3848581
+    },
+    {
+     "from": "running",
+     "note": "confirmed; validating for 1800 s",
+     "to": "validating",
+     "ts": 1792831640.4713874
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831672.4231706
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831704.3360384
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831736.3814898
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831766.4275048
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831796.69285
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831826.9692965
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831856.864764
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831888.8852234
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831918.8763325
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831951.8314977
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792831982.1306045
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832012.3025541
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832042.506168
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832072.332292
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832104.3054898
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832136.1723976
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832168.2269917
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832198.0576603
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832230.501121
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832261.4102917
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832292.6307533
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832322.5460498
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832354.5674286
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832384.4464126
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832416.2444565
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832448.2041993
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832480.3380835
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832511.097819
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832541.484899
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832572.1876082
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832602.1942337
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832632.3320587
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832662.1999586
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832693.9701443
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832725.9290748
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832757.879766
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832789.7400186
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832821.9603825
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832851.9094157
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832883.8346217
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832915.7100754
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832947.5497162
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792832979.424726
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833011.9004369
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833042.2052681
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833072.326611
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833102.5420947
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833132.6161082
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833162.5255463
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833194.3542418
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833226.3052704
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833258.2762432
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833290.5088942
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833320.5816576
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833351.1109817
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833381.9334211
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833411.9988315
+    },
+    {
+     "from": "validating",
+     "note": "validation check ok",
+     "to": "validating",
+     "ts": 1792833442.1299644
+    },
+    {
+     "from": "validating",
+     "note": "healthy for the whole window",
+     "to": "verified",
+     "ts": 1792833446.188445
+    }
+   ],
+   "commits": [
+    {
+     "comment": "shimpaku act-20261024-9b7065 add vlan 999",
+     "confirm_min": 2,
+     "junos_index0_time": "2026-10-24 08:47:07 UTC",
+     "junos_log": "shimpaku act-20261024-9b7065 add vlan 999",
+     "leg": "add vlan 999",
+     "seconds": 17.71,
+     "ts": 1792831631.4052618
+    },
+    {
+     "comment": "shimpaku act-20261024-9b7065 confirm",
+     "confirm_min": null,
+     "junos_index0_time": "2026-10-24 08:47:16 UTC",
+     "junos_log": "shimpaku act-20261024-9b7065 confirm",
+     "leg": "confirm",
+     "seconds": 6.16,
+     "ts": 1792831639.3844774
+    }
+   ],
+   "validation": {
+    "checks": [
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792831948.9055102
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792831979.8582494
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832010.1605191
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832040.3344414
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832070.5359452
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832102.367616
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832134.3388264
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832166.201558
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832196.2546177
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832228.0907955
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832258.5316458
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832289.443936
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832320.660531
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832352.5769954
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832382.598021
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832414.4783394
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832446.2925553
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832478.246065
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832508.3699694
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832539.1368554
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832569.5149312
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832600.2194078
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832630.223759
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832660.3625016
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832692.2364166
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832724.0038486
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832755.9648354
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832787.9164517
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832819.7755084
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832849.9944038
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832881.9467657
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832913.872279
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832945.744839
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792832977.5851214
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833009.4717422
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833040.1420019
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833070.2394478
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833100.5739906
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833130.5750377
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833160.6454833
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833192.5687509
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833224.3980293
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833256.3442833
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833288.3124135
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833318.5419455
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833348.618439
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833379.5197012
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833409.9751685
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833440.044584
+     },
+     {
+      "admin": "up",
+      "health": {
+       "bfd_up": 0,
+       "bgp_established": 0,
+       "ospf_full": 0
+      },
+      "health_ok": true,
+      "ok": true,
+      "pending_confirm": false,
+      "ts": 1792833444.1458724
+     }
+    ],
+    "ends": 1792833440.471199,
+    "expect_admin": null,
+    "next_check": null,
+    "pre": {
+     "bfd_up": 0,
+     "bgp_established": 0,
+     "ospf_full": 0
+    },
+    "starts": 1792831640.471199
+   },
+   "error": null,
+   "created": 1792831609.07564,
+   "updated": 1792833446.188457
+  }
+ },
+ "topology": {
+  "lldp": [
+   {
+    "device": "leaf1",
+    "local_if": "ge-0/0/0",
+    "remote_system": "spine1",
+    "remote_port": "leaf1-spine1",
+    "remote_chassis": "2c:6b:f5:02:f5:c0"
+   },
+   {
+    "device": "leaf1",
+    "local_if": "ge-0/0/1",
+    "remote_system": "spine2",
+    "remote_port": "leaf1-spine2",
+    "remote_chassis": "2c:6b:f5:6d:9c:c0"
+   },
+   {
+    "device": "leaf2",
+    "local_if": "ge-0/0/0",
+    "remote_system": "spine1",
+    "remote_port": "leaf2-spine1",
+    "remote_chassis": "2c:6b:f5:02:f5:c0"
+   },
+   {
+    "device": "leaf2",
+    "local_if": "ge-0/0/1",
+    "remote_system": "spine2",
+    "remote_port": "leaf2-spine2",
+    "remote_chassis": "2c:6b:f5:6d:9c:c0"
+   },
+   {
+    "device": "spine1",
+    "local_if": "ge-0/0/1",
+    "remote_system": "leaf2",
+    "remote_port": "leaf2-spine1",
+    "remote_chassis": "2c:6b:f5:82:6b:c0"
+   },
+   {
+    "device": "spine1",
+    "local_if": "ge-0/0/0",
+    "remote_system": "leaf1",
+    "remote_port": "leaf1-spine1",
+    "remote_chassis": "2c:6b:f5:df:aa:c0"
+   },
+   {
+    "device": "spine2",
+    "local_if": "ge-0/0/1",
+    "remote_system": "leaf2",
+    "remote_port": "leaf2-spine2",
+    "remote_chassis": "2c:6b:f5:82:6b:c0"
+   },
+   {
+    "device": "spine2",
+    "local_if": "ge-0/0/0",
+    "remote_system": "leaf1",
+    "remote_port": "leaf1-spine2",
+    "remote_chassis": "2c:6b:f5:df:aa:c0"
+   }
+  ],
+  "intended": [
+   {
+    "device": "r1",
+    "ifname": "ge-0/0/0",
+    "peer": "r2",
+    "link": "r1-r2",
+    "role": "routed"
+   },
+   {
+    "device": "r2",
+    "ifname": "ge-0/0/0",
+    "peer": "r1",
+    "link": "r1-r2",
+    "role": "routed"
+   },
+   {
+    "device": "r1",
+    "ifname": "ge-0/0/1",
+    "peer": "sw1",
+    "link": "r1-sw1",
+    "role": "trunk"
+   },
+   {
+    "device": "sw1",
+    "ifname": "ge-0/0/0",
+    "peer": "r1",
+    "link": "r1-sw1",
+    "role": "trunk"
+   },
+   {
+    "device": "leaf1",
+    "ifname": "ge-0/0/0",
+    "peer": "spine1",
+    "link": "leaf1-spine1",
+    "role": "fabric"
+   },
+   {
+    "device": "spine1",
+    "ifname": "ge-0/0/0",
+    "peer": "leaf1",
+    "link": "leaf1-spine1",
+    "role": "fabric"
+   },
+   {
+    "device": "leaf1",
+    "ifname": "ge-0/0/1",
+    "peer": "spine2",
+    "link": "leaf1-spine2",
+    "role": "fabric"
+   },
+   {
+    "device": "spine2",
+    "ifname": "ge-0/0/0",
+    "peer": "leaf1",
+    "link": "leaf1-spine2",
+    "role": "fabric"
+   },
+   {
+    "device": "leaf2",
+    "ifname": "ge-0/0/0",
+    "peer": "spine1",
+    "link": "leaf2-spine1",
+    "role": "fabric"
+   },
+   {
+    "device": "spine1",
+    "ifname": "ge-0/0/1",
+    "peer": "leaf2",
+    "link": "leaf2-spine1",
+    "role": "fabric"
+   },
+   {
+    "device": "leaf2",
+    "ifname": "ge-0/0/1",
+    "peer": "spine2",
+    "link": "leaf2-spine2",
+    "role": "fabric"
+   },
+   {
+    "device": "spine2",
+    "ifname": "ge-0/0/1",
+    "peer": "leaf2",
+    "link": "leaf2-spine2",
+    "role": "fabric"
+   }
+  ]
+ },
+ "audit": {
+  "rows": [
+   {
+    "seq": 17,
+    "ts": "2026-10-24T09:23:17.787462+00:00",
+    "actor": {
+     "kind": "system",
+     "name": "executor"
+    },
+    "kind": "executor",
+    "tool": "executor",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "kind": "add_vlan_to_trunk"
+    },
+    "result": {
+     "action_id": "act-20261024-634f65",
+     "client_info": null,
+     "device_commit": {
+      "comment": "shimpaku act-20261024-634f65 confirm",
+      "confirm_min": null,
+      "junos_index0_time": "2026-10-24 09:23:15 UTC",
+      "junos_log": "shimpaku act-20261024-634f65 confirm",
+      "leg": "confirm",
+      "seconds": 5.61,
+      "ts": 1792833797.7822187
+     },
+     "incident_id": null,
+     "latency_ms": null,
+     "policy_decision": null,
+     "result_status": "committed",
+     "tier": "T1"
+    },
+    "status": "committed",
+    "prev_hash": "af0a7912870ee491b3c8c80c0caa766da64569374dde0c77f9147f16d72869ef",
+    "row_hash": "9bf97b88a11ea9bc94b9d860c31a77465f3d6f4d6b393ccdf21fd8dfaa1eed0c",
+    "tier": "T1",
+    "policy_decision": null,
+    "action_id": "act-20261024-634f65",
+    "result_status": "committed"
+   },
+   {
+    "seq": 16,
+    "ts": "2026-10-24T09:23:08.779238+00:00",
+    "actor": {
+     "kind": "system",
+     "name": "executor"
+    },
+    "kind": "executor",
+    "tool": "executor",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "kind": "add_vlan_to_trunk"
+    },
+    "result": {
+     "action_id": "act-20261024-634f65",
+     "client_info": null,
+     "device_commit": {
+      "comment": "shimpaku act-20261024-634f65 add vlan 999",
+      "confirm_min": 2,
+      "junos_index0_time": "2026-10-24 09:23:05 UTC",
+      "junos_log": "shimpaku act-20261024-634f65 add vlan 999",
+      "leg": "add vlan 999",
+      "seconds": 17.61,
+      "ts": 1792833788.7739203
+     },
+     "incident_id": null,
+     "latency_ms": null,
+     "policy_decision": null,
+     "result_status": "committed",
+     "tier": "T1"
+    },
+    "status": "committed",
+    "prev_hash": "480d6e814a405ea1d2038a353cb3ac1bc29b69bb14f32c85aaa8b4d461c424ef",
+    "row_hash": "af0a7912870ee491b3c8c80c0caa766da64569374dde0c77f9147f16d72869ef",
+    "tier": "T1",
+    "policy_decision": null,
+    "action_id": "act-20261024-634f65",
+    "result_status": "committed"
+   },
+   {
+    "seq": 15,
+    "ts": "2026-10-24T09:22:46.088820+00:00",
+    "actor": {
+     "client": "mcp",
+     "kind": "mcp",
+     "name": "loopback:mcp",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_propose_add_vlan_to_trunk",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+     "vlan": 999
+    },
+    "result": {
+     "action_id": "act-20261024-634f65",
+     "client_info": "mcp",
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 4973.4,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "awaiting_approval",
+     "tier": "T1"
+    },
+    "status": "awaiting_approval",
+    "prev_hash": "e28e2bf1ed4ebd3bb1cc5f27e714e078959b080461a1e0c27bf29920f05e17e6",
+    "row_hash": "480d6e814a405ea1d2038a353cb3ac1bc29b69bb14f32c85aaa8b4d461c424ef",
+    "tier": "T1",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-634f65",
+    "result_status": "awaiting_approval"
+   },
+   {
+    "seq": 14,
+    "ts": "2026-10-24T09:21:19.940653+00:00",
+    "actor": {
+     "kind": "system",
+     "name": "executor"
+    },
+    "kind": "executor",
+    "tool": "executor",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "kind": "add_vlan_to_trunk"
+    },
+    "result": {
+     "action_id": "act-20261024-acdfc3",
+     "client_info": null,
+     "device_commit": {
+      "comment": "shimpaku act-20261024-acdfc3 confirm",
+      "confirm_min": null,
+      "junos_index0_time": "2026-10-24 09:21:17 UTC",
+      "junos_log": "shimpaku act-20261024-acdfc3 confirm",
+      "leg": "confirm",
+      "seconds": 5.42,
+      "ts": 1792833679.9351707
+     },
+     "incident_id": null,
+     "latency_ms": null,
+     "policy_decision": null,
+     "result_status": "committed",
+     "tier": "T1"
+    },
+    "status": "committed",
+    "prev_hash": "b9099cb4752e332d4ffd762c46212e6e97af3bcd8ceff5911b84be12e0796d71",
+    "row_hash": "e28e2bf1ed4ebd3bb1cc5f27e714e078959b080461a1e0c27bf29920f05e17e6",
+    "tier": "T1",
+    "policy_decision": null,
+    "action_id": "act-20261024-acdfc3",
+    "result_status": "committed"
+   },
+   {
+    "seq": 13,
+    "ts": "2026-10-24T09:21:10.860814+00:00",
+    "actor": {
+     "kind": "system",
+     "name": "executor"
+    },
+    "kind": "executor",
+    "tool": "executor",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "kind": "add_vlan_to_trunk"
+    },
+    "result": {
+     "action_id": "act-20261024-acdfc3",
+     "client_info": null,
+     "device_commit": {
+      "comment": "shimpaku act-20261024-acdfc3 add vlan 999",
+      "confirm_min": 2,
+      "junos_index0_time": "2026-10-24 09:21:07 UTC",
+      "junos_log": "shimpaku act-20261024-acdfc3 add vlan 999",
+      "leg": "add vlan 999",
+      "seconds": 16.71,
+      "ts": 1792833670.8555455
+     },
+     "incident_id": null,
+     "latency_ms": null,
+     "policy_decision": null,
+     "result_status": "committed",
+     "tier": "T1"
+    },
+    "status": "committed",
+    "prev_hash": "b0fc4b45db44880bd5011ce92d4d897a84e9a2658146999dc141cd7685639bfb",
+    "row_hash": "b9099cb4752e332d4ffd762c46212e6e97af3bcd8ceff5911b84be12e0796d71",
+    "tier": "T1",
+    "policy_decision": null,
+    "action_id": "act-20261024-acdfc3",
+    "result_status": "committed"
+   },
+   {
+    "seq": 12,
+    "ts": "2026-10-24T09:20:47.663817+00:00",
+    "actor": {
+     "client": "mcp",
+     "kind": "mcp",
+     "name": "loopback:mcp",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_propose_add_vlan_to_trunk",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+     "vlan": 999
+    },
+    "result": {
+     "action_id": "act-20261024-acdfc3",
+     "client_info": "mcp",
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 4164.5,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "awaiting_approval",
+     "tier": "T1"
+    },
+    "status": "awaiting_approval",
+    "prev_hash": "7ae6104f5faf346dd7ce8b208f3f4850fef0952529b15fce3966c5aec1dff26e",
+    "row_hash": "b0fc4b45db44880bd5011ce92d4d897a84e9a2658146999dc141cd7685639bfb",
+    "tier": "T1",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-acdfc3",
+    "result_status": "awaiting_approval"
+   },
+   {
+    "seq": 11,
+    "ts": "2026-10-24T09:16:49.629782+00:00",
+    "actor": {
+     "client": "mcp",
+     "kind": "mcp",
+     "name": "loopback:mcp",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_propose_add_vlan_to_trunk",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "reason": "VLAN 999 missing from the sw1 trunk; restore it",
+     "vlan": 999
+    },
+    "result": {
+     "action_id": "act-20261024-60e123",
+     "client_info": "mcp",
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 4858.2,
+     "policy_decision": {
+      "allowed": false,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9"
+      ],
+      "reasons": [
+       "G5 sw1 already has an action in flight"
+      ],
+      "status": "blocked"
+     },
+     "result_status": "blocked",
+     "tier": "T1"
+    },
+    "status": "blocked",
+    "prev_hash": "5c3c7522edc838ff87b21f61d16d9022a4213ce5e055953629d8e6f9c3a341ff",
+    "row_hash": "7ae6104f5faf346dd7ce8b208f3f4850fef0952529b15fce3966c5aec1dff26e",
+    "tier": "T1",
+    "policy_decision": {
+     "allowed": false,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9"
+     ],
+     "reasons": [
+      "G5 sw1 already has an action in flight"
+     ],
+     "status": "blocked"
+    },
+    "action_id": "act-20261024-60e123",
+    "result_status": "blocked"
+   },
+   {
+    "seq": 10,
+    "ts": "2026-10-24T09:08:42.934401+00:00",
+    "actor": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_get",
+    "args": {
+     "action_id": "act-20261024-9b7065"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 2.6,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "ok",
+     "tier": "control"
+    },
+    "status": "ok",
+    "prev_hash": "0602c1a57a1fec2b5d4f22c8bce85443b32d1ed65e7fbbdf29605c84ef823bbc",
+    "row_hash": "5c3c7522edc838ff87b21f61d16d9022a4213ce5e055953629d8e6f9c3a341ff",
+    "tier": "control",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-9b7065",
+    "result_status": "ok"
+   },
+   {
+    "seq": 9,
+    "ts": "2026-10-24T08:47:21.309615+00:00",
+    "actor": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_get",
+    "args": {
+     "action_id": "act-20261024-9b7065"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 1.7,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "ok",
+     "tier": "control"
+    },
+    "status": "ok",
+    "prev_hash": "639963adce9db03e06d55445f31511317270bdb1028d0200ca25ff9c49672ca3",
+    "row_hash": "0602c1a57a1fec2b5d4f22c8bce85443b32d1ed65e7fbbdf29605c84ef823bbc",
+    "tier": "control",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-9b7065",
+    "result_status": "ok"
+   },
+   {
+    "seq": 8,
+    "ts": "2026-10-24T08:47:21.063895+00:00",
+    "actor": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_get",
+    "args": {
+     "action_id": "act-20261024-9b7065"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 1.2,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "ok",
+     "tier": "control"
+    },
+    "status": "ok",
+    "prev_hash": "d7cd58e3d3e9e81c7e500ef10413e456d51c1260a9601cca7eed60d5c6f6cb5b",
+    "row_hash": "639963adce9db03e06d55445f31511317270bdb1028d0200ca25ff9c49672ca3",
+    "tier": "control",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-9b7065",
+    "result_status": "ok"
+   },
+   {
+    "seq": 7,
+    "ts": "2026-10-24T08:47:19.390222+00:00",
+    "actor": {
+     "kind": "system",
+     "name": "executor"
+    },
+    "kind": "executor",
+    "tool": "executor",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "kind": "add_vlan_to_trunk"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": {
+      "comment": "shimpaku act-20261024-9b7065 confirm",
+      "confirm_min": null,
+      "junos_index0_time": "2026-10-24 08:47:16 UTC",
+      "junos_log": "shimpaku act-20261024-9b7065 confirm",
+      "leg": "confirm",
+      "seconds": 6.16,
+      "ts": 1792831639.3844774
+     },
+     "incident_id": null,
+     "latency_ms": null,
+     "policy_decision": null,
+     "result_status": "committed",
+     "tier": "T1"
+    },
+    "status": "committed",
+    "prev_hash": "989a88363178dc780125373e41aab1f4a62f9228508a0c2298d9d1e72f9a425f",
+    "row_hash": "d7cd58e3d3e9e81c7e500ef10413e456d51c1260a9601cca7eed60d5c6f6cb5b",
+    "tier": "T1",
+    "policy_decision": null,
+    "action_id": "act-20261024-9b7065",
+    "result_status": "committed"
+   },
+   {
+    "seq": 6,
+    "ts": "2026-10-24T08:47:17.845763+00:00",
+    "actor": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_get",
+    "args": {
+     "action_id": "act-20261024-9b7065"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 1.6,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "ok",
+     "tier": "control"
+    },
+    "status": "ok",
+    "prev_hash": "1e1eba111f9c08cd14aacb5521069af259530ae27fc5de6191f7a0f8eb640913",
+    "row_hash": "989a88363178dc780125373e41aab1f4a62f9228508a0c2298d9d1e72f9a425f",
+    "tier": "control",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-9b7065",
+    "result_status": "ok"
+   },
+   {
+    "seq": 5,
+    "ts": "2026-10-24T08:47:14.610146+00:00",
+    "actor": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_get",
+    "args": {
+     "action_id": "act-20261024-9b7065"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 1.1,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "ok",
+     "tier": "control"
+    },
+    "status": "ok",
+    "prev_hash": "709fef7a0fe1f123fee02c79bb8406d0ce7928120fb4dcb4386da870529d3044",
+    "row_hash": "1e1eba111f9c08cd14aacb5521069af259530ae27fc5de6191f7a0f8eb640913",
+    "tier": "control",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-9b7065",
+    "result_status": "ok"
+   },
+   {
+    "seq": 4,
+    "ts": "2026-10-24T08:47:11.407501+00:00",
+    "actor": {
+     "kind": "system",
+     "name": "executor"
+    },
+    "kind": "executor",
+    "tool": "executor",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "kind": "add_vlan_to_trunk"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": {
+      "comment": "shimpaku act-20261024-9b7065 add vlan 999",
+      "confirm_min": 2,
+      "junos_index0_time": "2026-10-24 08:47:07 UTC",
+      "junos_log": "shimpaku act-20261024-9b7065 add vlan 999",
+      "leg": "add vlan 999",
+      "seconds": 17.71,
+      "ts": 1792831631.4052618
+     },
+     "incident_id": null,
+     "latency_ms": null,
+     "policy_decision": null,
+     "result_status": "committed",
+     "tier": "T1"
+    },
+    "status": "committed",
+    "prev_hash": "9c552301d93bcd4a36eccc60ea99aab057b5ed5a76993c5bc1c7f2fc18d67911",
+    "row_hash": "709fef7a0fe1f123fee02c79bb8406d0ce7928120fb4dcb4386da870529d3044",
+    "tier": "T1",
+    "policy_decision": null,
+    "action_id": "act-20261024-9b7065",
+    "result_status": "committed"
+   },
+   {
+    "seq": 3,
+    "ts": "2026-10-24T08:47:11.370463+00:00",
+    "actor": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_get",
+    "args": {
+     "action_id": "act-20261024-9b7065"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 1.9,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "ok",
+     "tier": "control"
+    },
+    "status": "ok",
+    "prev_hash": "fd9a53c8a1975aa79d5414daac8fe59cba5a6b646f90921dfe8396db9603f26d",
+    "row_hash": "9c552301d93bcd4a36eccc60ea99aab057b5ed5a76993c5bc1c7f2fc18d67911",
+    "tier": "control",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-9b7065",
+    "result_status": "ok"
+   },
+   {
+    "seq": 2,
+    "ts": "2026-10-24T08:47:08.142207+00:00",
+    "actor": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_get",
+    "args": {
+     "action_id": "act-20261024-9b7065"
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 1.6,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "ok",
+     "tier": "control"
+    },
+    "status": "ok",
+    "prev_hash": "60cd2ee8c6d849d1e38a5f349e3a73a19f90380c6ca7015e3f9d497f49390d35",
+    "row_hash": "fd9a53c8a1975aa79d5414daac8fe59cba5a6b646f90921dfe8396db9603f26d",
+    "tier": "control",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-9b7065",
+    "result_status": "ok"
+   },
+   {
+    "seq": 1,
+    "ts": "2026-10-24T08:46:49.084732+00:00",
+    "actor": {
+     "kind": "mcp",
+     "name": "loopback:anonymous",
+     "transport": "http"
+    },
+    "kind": "mcp:http:tools/call",
+    "tool": "action_propose_add_vlan_to_trunk",
+    "args": {
+     "device": "sw1",
+     "ifname": "ge-0/0/5",
+     "reason": "Missing VLAN demo: trunk member removed, agent proposes restoring it",
+     "vlan": 999
+    },
+    "result": {
+     "action_id": "act-20261024-9b7065",
+     "client_info": null,
+     "device_commit": null,
+     "incident_id": null,
+     "latency_ms": 6039.7,
+     "policy_decision": {
+      "allowed": true,
+      "checked": [
+       "G0",
+       "G1",
+       "G3",
+       "G5",
+       "blast",
+       "G6",
+       "G7",
+       "G8",
+       "G9",
+       "G4"
+      ],
+      "reasons": [
+       "T1 self-driving is off; a dashboard user must approve"
+      ],
+      "status": "awaiting_approval"
+     },
+     "result_status": "awaiting_approval",
+     "tier": "T1"
+    },
+    "status": "awaiting_approval",
+    "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "row_hash": "60cd2ee8c6d849d1e38a5f349e3a73a19f90380c6ca7015e3f9d497f49390d35",
+    "tier": "T1",
+    "policy_decision": {
+     "allowed": true,
+     "checked": [
+      "G0",
+      "G1",
+      "G3",
+      "G5",
+      "blast",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G4"
+     ],
+     "reasons": [
+      "T1 self-driving is off; a dashboard user must approve"
+     ],
+     "status": "awaiting_approval"
+    },
+    "action_id": "act-20261024-9b7065",
+    "result_status": "awaiting_approval"
+   }
+  ]
+ },
+ "audit_verify": {
+  "ok": true,
+  "rows": 17
+ },
+ "bench": {
+  "schema": "virga/results/v1",
+  "selftest": {
+   "generated": "2026-10-24T07:48:56.039508+00:00",
+   "files": [
+    "selftest-20261024T060217Z.jsonl",
+    "selftest-20261024T070101Z.jsonl",
+    "selftest-20261024T070435Z.jsonl"
+   ],
+   "scenarios": {
+    "CAM-05": {
+     "title": "Shadowing filter term drops users -> servers (no counter)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.16,
+     "time_to_restore_s_median": 15.91,
+     "time_to_restore_s_max": 43.64,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:11:38.548Z"
+    },
+    "CAM-06": {
+     "title": "Management-plane lockout (SSH/NETCONF blocked, forwarding fine)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.29,
+     "time_to_restore_s_median": 71.23,
+     "time_to_restore_s_max": 94.22,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:00:33.372Z"
+    },
+    "CAM-07": {
+     "title": "OSPF r1-r2 adjacency lost (interface made passive)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.16,
+     "time_to_restore_s_median": 3.96,
+     "time_to_restore_s_max": 4.52,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:39:56.874Z"
+    },
+    "CFG-01": {
+     "title": "Out-of-band config drift (interface description deleted)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.16,
+     "time_to_restore_s_median": 5.24,
+     "time_to_restore_s_max": 12.02,
+     "config_restored_all": true,
+     "last": "2026-10-24T06:54:46.582Z"
+    },
+    "CFG-02": {
+     "title": "Bad config push rejected (nothing must change)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": null,
+     "time_to_restore_s_median": 0.0,
+     "time_to_restore_s_max": 0.0,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:00:50.671Z"
+    },
+    "FAB-01": {
+     "title": "Fabric link down (local admin disable, carrier lost)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.17,
+     "time_to_restore_s_median": 9.12,
+     "time_to_restore_s_max": 12.7,
+     "config_restored_all": true,
+     "last": "2026-10-24T06:49:17.532Z"
+    },
+    "FAB-02": {
+     "title": "One-sided link failure, carrier stays up (far end shut)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.15,
+     "time_to_restore_s_median": 12.43,
+     "time_to_restore_s_max": 12.49,
+     "config_restored_all": true,
+     "last": "2026-10-24T06:50:32.373Z"
+    },
+    "FAB-03": {
+     "title": "BFD removed from a fabric link (latent, no user impact)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 4.16,
+     "time_to_restore_s_median": 4.74,
+     "time_to_restore_s_max": 8.17,
+     "config_restored_all": true,
+     "last": "2026-10-24T06:51:34.242Z"
+    },
+    "FAB-04": {
+     "title": "OSPF MTU mismatch on a fabric link (adjacency stuck)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 6.63,
+     "time_to_restore_s_median": 4.65,
+     "time_to_restore_s_max": 7.05,
+     "config_restored_all": true,
+     "last": "2026-10-24T06:52:42.005Z"
+    },
+    "FAB-05": {
+     "title": "Overlay BGP EVPN session down (VLAN 100 cut, underlay healthy)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.18,
+     "time_to_restore_s_median": 5.19,
+     "time_to_restore_s_max": 6.48,
+     "config_restored_all": true,
+     "last": "2026-10-24T06:53:23.339Z"
+    },
+    "FAB-06": {
+     "title": "VNI mismatch for VLAN 100 (control plane up, data plane cut)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.16,
+     "time_to_restore_s_median": 4.65,
+     "time_to_restore_s_max": 5.27,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:37:40.091Z"
+    },
+    "FAB-07": {
+     "title": "ECMP path lost while all adjacencies are Full (metric skew)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.18,
+     "time_to_restore_s_median": 5.2,
+     "time_to_restore_s_max": 6.48,
+     "config_restored_all": true,
+     "last": "2026-10-24T06:54:02.388Z"
+    },
+    "FAB-09": {
+     "title": "Underlay loses leaf1 loopback (overlay falls as a consequence)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 88.17,
+     "time_to_restore_s_median": 4.08,
+     "time_to_restore_s_max": 5.11,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:39:23.152Z"
+    },
+    "FAB-11": {
+     "title": "Fabric link flapping (three down/up cycles on leaf1 ge-0/0/0)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.0,
+     "time_to_restore_s_median": 0.0,
+     "time_to_restore_s_max": 0.0,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:44:07.955Z"
+    },
+    "FAB-12": {
+     "title": "OSPF hello/dead timer mismatch on a fabric link (adjacency drops after the dead interval)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 40.16,
+     "time_to_restore_s_median": 8.94,
+     "time_to_restore_s_max": 12.22,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:45:30.234Z"
+    },
+    "WAN-03": {
+     "title": "WAN congestion (Junos policer on r1-r2)",
+     "status": "selftested",
+     "trials": 5,
+     "passes": 5,
+     "blocked": 0,
+     "fails": 0,
+     "time_to_effect_s_median": 0.18,
+     "time_to_restore_s_median": 3.97,
+     "time_to_restore_s_max": 4.18,
+     "config_restored_all": true,
+     "last": "2026-10-24T07:41:04.581Z"
+    }
+   }
+  },
+  "latest_run": null,
+  "runs": [],
+  "catalogue_sha256": "9ee9a859d4e01af5bb52e7c064f8261d1a8617dbdb11633a72eb3eb0bdf0b5ef",
+  "generated": "2026-10-24T07:48:56.039708+00:00"
+ }
+}

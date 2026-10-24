@@ -1,0 +1,241 @@
+# Cloudflare (proxied) -> this Caddy -> three things:
+#   <domain>             the static landing page (deploy/vps/site)
+#   app.<domain>         the dashboard SPA (/srv/app, baked into the edge image, pre-compressed)
+#   app.<domain>/api/*   the LIVE daemon on the lab host over NetBird ({$SHIMPAKU_LAB_UPSTREAM}),
+#                        falling back to the local read-only replay for reads when the lab is down
+#   app.<domain>/mcp     the live daemon only (never the replay); 503 JSON when the lab is down
+# Env: SHIMPAKU_SITE_HOSTS ("a.example, b.example"), SHIMPAKU_APP_HOSTS ("app.a.example, app.b.example"),
+#      SHIMPAKU_LAB_UPSTREAM (host:port, the lab's NetBird address).
+{
+	# rate_limit is a plugin directive with no default order; run it before anything else.
+	order rate_limit first
+	servers {
+		# Only Cloudflare may set the client address. The ranges are fetched from Cloudflare's
+		# published list by the caddy-cloudflare-ip module and refreshed every 12 h.
+		trusted_proxies cloudflare {
+			interval 12h
+			timeout 15s
+		}
+		client_ip_headers CF-Connecting-IP
+	}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		-Server
+	}
+}
+
+# Live first, replay second. Shared by the read path only.
+(upstream_opts) {
+	health_uri /api/whoami
+	health_interval 10s
+	health_timeout 3s
+	health_status 200
+	fail_duration 30s
+	max_fails 2
+	unhealthy_status 502 503 504
+	lb_try_duration 5s
+	lb_try_interval 250ms
+	# SSE (/api/events etc.): flush every event at once. The app pings every 15 s, well inside
+	# Cloudflare's 125 s idle limit; no read/stream timeout here, so streams are never cut by Caddy.
+	flush_interval -1
+	# The daemon trusts X-Forwarded-* only from this edge (SHIMPAKU_TRUSTED_PROXIES / FORWARDED_ALLOW_IPS
+	# on the lab). Send exactly one client address: the one Cloudflare vouched for.
+	header_up X-Forwarded-For {client_ip}
+	header_up X-Real-IP {client_ip}
+	transport http {
+		dial_timeout 2s
+		# headers only; a stream's body is not bound by this. Below Cloudflare's 125 s.
+		response_header_timeout 100s
+	}
+}
+
+{$SHIMPAKU_SITE_HOSTS} {
+	import common
+	root * /srv/site
+	# the dashboard link follows the host the visitor used ({{.Host}}), so every domain serves itself
+	templates
+	file_server
+}
+
+{$SHIMPAKU_APP_HOSTS} {
+	import common
+
+	# ---- per-client-IP limits ({client_ip} = CF-Connecting-IP from a Cloudflare address) ----
+	# The app has its own per-principal limits (SHIMPAKU_RATE_LIMITS); these stop floods early.
+	@invites path /api/invites/*
+	rate_limit @invites {
+		zone invites {
+			key {client_ip}
+			events 10
+			window 1m
+		}
+	}
+	@session_requests {
+		method POST
+		path /api/session-requests
+	}
+	rate_limit @session_requests {
+		zone session_requests {
+			key {client_ip}
+			events 5
+			window 10m
+		}
+	}
+	# Operator sign-in (password + TOTP): brute force stops here before it reaches the lab; the
+	# app's own limiter (5 a minute per client address) still applies behind it.
+	@login {
+		method POST
+		path /api/login /api/logout-all
+	}
+	rate_limit @login {
+		zone login {
+			key {client_ip}
+			events 10
+			window 10m
+		}
+	}
+	@demo path /api/demo/*
+	rate_limit @demo {
+		zone demo {
+			key {client_ip}
+			events 10
+			window 1m
+		}
+	}
+	@actions_write {
+		method POST
+		path /api/actions /api/actions/*
+	}
+	rate_limit @actions_write {
+		zone actions_write {
+			key {client_ip}
+			events 20
+			window 1m
+		}
+	}
+	@assistant path /api/assistant /api/assistant/*
+	rate_limit @assistant {
+		zone assistant {
+			key {client_ip}
+			events 10
+			window 1m
+		}
+	}
+	@mcp path /mcp /mcp/*
+	rate_limit @mcp {
+		zone mcp {
+			key {client_ip}
+			events 60
+			window 1m
+		}
+	}
+	@api path /api/*
+	rate_limit @api {
+		zone api {
+			key {client_ip}
+			events 300
+			window 1m
+		}
+	}
+
+	# ---- MCP: the agent write path. Live daemon only; it answers 401 without a token. ----
+	handle @mcp {
+		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {
+			health_uri /api/whoami
+			health_interval 10s
+			health_timeout 3s
+			fail_duration 30s
+			flush_interval -1
+			header_up X-Forwarded-For {client_ip}
+			header_up X-Real-IP {client_ip}
+			transport http {
+				dial_timeout 2s
+				response_header_timeout 100s
+			}
+		}
+	}
+
+	# ---- Writes: live daemon only. Never silently replayed: no healthy upstream -> 503 JSON
+	# from handle_errors below.
+	@api_write {
+		path /api/*
+		not method GET HEAD OPTIONS
+	}
+	handle @api_write {
+		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {
+			health_uri /api/whoami
+			health_interval 10s
+			health_timeout 3s
+			fail_duration 30s
+			header_up X-Forwarded-For {client_ip}
+			header_up X-Real-IP {client_ip}
+			transport http {
+				dial_timeout 2s
+				response_header_timeout 100s
+			}
+		}
+	}
+
+	# ---- Reads: live first, replay when the lab's health check fails.
+	handle @api {
+		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} replay:8780 {
+			lb_policy first
+			import upstream_opts
+		}
+	}
+
+	# ---- Static SPA (tester invite pages such as /start are client routes) ----
+	handle {
+		root * /srv/app
+		# Same policy the app sets on the pages it serves (src/shimpaku/api/app.py).
+		header {
+			X-Frame-Options DENY
+			Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+		}
+		# Hashed bundles: cache forever; a missing one is a real 404, never the SPA shell.
+		handle /assets/* {
+			@exists file
+			header @exists Cache-Control "public, max-age=31536000, immutable"
+			file_server {
+				precompressed br zstd gzip
+			}
+		}
+		# Everything else is the shell or a client route: always revalidate.
+		handle {
+			header Cache-Control "no-cache"
+			try_files {path} /index.html
+			file_server {
+				precompressed br zstd gzip
+			}
+		}
+	}
+
+	handle_errors 502 503 504 {
+		@mcp_err path /mcp /mcp/*
+		handle @mcp_err {
+			header Content-Type application/json
+			header Cache-Control no-store
+			respond `{"detail":"the lab is offline; MCP is only served by the live system"}` 503
+		}
+		@api_err path /api/*
+		handle @api_err {
+			header Content-Type application/json
+			header Cache-Control no-store
+			respond `{"detail":"the lab is offline; the dashboard is showing a recorded replay"}` 503
+		}
+		handle {
+			header Cache-Control no-store
+			root * /srv/offline
+			rewrite * /index.html
+			file_server {
+				status 503
+			}
+		}
+	}
+}

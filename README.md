@@ -31,6 +31,17 @@ open http://127.0.0.1:8780             # the dashboard: Service levels → Root 
 - **Benchmark**: an injected-fault scenario, verified independently of the system under test,
   scored against four baselines (see [Benchmark](#benchmark)).
 
+## Screens (live lab, 2026-10-24)
+
+Every screen below is the running system against the real vJunos lab. No demo data is used.
+
+| | |
+|---|---|
+| ![Overview](docs/screens/11-overview.png) **Overview.** All 7 devices reachable, every link up, the audit chain verified, and today's actions, 5 of them blocked by guardrails. | ![Topology](docs/screens/12-topology.png) **Live topology.** Both sites, each link coloured by LLDP, OSPF and BFD state. The demo trunk shows VLAN 999 present or missing. |
+| ![Service levels, campus, 24 h](docs/screens/01-service-levels-campus.png) **Service levels.** Real probe- and device-minutes, with `n` shown. The change timeline lists every commit and action on sw1 today, including the blocked, recurred and cancelled ones. | ![Root cause](docs/screens/03-root-cause.png) **Root cause.** The fabric BFD incident: classifier breakdown, blast-radius verdict and scored evidence. |
+| ![An action that recurred](docs/screens/05-action-recurred.png) **An action that recurred.** VLAN 999 was restored under `commit confirmed`, then removed again during validation. The system reopened the issue instead of trusting its own fix. | ![A tester blocked](docs/screens/07-action-blocked-tester-scope.png) **A guest tester blocked.** A tester tried a port bounce on leaf2, and the engine refused it as outside the tester scope. |
+| ![Benchmark](docs/screens/08-benchmark.png) **Benchmark.** 16 fault scenarios × 5 trials, each injected, verified independently and reverted. | ![Tester pass](docs/screens/10-tester-start.png) **Tester pass.** An invited guest's start page, with a privacy notice and consent before a 30-minute session. |
+
 ## Architecture
 
 ```mermaid
@@ -118,7 +129,7 @@ proves the harness itself works, repeatably, on the real lab.
 | A killed executor is rolled back by Junos | Measured 73–76 s to auto-rollback after `SIGKILL` mid-commit, twice, with the device left clean both times | `docs/build/mcp-actions.md` |
 | Telemetry keeps up | 7/7 nodes streamed 26 minutes with no gap over 60 s; a link-state fault landed in the event table in 1.35–1.91 s | `docs/build/telemetry.md` |
 | The "Missing VLAN" gap was found and closed | Shim's own live eval (not a human) found that one model substituted an unwarranted redeploy when this tool didn't exist; it was built, guardrailed (G3) and proven live: fault injected → proposed over MCP → held for human approval → approved → two real commits → VLAN restored on the device | this commit history, `act-20261024-1ca1ea` |
-| 256 tests pass, 2 correctly skipped (they need live devices) | `pytest -q`; CI runs it on every push | `.github/workflows/ci.yml` |
+| 506 tests pass, 2 correctly skipped (they need live devices), including a 122-attack red team of the guest-tester surfaces | `pytest -q`; CI runs it on every push | `.github/workflows/ci.yml` |
 | Eight defects were found only by running it live, including one false "verified" from our own validation | Each has a fix and, where it could recur, a test that fails on the old code. The false verification is left unedited in the audit history and corrected in writing | [`docs/INCIDENTS.md`](docs/INCIDENTS.md) |
 | The audit trail holds | `GET /api/audit/verify` recomputes the hash chain over every row: `{"ok": true}` | `src/shimpaku/mcp/audit.py` |
 
@@ -170,3 +181,7 @@ The live demo script is [`DEMO.md`](DEMO.md) (`shimpaku demo seed | break | stat
 
 v2: the client-farm VM (Wi-Fi/wired synthetic clients, `R3`), the full blinded benchmark run,
 self-driving toggles, OIDC auth, and JNCIA-MistAI (JN0-253).
+
+## Licence
+
+MIT; see [LICENSE](LICENSE). Shimpaku is an independent project, not affiliated with HPE or Juniper Networks.

@@ -303,3 +303,37 @@ directory, not under the repo and not committed. Rerun
 `python -m shimpaku.assistant.eval --model <name> --out <file>.jsonl` any time the gateway has spare
 capacity to regenerate them; `--out` can point anywhere, including somewhere under the repo if the
 orchestrator wants these transcripts kept.
+
+## Model re-selection, 2026-10-24
+
+The Haiku free tier was phased out on the gateway, and the old triage and escalate defaults
+(`nvidia-glm-flash`, `nvidia-glm`) timed out. Each model the gateway lists got one request that
+required a tool call:
+
+| Model | Result |
+|---|---|
+| `nvidia-nemotron-lightning` | tool call in 10.1 s |
+| `nvidia-nemotron-ultra` | tool call in 11.5 s |
+| `nvidia-nemotron-nano` | tool call in 17.6 s |
+| `tokenharbor-mimo-v2.6-flash-free` | tool call in 60 s |
+| `tokenharbor-deepseek-v4.1-flash-free` | 429, free quota used |
+| `nvidia-glm`, `nvidia-glm-flash`, `nvidia-nemotron-super`, `nvidia-gpt-oss` | timed out at 120 s |
+
+`tokenharbor-claude-haiku-5.5-free` still answered, but it is phased out on the gateway, so it is
+not used.
+
+The eval suite, run once over its 14 scenarios against the mock lab:
+
+| Model | Pass | Diagnosis | Evidence | Action | Unsafe | Hallucinated | Median time |
+|---|---|---|---|---|---|---|---|
+| `nvidia-nemotron-ultra` | 0.571 | 0.929 | 0.714 | 0.786 | 0 | 0 | 70 s |
+| `nvidia-nemotron-lightning` | 0.357 | 0.429 | 0.643 | 0.714 | 0 | 0 | 24 s |
+
+New defaults (`settings.llm_models`):
+- `triage` → `nvidia-nemotron-lightning`, for speed on simple questions;
+- `diagnose` and `escalate` → `nvidia-nemotron-ultra`.
+
+This is one rep per scenario, so read it as a selection, not a benchmark.
+
+NVIDIA's API trial terms restrict production use. A public tester deployment should confirm those
+terms, or set a different model through `SHIMPAKU_LLM_MODELS` and `SHIMPAKU_TESTER_LLM_MODELS`.

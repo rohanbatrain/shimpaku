@@ -1,5 +1,9 @@
 """The one service API every surface calls (CONTRACT "Service layer"; owner B-mcp).
 
+Writes that do not come through MCP (REST propose/approve/reject/cancel, CLI and system demo
+operations) are written to the hash-chained audit log here; MCP tool calls are audited by
+`mcp.server.AuditMiddleware`, so they are not written twice.
+
 Consumers: `shimpaku.api` (REST GETs + approve/cancel), `shimpaku.mcp` (T0 tools 1:1, action
 tools), `shimpaku.assistant` (through MCP). Every function is `async` and returns a plain
 JSON-serialisable dict. Errors are returned, not raised, as `{"error": {"code", "message"}}`
@@ -17,11 +21,16 @@ Device reads go through `shimpaku.devices` (PyEZ pool) in a worker thread.
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import inspect
+import logging
+import re
 import time
 from typing import Any, Callable, Literal
 
 from shimpaku import devices
+
+log = logging.getLogger("shimpaku.service")
 
 ProbeKind = Literal["ping", "dhcp", "dns", "http", "arp"]
 
@@ -114,6 +123,18 @@ async def routing_get_health(device: str | None = None) -> dict:
     return await _device_read(devices.routing_health, device)
 
 
+async def device_get_health(device: str | None = None, window_min: int = 60) -> dict:
+    """Stored health per device (no device call): latest CPU / memory samples and the device-minute
+    verdicts of the last `window_min` minutes. Provider: the daemon's store (`providers.py`)."""
+    return await _call_provider("device_get_health", device=device, window_min=int(window_min))
+
+
+async def iface_get_history(device: str, window_min: int = 60) -> dict:
+    """Per-interface traffic rates over time, computed from the collector's stored gNMI counters
+    (`if.in_octets` / `if.out_octets` / packets). Provider: the daemon's store (`providers.py`)."""
+    return await _call_provider("iface_get_history", device=device, window_min=int(window_min))
+
+
 async def config_get_commits(device: str, n: int = 10) -> dict:
     """Newest commits (index, user, client, time, log, pending-confirm flag)."""
     return await _device_read(devices.commits, device, n)
@@ -171,15 +192,51 @@ def _engine():
     return engine()
 
 
+def _caller(c: Any):
+    from shimpaku.actions.engine import Caller
+    return Caller.coerce(c)
+
+
+def _audited_by_mcp(caller) -> bool:
+    """MCP tool calls are already audited, one row each, by `mcp.server.AuditMiddleware`."""
+    return caller.kind == "mcp" and caller.transport in ("http", "stdio")
+
+
+def _audit_row(caller, method: str, *, args: Any = None, action: dict | None = None,
+               action_id: str | None = None, status: str = "ok", reasons: list[str] | None = None) -> None:
+    """One hash-chained row for a write that did not come through MCP (REST, CLI, system). The
+    audit log is the daemon's (`set_audit_log`); outside the daemon nothing is written here."""
+    if _audit is None or _audited_by_mcp(caller):
+        return
+    pol = (action or {}).get("policy") or {}
+    decision = ({k: pol.get(k) for k in ("allowed", "status", "reasons", "checked")} if pol
+                else ({"allowed": False, "reasons": reasons} if reasons else None))
+    source = caller.transport if caller.transport in ("rest", "cli") else "internal"
+    _audit.append(caller=caller.as_dict(), client_info=caller.client, transport=caller.transport,
+                  method=method, tool=method, args=args, tier=(action or {}).get("tier"),
+                  policy_decision=decision, action_id=(action or {}).get("id") or action_id,
+                  incident_id=(action or {}).get("incident_id"), result_status=status[:40], source=source)
+
+
+def _status_of(out: dict) -> str:
+    if isinstance(out.get("error"), dict):
+        return f"error:{out['error'].get('code')}"
+    return str(out.get("status") or "ok")
+
+
 async def action_propose(kind: str, args: dict, reason: str, caller: Any) -> dict:
     """Propose an action. Policy (G0–G9) runs in code now; the result is the stored action with
     `status` = `blocked` (with `policy.reasons`), `awaiting_approval`, or `automatic` (T1 with
     self-driving on). Nothing executes from here — the executor picks up approved work.
     `caller` is a `shimpaku.actions.engine.Caller` (or dict) built by the transport."""
+    c = _caller(caller)
     try:
-        return await asyncio.to_thread(_engine().propose, kind, args, reason, caller)
+        out = await asyncio.to_thread(_engine().propose, kind, args, reason, c)
     except Exception as e:  # noqa: BLE001
-        return _err("propose_failed", f"{type(e).__name__}: {e}")
+        out = _err("propose_failed", f"{type(e).__name__}: {e}")
+    _audit_row(c, "action_propose", args={"kind": kind, "args": args, "reason": reason}, action=out,
+               status=_status_of(out))
+    return out
 
 
 def _normalise_action_error(a: dict) -> dict:
@@ -204,49 +261,123 @@ async def action_list(status: str | None = None) -> dict:
     return {"actions": [_normalise_action_error(a) for a in items]}
 
 
-async def action_approve(action_id: str, user: Any) -> dict:
-    """Approve an `awaiting_approval` action. Dashboard session only: `user` must be a Caller
-    with kind="dashboard" (the API builds it from the session). Raises PermissionError otherwise;
-    returns `{"error": ...}` for an unknown action or wrong state."""
+async def _decide(method: str, fn_name: str, action_id: str, caller: Any, *, raise_refused: bool) -> dict:
+    """approve / reject / cancel: run the engine's rule, and audit the outcome, refusals included."""
     from shimpaku.actions.engine import ApprovalRefused
     from shimpaku.actions.state import StateError
 
+    c = _caller(caller)
     try:
-        return await asyncio.to_thread(_engine().approve, action_id, user)
-    except ApprovalRefused:
-        raise
+        out = await asyncio.to_thread(getattr(_engine(), fn_name), action_id, c)
+    except ApprovalRefused as e:
+        _audit_row(c, method, args={"action_id": action_id}, action_id=action_id, status="refused",
+                   reasons=[str(e)])
+        if raise_refused:
+            raise
+        return _err("forbidden", str(e))
     except StateError as e:
-        return _err("bad_state", str(e))
+        out = _err("bad_state", str(e))
     except KeyError:
-        return _err("not_found", f"no action {action_id!r}")
+        out = _err("not_found", f"no action {action_id!r}")
+    _audit_row(c, method, args={"action_id": action_id}, action=out if "id" in out else None,
+               action_id=action_id, status=_status_of(out))
+    return out
+
+
+async def action_approve(action_id: str, user: Any) -> dict:
+    """Approve an `awaiting_approval` action. Dashboard session only: `user` must be a Caller
+    with kind="dashboard" (the API builds it from the session); a tester may approve only the
+    fixture action of their own lease. Raises PermissionError otherwise; returns `{"error": ...}`
+    for an unknown action or wrong state. Every outcome is an audit row."""
+    return await _decide("action_approve", "approve", action_id, user, raise_refused=True)
 
 
 async def action_reject(action_id: str, user: Any) -> dict:
-    """Reject an `awaiting_approval` action (dashboard session only)."""
-    from shimpaku.actions.engine import ApprovalRefused
-    from shimpaku.actions.state import StateError
-
-    try:
-        return await asyncio.to_thread(_engine().reject, action_id, user)
-    except ApprovalRefused:
-        raise
-    except (StateError, KeyError) as e:
-        return _err("bad_state", str(e))
+    """Reject an `awaiting_approval` action (dashboard session only; testers: own lease's fixture)."""
+    out = await _decide("action_reject", "reject", action_id, user, raise_refused=True)
+    err = out.get("error")
+    if isinstance(err, dict) and err.get("code") == "not_found":  # unchanged contract: 409, not 404
+        return _err("bad_state", err["message"])
+    return out
 
 
 async def action_cancel(action_id: str, caller: Any) -> dict:
-    """Cancel an action that has not started running (proposer or dashboard user)."""
-    from shimpaku.actions.engine import ApprovalRefused
-    from shimpaku.actions.state import StateError
+    """Cancel an action that has not started running (proposer or operator; testers: own lease)."""
+    return await _decide("action_cancel", "cancel", action_id, caller, raise_refused=False)
 
+
+# ===================================================================== demo fixture (fault lab)
+
+DEMO_ROLES = ("operator", "tester", "system")
+
+
+async def _demo_op(op: str, caller: Any, *, opener=None, lock_db=None) -> dict:
+    """`demo_seed` / `demo_break`: a Junos write on the fixture devices only, under the device
+    lock (refused while a `commit confirmed` is pending), one audit row per call with the
+    caller's role and lease. Operators, testers (with a lease) and the system may run it."""
+    from shimpaku.actions import fixture
+    from shimpaku.config import settings
+
+    c = _caller(caller)
+    method = f"demo_{op}"
+    refusal = None
+    if c.role not in DEMO_ROLES:
+        refusal = f"{method} refused: role {c.role!r} may not change the demo fixture"
+    elif c.role == "tester" and not c.lease_id:
+        refusal = f"{method} refused: tester has no lease"
+    if refusal:
+        _audit_row(c, method, args={"devices": _demo_devices(op)}, status="refused", reasons=[refusal])
+        return _err("forbidden", refusal)
+    holder = f"shimpaku-demo:{c.role}:{c.lease_id or c.name}"
+    fn = fixture.apply_seed if op == "seed" else fixture.apply_break
     try:
-        return await asyncio.to_thread(_engine().cancel, action_id, caller)
-    except ApprovalRefused as e:
-        return _err("forbidden", str(e))
-    except StateError as e:
-        return _err("bad_state", str(e))
-    except KeyError:
-        return _err("not_found", f"no action {action_id!r}")
+        writes = await asyncio.to_thread(fn, holder, opener=opener or devices.open_device,
+                                         lock_db=lock_db or settings.lock_db)
+    except Exception as e:  # noqa: BLE001  (DeviceBusy, PendingConfirm, NETCONF errors)
+        from shimpaku import lock
+        code = "busy" if isinstance(e, (lock.DeviceBusy, lock.PendingConfirm)) else "device_error"
+        # testers read this reply and every reader sees the audit row: no management addresses
+        log.warning("%s failed: %s: %s", method, type(e).__name__, e)
+        out = _err(code, scrub_hosts(f"{type(e).__name__}: {e}"))
+        _audit_row(c, method, args={"devices": _demo_devices(op)}, status=f"error:{type(e).__name__}",
+                   reasons=[scrub_hosts(str(e))[:300]])
+        return out
+    changed = any(w["changed"] for w in writes)
+    out = {"op": op, "changed": changed, "writes": writes}
+    _audit_row(c, method, args={"devices": _demo_devices(op),
+                                "diff": {w["device"]: w["diff"] for w in writes if w["diff"]}},
+               status="changed" if changed else "no_change")
+    return out
+
+
+_IPV4 = re.compile(r"(?<![\w.])\d{1,3}(?:\.\d{1,3}){3}(?![\w.])")
+_IPV6 = re.compile(r"(?<![\w:])[0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7}(?![\w:])")
+
+
+def scrub_hosts(text: str) -> str:
+    """Replace IPv4/IPv6 addresses (management addresses in device errors) with `<host>`."""
+    def sub(m: re.Match) -> str:
+        try:
+            ipaddress.ip_address(m.group(0))
+        except ValueError:
+            return m.group(0)
+        return "<host>"
+    return _IPV6.sub(sub, _IPV4.sub(sub, text))
+
+
+def _demo_devices(op: str) -> list[str]:
+    from shimpaku.actions import fixture
+    return [fixture.DEVICE, fixture.CORR_DEVICE] if op == "seed" else [fixture.DEVICE]
+
+
+async def demo_seed(caller: Any, **kw: Any) -> dict:
+    """Create the Missing-VLAN fixture (idempotent). Audited; takes the device lock."""
+    return await _demo_op("seed", caller, **kw)
+
+
+async def demo_break(caller: Any, **kw: Any) -> dict:
+    """Inject the fault: VLAN 999 removed from the sw1 ge-0/0/5 trunk. Audited; takes the lock."""
+    return await _demo_op("break", caller, **kw)
 
 
 async def policy_get() -> dict:
@@ -263,3 +394,61 @@ async def policy_get() -> dict:
 async def health() -> dict:
     return {"ok": True, "ts": time.time()}
 
+
+
+# ===================================================================== assistant (dashboard ⌘K)
+
+_mcp_server = None
+
+
+def set_mcp_server(server) -> None:
+    """The daemon's MCP server; Ask Shim talks to it in memory, so it uses the same tools,
+    guardrails and audit as any external agent, without a network hop or a bearer token."""
+    global _mcp_server
+    _mcp_server = server
+
+
+async def assistant_ask(question: str, principal: str, context: dict | None = None, *,
+                        llm_key: str | None = None, role: str | None = None,
+                        lease_id: str | None = None):
+    """Run Shim for a dashboard user and translate its events into the panel's contract
+    (meta, tool, token, error, done). Shim acts as `shim:<principal>` with the asker's role and
+    lease, so a tester's assistant is held to the tester gate; it can propose, never approve.
+    A `visitor` asker (e.g. a `read` token) gets a Shim that cannot propose either."""
+    import time as _t
+
+    from shimpaku.actions.engine import Caller
+    from shimpaku.assistant.llm import LLM
+    from shimpaku.assistant.loop import Assistant
+    from shimpaku.mcp import server as mcp_mod
+
+    if _mcp_server is None:
+        yield {"type": "error", "message": "the assistant is not wired into this daemon"}
+        return
+    caller = Caller(kind="assistant", name=f"shim:{principal}", transport="inproc",
+                    role=role if role in ("tester", "visitor") else "agent", lease_id=lease_id)
+    token = mcp_mod._caller.set(caller)
+    factory = (lambda name: LLM(name, key=llm_key)) if llm_key else None
+    started: dict[str, float] = {}
+    streamed = False
+    try:
+        bot = Assistant(_mcp_server, llm_factory=factory)
+        async for ev in bot.ask(question):
+            t = ev.get("type")
+            if t == "route":
+                yield {"type": "meta", "model": ev.get("model", "?")}
+            elif t == "tool_call":
+                started[ev["id"]] = _t.perf_counter()
+            elif t == "tool_result":
+                ms = int((_t.perf_counter() - started.pop(ev["id"], _t.perf_counter())) * 1000)
+                yield {"type": "tool", "name": ev.get("name"), "call": ev.get("name"), "ms": ms,
+                       "ok": bool(ev.get("ok"))}
+            elif t == "token":
+                streamed = True
+                yield ev
+            elif t == "answer" and not streamed and ev.get("text"):
+                yield {"type": "token", "text": ev["text"]}
+            elif t in ("error", "done"):
+                yield {"type": t, **({"message": ev.get("message", "")} if t == "error" else {})}
+    finally:
+        mcp_mod._caller.reset(token)

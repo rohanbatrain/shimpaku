@@ -3,22 +3,23 @@ import { Link, useParams } from "react-router";
 import { Layer } from "grommet";
 import { api, useApi, useSse } from "../api";
 import TopBar from "../components/TopBar";
-import { SleChart } from "../components/charts";
+import { SleChart } from "../components/LazyCharts";
 import { Busy, Diff, Load, Pill, StatusPill, ToneIcon } from "../components/ui";
 import { time } from "../format";
 import { useSession } from "../session";
 
 type Act = {
-  id: string; kind: string; tier: string; title: string; device: string; site: string; incident_id?: string | null;
-  args: Record<string, unknown>; reason: string; status: string; mode: string; proposed_by: string; approved_by?: string | null;
+  id: string; kind: string; tier: string; title: string; device: string; site: string | null; incident_id?: string | null;
+  args: Record<string, unknown>; reason: string; status: string; mode: string | null; proposed_by: string; approved_by?: string | null;
   created_at: number; confirm_minutes?: number; validation_minutes?: number; committed_at?: number | null;
   steps: { state: string; t: number | null }[]; guardrails: { id: string; name: string; passed: boolean; detail?: string }[];
-  diff: string; validation: { t: number; level: string; text: string }[]; verifier?: { status: string; detail: string };
-  series?: { t: number; value: number }[]; demo?: boolean;
+  diff: string | null; validation: { t: number; level: string; text: string }[]; verifier?: { status: string; detail: string } | null;
+  series?: { t: number; value: number }[] | null; series_kind?: string | null; demo?: boolean;
+  commits?: { comment?: string; leg?: string; confirm_min?: number | null; junos_index0_time?: string; seconds?: number; ts?: number }[];
 };
 
 const DOT: Record<string, string> = { bad: "#D93A30", info: "#5B6B8C", good: "#1B7F3A", pending: "#3A9CC0" };
-const STEP_LABEL: Record<string, string> = { proposed: "Proposed", approved: "Approved", committed: "Committed", validating: "Validating", verified: "Verified" };
+const STEP_LABEL: Record<string, string> = { proposed: "Proposed", approved: "Approved", committed: "Committed", validating: "Validating", verified: "Verified", recurred: "Recurred", blocked: "Blocked", failed: "Failed", rejected: "Rejected", cancelled: "Cancelled", rolled_back: "Rolled back" };
 
 export default function ActionDetail() {
   const { id = "" } = useParams();
@@ -51,10 +52,10 @@ export default function ActionDetail() {
     <>
       <TopBar title={a ? <>Action {a.id} · {a.title}</> : `Action ${id}`} crumbs={<><Link to="/actions">Actions</Link>{a?.incident_id && <> / <Link to={`/root-cause/${a.incident_id}`}>{a.incident_id}</Link></>}</>}>
         {a && <StatusPill status={a.status} />}
-        {a && <Pill tone={a.tier === "T2" ? "warn" : "neutral"}>{a.tier} · {a.mode}</Pill>}
+        {a && <Pill tone={a.tier === "T2" ? "warn" : "neutral"}>{a.mode ? `${a.tier} · ${a.mode}` : a.tier}</Pill>}
         {a && ["proposed", "awaiting_approval"].includes(a.status) && (
           <>
-            <button className="btn primary" disabled={!who.can_approve} title={who.can_approve ? "" : "Approval needs a signed-in dashboard user"} onClick={() => setConfirm("approve")}>
+            <button className="btn primary" disabled={!who.can_approve} title={who.can_approve ? "" : who.replay ? "Read-only replay: approvals run only in the private lab" : "Approval needs a signed-in dashboard user"} onClick={() => setConfirm("approve")}>
               Approve and commit
             </button>
             <button className="btn danger" onClick={() => setConfirm("reject")}>Reject</button>
@@ -81,27 +82,43 @@ export default function ActionDetail() {
                   <div className="card">
                     <h2>Why</h2>
                     <p style={{ margin: "0 0 10px" }}>{a.reason}</p>
-                    <dl className="kv" style={{ gridTemplateColumns: "130px 1fr" }}>
-                      <dt>Device</dt><dd className="mono">{a.device} · {a.site}</dd>
+                    <dl className="kv kv-narrow">
+                      <dt>Device</dt><dd className="mono">{a.site ? `${a.device} · ${a.site}` : a.device}</dd>
                       <dt>Tool</dt><dd className="mono">{a.kind}({Object.entries(a.args).map(([k, v]) => `${k}=${v}`).join(", ")})</dd>
                       <dt>Proposed by</dt><dd className="mono">{a.proposed_by}</dd>
                       <dt>Approved by</dt><dd className="mono">{a.approved_by ?? "—"}</dd>
-                      <dt>Safety net</dt><dd><span className="mono">commit confirmed {a.confirm_minutes ?? 5}</span> · auto-rollback if validation is silent</dd>
+                      <dt>Safety net</dt><dd>{a.confirm_minutes != null ? <span className="mono">commit confirmed {a.confirm_minutes}</span> : "no commit made"} · auto-rollback if validation is silent</dd>
                     </dl>
                   </div>
                   <div className="card">
                     <h2>Guardrails checked before commit</h2>
+                    {a.guardrails.length === 0 && <span className="small weak">No guardrail record.</span>}
                     {a.guardrails.map((g) => (
                       <div key={g.id} style={{ display: "flex", gap: 8, padding: "3px 0", fontSize: 13 }}>
                         <ToneIcon tone={g.passed ? "ok" : "crit"} size="15px" />
-                        <span className="mono weak" style={{ width: 26 }}>{g.id}</span>
-                        <span>{g.name}</span>
+                        <span className="mono weak" style={{ minWidth: 26 }}>{g.id}</span>
+                        <span>{g.name}{g.detail && <b className="tone-crit"> — {g.detail}</b>}</span>
                       </div>
                     ))}
                   </div>
                   <div className="card">
                     <h2>Change · {a.device}</h2>
-                    <Diff text={a.diff} />
+                    {a.diff ? <Diff text={a.diff} /> : (
+                      <>
+                        <div className="small weak" style={{ marginBottom: 6 }}>Config diff not recorded by the executor. Commits on the device:</div>
+                        {a.commits?.length ? (
+                          <ul className="tl">
+                            {a.commits.map((c, i) => (
+                              <li key={i}>
+                                <span className="mono weak">{time(c.ts)}</span>
+                                <span className="mono">{c.comment ?? c.leg}</span>
+                                <span className="small weak">{c.confirm_min ? `confirmed ${c.confirm_min} min` : ""}{c.seconds != null ? ` · ${c.seconds} s` : ""}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : <span className="small weak">No commit was made.</span>}
+                      </>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -117,13 +134,19 @@ export default function ActionDetail() {
                       ))}
                     </ul>
                   </div>
-                  {a.series && (
+                  {a.series && a.series.length > 0 && (a.series_kind === "validation_checks" ? (
+                    <div className="card">
+                      <h2>Validation checks</h2>
+                      <SleChart series={a.series} goal={100} height={110} label="Validation checks after the commit: 100 = check passed, 0 = check failed" />
+                      <div className="small weak">{a.series.length} checks · 100 = passed, 0 = failed · {a.series.filter((p) => p.value === 0).length} failed</div>
+                    </div>
+                  ) : (
                     <div className="card">
                       <h2>Service level around the change</h2>
                       <SleChart series={a.series} goal={99} height={110} label="Success rate in the last 60 minutes around the change" />
                       <div className="small weak">Success rate, last 60 min · dashed line = goal</div>
                     </div>
-                  )}
+                  ))}
                   {a.verifier && (
                     <div className={`notice ${a.verifier.status === "cleared" ? "ok" : "info"}`}>
                       <b>Independent verifier: {a.verifier.status}</b> — {a.verifier.detail}
@@ -137,11 +160,11 @@ export default function ActionDetail() {
       </div>
       {confirm && a && (
         <Layer onEsc={() => setConfirm(null)} onClickOutside={() => setConfirm(null)} responsive={false} modal>
-          <div style={{ padding: 22, width: 460 }} role="dialog" aria-labelledby="dlg-h">
+          <div style={{ padding: 22, width: 460, maxWidth: "calc(100vw - 40px)" }} role="dialog" aria-labelledby="dlg-h">
             <h1 id="dlg-h" style={{ fontSize: 17, marginBottom: 8 }}>{confirm === "approve" ? `Approve action ${a.id}?` : `Reject action ${a.id}?`}</h1>
             <p className="weak" style={{ marginTop: 0 }}>
               {confirm === "approve"
-                ? <>The executor takes the {a.device} lease and commits with <span className="mono">commit confirmed {a.confirm_minutes ?? 5}</span>. It rolls back by itself unless validation confirms it. You are approving as <b>{who.user}</b>.</>
+                ? <>The executor takes the {a.device} lease and commits with <span className="mono">commit confirmed{a.confirm_minutes != null ? ` ${a.confirm_minutes}` : ""}</span>. It rolls back by itself unless validation confirms it. You are approving as <b>{who.user}</b>.</>
                 : "The proposal is rejected; nothing is sent to the device."}
             </p>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>

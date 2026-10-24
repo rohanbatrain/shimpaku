@@ -13,7 +13,7 @@ Date 2026-10-24. Builder B-web. Binding: `CONTRACT.md` (REST routes, auth flag, 
 | `src/shimpaku/api/__main__.py` | `SHIMPAKU_DEMO=1 python -m shimpaku.api` — API alone, for UI work |
 | `tests/api/test_api.py` | 26 tests: auth off/local, cookie flags http vs https, CSRF (token, Origin, Sec-Fetch-Site), token scopes, tokens never approve/reject/manage tokens, rate limit, service error mapping, assistant stream |
 | `web/` | React 19 + Vite 8 + TypeScript + Grommet 2.58 (own theme, no `grommet-theme-hpe`) + react-router 7 + Recharts 3; Inter and JetBrains Mono from `@fontsource` (self-hosted, bundled) |
-| `docs/build/screens/` | headless-Chrome screenshots, 1600×1000 @2x, demo mode |
+| `docs/screens/` | headless-Chrome screenshots of the **live lab**, 1600×1000 @2x, taken 2026-10-24 |
 
 ## Routes
 
@@ -58,13 +58,21 @@ async generator of dicts: `{"type":"meta","model"}`, `{"type":"tool","name","cal
 
 ## Payload shapes the UI reads
 
-`api/demo.py` is the reference. Key fields: SLE `sles[].{id,name,domain,goal_pct,value_pct,unit,n,series[{t,value}],
+Pages read a UI contract, not the raw service payloads. `api/view.py` maps every real service
+payload (`shimpaku.service` / `providers`, and replay snapshots of them) to that contract; `api/app.py`
+applies it to each GET route and SSE poller. `api/demo.py` emits the contract directly, and `view.py`
+passes it (and any `error` / `available: false` payload) through unchanged. What the real service does
+not collect is `null` / `[]` and the page says "not collected" (SLE `goal_pct`, `series`, `changes`;
+blast-radius `timeline`, `scores`, per-item impact; action `diff`, `verifier`, `site`, `mode`).
+Bench: real data is the harness self-test (`selftest.scenarios`, `totals`); `systems` appears only
+when a scored run exists. Tests: `tests/api/test_view.py` over `tests/fixtures/live_snapshot.json`.
+
+Key fields: SLE `sles[].{id,name,domain,goal_pct,value_pct,unit,n,series[{t,value}],
 classifiers[{id,name,share_pct}],incident_id}`, `changes[{t,kind:fault|action|commit,text,ref}]`, `sites`;
 blast radius `{tree[{name,share_pct,children}],affected[],distribution[{dimension,items[{name,failures,total}]}],
 timeline[{t,fail,total}],evidence[{title,detail,tool}],scores}`; action `{steps[{state,t}],guardrails[{id,name,passed}],
 diff,validation[{t,level:bad|info|good|pending,text}],verifier{status,detail},series}`; bench `{systems[],per_class[]}`.
-Times are epoch seconds. Missing fields degrade to "—"; B-analytics/B-mcp payloads need aligning to these
-names (or the UI adapted) once real providers land.
+Times are epoch seconds (`view.py` parses the service's naive-UTC strings). Missing fields degrade to "—".
 
 ## Screens (MVP + extras)
 
