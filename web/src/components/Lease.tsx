@@ -41,7 +41,7 @@ export function LeaseBanner() {
   if (!l) return null;
   const left = l.state === "active" && l.ends ? Math.max(0, Math.round(l.ends - now / 1000)) : null;
   return (
-    <div className={`notice ${l.state === "active" ? "ok" : "warn"}`} role="status" style={{ margin: "12px 24px 0", display: "flex", alignItems: "center", gap: 12 }}>
+    <div className={`notice lease ${l.state === "active" ? "ok" : "warn"}`} role="status">
       <span style={{ flex: 1 }}>
         {l.state === "active" ? <>Tester session · <b className="mono">{left != null ? mmss(left) : "—"}</b> left · {l.breaks_left} breaks, {l.seeds_left} re-seeds left</>
           : l.state === "queued" ? <>Someone else is using the lab. You are <b>#{l.queue_position}</b> in the queue; this page updates by itself.</>

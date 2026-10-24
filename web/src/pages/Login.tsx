@@ -32,7 +32,7 @@ export default function Login({ onDone }: { onDone: () => void }) {
         <div className="small" style={{ color: "#8FA79C" }}>{DISCLAIMER}</div>
       </section>
       <section className="login-form">
-        <form onSubmit={submit} style={{ width: 340 }} aria-labelledby="login-h">
+        <form onSubmit={submit} style={{ width: 340, maxWidth: "100%" }} aria-labelledby="login-h">
           <h1 id="login-h" style={{ marginBottom: 4 }}>Sign in</h1>
           <p className="weak" style={{ marginTop: 0 }}>Local admin account (auth mode <span className="mono">local</span>).</p>
           <div className="field">

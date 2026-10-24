@@ -82,7 +82,7 @@ export default function ActionDetail() {
                   <div className="card">
                     <h2>Why</h2>
                     <p style={{ margin: "0 0 10px" }}>{a.reason}</p>
-                    <dl className="kv" style={{ gridTemplateColumns: "130px 1fr" }}>
+                    <dl className="kv kv-narrow">
                       <dt>Device</dt><dd className="mono">{a.site ? `${a.device} · ${a.site}` : a.device}</dd>
                       <dt>Tool</dt><dd className="mono">{a.kind}({Object.entries(a.args).map(([k, v]) => `${k}=${v}`).join(", ")})</dd>
                       <dt>Proposed by</dt><dd className="mono">{a.proposed_by}</dd>
@@ -160,7 +160,7 @@ export default function ActionDetail() {
       </div>
       {confirm && a && (
         <Layer onEsc={() => setConfirm(null)} onClickOutside={() => setConfirm(null)} responsive={false} modal>
-          <div style={{ padding: 22, width: 460 }} role="dialog" aria-labelledby="dlg-h">
+          <div style={{ padding: 22, width: 460, maxWidth: "calc(100vw - 40px)" }} role="dialog" aria-labelledby="dlg-h">
             <h1 id="dlg-h" style={{ fontSize: 17, marginBottom: 8 }}>{confirm === "approve" ? `Approve action ${a.id}?` : `Reject action ${a.id}?`}</h1>
             <p className="weak" style={{ marginTop: 0 }}>
               {confirm === "approve"

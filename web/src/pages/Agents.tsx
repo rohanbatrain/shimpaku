@@ -93,7 +93,7 @@ export default function Agents() {
       </div>
       {made && (
         <Layer onEsc={() => setMade(null)} modal responsive={false}>
-          <div style={{ padding: 22, width: 560 }} role="dialog" aria-labelledby="tok-h">
+          <div style={{ padding: 22, width: 560, maxWidth: "calc(100vw - 40px)" }} role="dialog" aria-labelledby="tok-h">
             <h1 id="tok-h" style={{ fontSize: 17 }}>Token for {made.name}</h1>
             <p className="weak">Copy it now. It is not shown again.</p>
             <div className="diff" style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{made.token}</div>

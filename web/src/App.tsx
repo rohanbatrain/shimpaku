@@ -1,6 +1,6 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Robot, Dashboard, Tree, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -29,12 +29,47 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-function Nav({ who, onSignOut }: { who: Who; onSignOut: () => void }) {
+const TITLES: [string, string][] = [["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"]];
+const MOBILE = "(max-width: 900px)";
+
+// ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
+function AppBar({ open, onToggle, btn }: { open: boolean; onToggle: () => void; btn: RefObject<HTMLButtonElement | null> }) {
+  const loc = useLocation();
+  const title = TITLES.find(([p]) => loc.pathname.startsWith(p))?.[1] ?? "Shimpaku";
+  return (
+    <div className="appbar">
+      <Mark size={28} />
+      <span className="appbar-t">{title}</span>
+      <button ref={btn} type="button" className="appbar-menu" onClick={onToggle} aria-expanded={open} aria-controls="main-nav" aria-label={open ? "Close menu" : "Open menu"}>
+        {open ? <Close size="20px" color="currentColor" aria-hidden /> : <Menu size="20px" color="currentColor" aria-hidden />}
+      </button>
+    </div>
+  );
+}
+
+function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => void; drawer: boolean; onClose: () => void }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!drawer) return;
+    const el = ref.current;
+    const items = () => Array.from(el?.querySelectorAll<HTMLElement>("a[href], button") ?? []);
+    items()[0]?.focus();
+    const k = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); onClose(); return; }
+      if (e.key !== "Tab") return;
+      const f = items(); if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", k, true);
+    return () => document.removeEventListener("keydown", k, true);
+  }, [drawer, onClose]);
   const acts = useApi<{ actions: { status: string }[] }>("/api/actions", { url: "/api/stream/actions", event: "actions" });
   const open = acts.data?.actions.filter((a) => ["proposed", "awaiting_approval"].includes(a.status)).length ?? 0;
   const ic = { size: "16px", color: "currentColor" } as const;
   return (
-    <nav className="nav" aria-label="Main">
+    <nav ref={ref} id="main-nav" className={`nav${drawer ? " open" : ""}`} aria-label="Main">
       <div className="brand">
         <Mark />
         <div>
@@ -102,6 +137,16 @@ export default function App() {
   const [panel, setPanel] = useState<{ open: boolean; seed?: string; n: number }>({ open: false, n: 0 });
   const nav = useNavigate();
   const loc = useLocation();
+  const [drawer, setDrawer] = useState(false);
+  const menuBtn = useRef<HTMLButtonElement>(null);
+  const closeDrawer = useCallback(() => { setDrawer(false); menuBtn.current?.focus(); }, []);
+  useEffect(() => setDrawer(false), [loc.pathname]);
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE);
+    const h = () => !mq.matches && setDrawer(false);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
 
   const refresh = useCallback(() => {
     api<Who>("/api/whoami").then(setWho).catch(() => setWho(null));
@@ -155,8 +200,10 @@ export default function App() {
   return (
     <SessionCtx.Provider value={{ who, refresh, openAssistant }}>
       <a href="#main" className="sr-only">Skip to content</a>
-      <div className={`shell${panel.open ? " with-panel" : ""}`}>
-        <Nav who={who} onSignOut={signOut} />
+      <div className={`shell${panel.open ? " with-panel" : ""}${drawer ? " drawer-open" : ""}`}>
+        <AppBar open={drawer} onToggle={() => (drawer ? closeDrawer() : setDrawer(true))} btn={menuBtn} />
+        <Nav who={who} onSignOut={signOut} drawer={drawer} onClose={closeDrawer} />
+        {drawer && <div className="scrim" onClick={closeDrawer} aria-hidden />}
         <main className="main" id="main">
           {who.role === "tester" && <Suspense fallback={null}><LeaseBanner /></Suspense>}
           <Suspense fallback={<Loading label="Loading" />}>

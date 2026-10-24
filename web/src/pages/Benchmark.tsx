@@ -50,6 +50,7 @@ function SelfTestView({ t }: { t: SelfTest }) {
 
 export default function Benchmark() {
   const q = useApi<Bench>("/api/bench/results");
+  const narrow = typeof window !== "undefined" && window.matchMedia("(max-width: 600px)").matches;
   return (
     <>
       <TopBar title="Benchmark" crumbs="Blinded fault-injection runs, scored by a separate process" />
@@ -97,11 +98,11 @@ export default function Benchmark() {
                 {b.selftest && <SelfTestView t={b.selftest} />}
                 <div className="card">
                   <h2>By fault class · {ours.system}</h2>
-                  <div role="img" aria-label="Root cause top-1 and fixed rate per fault class" style={{ height: 260 }}>
+                  <div role="img" aria-label="Root cause top-1 and fixed rate per fault class" style={{ height: narrow ? 330 : 260 }}>
                     <ResponsiveContainer>
-                      <BarChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: -14 }} barGap={2} barCategoryGap="22%">
+                      <BarChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: narrow ? 24 : -14 }} barGap={2} barCategoryGap="22%">
                         <CartesianGrid vertical={false} stroke="#EEF1F0" />
-                        <XAxis dataKey="cls" tick={{ fontSize: 11, fill: "#56645E" }} interval={0} tickLine={false} axisLine={{ stroke: "#DCE2DF" }} />
+                        <XAxis dataKey="cls" tick={{ fontSize: 11, fill: "#56645E" }} interval={0} tickLine={false} axisLine={{ stroke: "#DCE2DF" }} {...(narrow ? { angle: -50, textAnchor: "end", height: 90 } : {})} />
                         <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 11, fill: "#56645E" }} axisLine={false} tickLine={false} />
                         <Tooltip cursor={{ fill: "rgba(1,169,130,.06)" }} formatter={(v: any) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 6 }} />
                         <Legend iconType="square" wrapperStyle={{ fontSize: 12 }} />

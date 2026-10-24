@@ -48,7 +48,7 @@ export default function Start({ onDone }: { onDone: () => void }) {
         <div className="small" style={{ color: "#8FA79C" }}>{DISCLAIMER}</div>
       </section>
       <section className="login-form">
-        <form onSubmit={start} style={{ width: 420 }} aria-labelledby="start-h">
+        <form onSubmit={start} style={{ width: 420, maxWidth: "100%" }} aria-labelledby="start-h">
           <h1 id="start-h" style={{ marginBottom: 4 }}>Tester pass</h1>
           {st && !st.valid ? (
             <div className="notice crit" role="alert">{WHY[st.reason ?? "invalid"] ?? WHY.invalid}</div>

@@ -158,3 +158,93 @@ dl.kv dd { margin: 0; }
   .main { padding-bottom: 88px; } /* content scrolls clear of the bubble */
   .shell.with-panel .panel { position: fixed; inset: 0; width: 100%; height: 100dvh; z-index: 30; border-left: 0; }
 }
+
+/* ---------- responsive ---------- */
+.appbar, .scrim { display: none; }
+.topbar-ctl { display: contents; }
+ul.chg-list { list-style: none; padding: 0; margin: 0; display: flex; gap: 6px 22px; flex-wrap: wrap; font-size: 13px; }
+ul.chg-list li { display: flex; gap: 6px; align-items: center; }
+.notice.lease { margin: 12px 24px 0; display: flex; align-items: center; gap: 12px; }
+
+@media (max-width: 900px) {
+  /* Drawer, not bottom tabs: six destinations (two admin) + identity/sign-out + disclaimer don't fit four tabs. */
+  /* let the document scroll (Grommet "full" makes its wrapper the scroller): URL bar collapses, sticky app bar works */
+  #root > div { height: auto !important; min-height: 100%; overflow: visible !important; }
+  .shell, .shell.with-panel { display: block; height: auto; min-height: 100vh; }
+  .appbar { display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 15; height: 56px; padding: 0 6px 0 16px; padding-top: env(safe-area-inset-top, 0px); background: var(--nav); color: #fff; }
+  .appbar-t { flex: 1; font-weight: 650; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .appbar-menu { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: #fff; cursor: pointer; }
+  .appbar-menu:hover { background: #16271f; }
+  .nav { position: fixed; top: 0; bottom: 0; left: 0; width: min(300px, 84vw); z-index: 40; overflow-y: auto; transform: translateX(-100%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; padding-top: calc(16px + env(safe-area-inset-top, 0px)); padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .nav.open { transform: none; visibility: visible; transition: transform .2s ease; box-shadow: 8px 0 24px rgba(0,0,0,.3); }
+  .nav a { min-height: 44px; }
+  .nav .who button { min-height: 36px; padding: 4px 12px; }
+  .shell.drawer-open .ask-bubble { display: none; }
+  html:has(.shell.drawer-open) { overflow: hidden; }
+  .scrim { display: block; position: fixed; inset: 0; z-index: 35; background: rgba(4, 14, 10, .45); }
+  .main { overflow: visible; display: flex; }
+  .topbar { position: static; padding: 12px 16px; gap: 8px; }
+  .topbar > div:first-child { flex: 1 1 100%; min-width: 0; }
+  .topbar h1 { font-size: 18px; line-height: 24px; }
+  .topbar .spacer { display: none; }
+  .topbar h1.dup { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .topbar:has(h1.dup) > div:first-child:not(:has(.crumbs)) { display: none; }
+  .topbar-ctl { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
+  .topbar-ask { display: none; }
+  .badge-demo, .badge-mode { font-size: 11px; padding: 1px 7px; }
+  .seg button { min-height: 40px; padding: 6px 12px; white-space: nowrap; }
+  .btn { min-height: 44px; padding: 8px 14px; }
+  .content { padding: 14px 16px 24px; }
+  .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+  .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .content > *, .card { min-width: 0; }
+  .mono { overflow-wrap: anywhere; }
+  .notice.lease { margin: 12px 16px 0; flex-wrap: wrap; }
+  .card.flush { overflow-x: auto; }
+  table.t th, table.t td { white-space: nowrap; }
+  table.t td:first-child { white-space: normal; min-width: 150px; }
+  .sle-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .steps { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); row-gap: 10px; }
+  .tabs { overflow-x: auto; padding: 0 8px; }
+  .tabs button { min-height: 44px; white-space: nowrap; }
+  .login-wrap { grid-template-columns: minmax(0, 1fr); }
+  .login-art { padding: 28px 20px; gap: 20px; }
+  .login-form { padding: 24px 16px 40px; }
+  .field input, .field select { min-height: 44px; font-size: 16px; }
+  .cls { min-height: 40px; }
+  .cls button { min-height: 40px; }
+  .panel-f input { font-size: 16px; min-height: 44px; }
+  .icon-btn { min-width: 44px; min-height: 44px; justify-content: center; align-items: center; }
+  .diff { font-size: 12px; }
+}
+@media (max-width: 600px) {
+  .seg { display: flex; flex: 1 1 auto; }
+  .seg button { flex: 1; }
+  dl.kv, dl.kv.kv-narrow { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  dl.kv dd { margin-bottom: 8px; overflow-wrap: anywhere; }
+  dl.kv-narrow { grid-template-columns: 130px 1fr; }
+  .cls[style] { grid-template-columns: minmax(0, 1fr) minmax(60px, 1fr) auto !important; }
+  .cls { grid-template-columns: minmax(0, 1fr) minmax(60px, 1fr) 40px; }
+  ul.chg-list { flex-direction: column; flex-wrap: nowrap; gap: 0; }
+  ul.chg-list li { display: grid; grid-template-columns: 9px 44px minmax(0, 1fr); gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--line); align-items: baseline; }
+  ul.chg-list li:first-child { border-top: 0; }
+  ul.chg-list li > .small { grid-column: 3; grid-row: 2; }
+  ul.chg-list .chg-text { grid-column: 3; grid-row: 1; overflow-wrap: anywhere; }
+  ul.chg-list .chg-dot { align-self: center; }
+  ul.tl li { grid-template-columns: 44px 14px minmax(0, 1fr); }
+  ul.tl li > * { overflow-wrap: anywhere; min-width: 0; }
+  /* Actions table → cards */
+  .card.flush:has(table.cards) { overflow: visible; }
+  table.t.cards, table.t.cards tbody { display: block; }
+  table.t.cards thead { display: none; }
+  table.t.cards tr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  table.t.cards tr:last-child { border-bottom: 0; }
+  table.t.cards td { display: contents; white-space: normal; }
+  table.t.cards td::before { content: attr(data-label); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--tw); font-weight: 600; align-self: center; }
+  table.t.cards td.c-id::before, table.t.cards td[data-label="Action"]::before { content: none; }
+  table.t.cards td.c-id > a { grid-column: 1 / -1; display: inline-flex; align-items: center; min-height: 32px; }
+  table.t.cards td[data-label="Action"] > b { grid-column: 1 / -1; font-size: 15px; margin-bottom: 4px; }
+  table.t.cards td > * { justify-self: start; align-self: center; min-width: 0; overflow-wrap: anywhere; }
+  .big { font-size: 26px; line-height: 30px; }
+  .card-h { flex-wrap: wrap; }
+}

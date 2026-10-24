@@ -31,19 +31,19 @@ export default function Actions() {
         <div className="card flush">
           <Load q={q} empty={(d) => (d.actions.length ? null : <Empty title="No actions">Nothing has been proposed.</Empty>)}>
             {(d) => (
-              <table className="t">
+              <table className="t cards">
                 <thead><tr><th>#</th><th>Action</th><th>Tier</th><th>Device</th><th>Mode</th><th>Proposed by</th><th>Created</th><th>Status</th></tr></thead>
                 <tbody>
                   {d.actions.map((a) => (
                     <tr key={a.id} className="click" onClick={() => nav(`/actions/${a.id}`)}>
-                      <td><Link to={`/actions/${a.id}`} className="mono" onClick={(e) => e.stopPropagation()}>{a.id}</Link></td>
-                      <td><b>{a.title}</b></td>
-                      <td><Pill tone={a.tier === "T2" ? "warn" : "neutral"}>{a.tier}</Pill></td>
-                      <td className="mono">{a.device ?? "—"}</td>
-                      <td className="weak">{a.mode ?? "—"}</td>
-                      <td className="mono small">{a.proposed_by ?? "—"}</td>
-                      <td className="small weak">{ago(a.created_at)}</td>
-                      <td><StatusPill status={a.status} /></td>
+                      <td className="c-id"><Link to={`/actions/${a.id}`} className="mono" onClick={(e) => e.stopPropagation()}>{a.id}</Link></td>
+                      <td data-label="Action"><b>{a.title}</b></td>
+                      <td data-label="Tier"><Pill tone={a.tier === "T2" ? "warn" : "neutral"}>{a.tier}</Pill></td>
+                      <td data-label="Device" className="mono">{a.device ?? "—"}</td>
+                      <td data-label="Mode" className="weak">{a.mode ?? "—"}</td>
+                      <td data-label="Proposed by" className="mono small">{a.proposed_by ?? "—"}</td>
+                      <td data-label="Created" className="small weak">{ago(a.created_at)}</td>
+                      <td data-label="Status"><StatusPill status={a.status} /></td>
                     </tr>
                   ))}
                 </tbody>

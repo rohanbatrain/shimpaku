@@ -24,7 +24,7 @@ function Changes({ s }: { s: Summary & { changes: NonNullable<Summary["changes"]
         <h2>Changes</h2>
         <span className="small weak">commits, injected faults and actions in the window</span>
       </div>
-      <div style={{ position: "relative", height: 26, borderBottom: "1px solid var(--line)", margin: "4px 0 8px" }} aria-hidden>
+      <div className="chg-track" style={{ position: "relative", height: 26, borderBottom: "1px solid var(--line)", margin: "4px 0 8px" }} aria-hidden>
         {s.changes.map((c, i) => (
           <span key={i} title={`${time(c.t)} ${c.text}`} style={{ position: "absolute", bottom: 6, left: `calc(${((c.t - start) / (now - start)) * 100}% - 6px)`, width: 11, height: 11, background: KIND[c.kind]?.c ?? "#6F7B76", transform: "rotate(45deg)", borderRadius: 2, boxShadow: "0 0 0 2px #fff" }} />
         ))}
@@ -32,13 +32,13 @@ function Changes({ s }: { s: Summary & { changes: NonNullable<Summary["changes"]
       {s.changes.length === 0 ? (
         <span className="small weak">No changes in this window.</span>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", gap: "6px 22px", flexWrap: "wrap", fontSize: 13 }}>
+        <ul className="chg-list">
           {s.changes.map((c, i) => (
-            <li key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <span aria-hidden style={{ width: 9, height: 9, background: KIND[c.kind]?.c, transform: "rotate(45deg)", borderRadius: 1 }} />
+            <li key={i}>
+              <span aria-hidden className="chg-dot" style={{ width: 9, height: 9, background: KIND[c.kind]?.c, transform: "rotate(45deg)", borderRadius: 1 }} />
               <span className="mono weak">{time(c.t)}</span>
               <span className="weak small">{KIND[c.kind]?.l}</span>
-              {c.ref ? <Link to={`/actions/${c.ref}`}>{c.text}</Link> : <span>{c.text}</span>}
+              {c.ref ? <Link className="chg-text" to={`/actions/${c.ref}`}>{c.text}</Link> : <span className="chg-text">{c.text}</span>}
             </li>
           ))}
         </ul>
