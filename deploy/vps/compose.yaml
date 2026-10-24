@@ -2,7 +2,7 @@
 # Needs: deploy/vps/.env with SHIMPAKU_DOMAIN, and deploy/vps/snapshot/snapshot.json.
 services:
   replay:
-    build: { context: ../.., dockerfile: deploy/vps/Dockerfile }
+    build: { context: ../.., dockerfile: deploy/vps/Dockerfile, target: replay }
     restart: unless-stopped
     read_only: true
     tmpfs: [/tmp]
@@ -17,7 +17,8 @@ services:
     networks: [web]
 
   caddy:
-    image: caddy:2
+    # caddy:2 plus the built SPA at /srv/app (Dockerfile target `edge`): one build, no shared volume
+    build: { context: ../.., dockerfile: deploy/vps/Dockerfile, target: edge }
     restart: unless-stopped
     ports: ["80:80", "443:443", "443:443/udp"]
     environment:

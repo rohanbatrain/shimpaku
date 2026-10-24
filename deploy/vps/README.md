@@ -5,7 +5,8 @@ The public site never reaches the lab. It serves two things from one VPS:
 | Host | What | Served by |
 |---|---|---|
 | `<domain>` | The landing page (`site/index.html`) | Caddy, static |
-| `app.<domain>` | The dashboard, replaying a snapshot recorded from the live lab | `python -m shimpaku.api` with `SHIMPAKU_REPLAY` |
+| `app.<domain>` | The dashboard SPA (`web/dist`, baked into the Caddy image) | Caddy, static, pre-compressed |
+| `app.<domain>/api/*` | The data, replaying a snapshot recorded from the live lab | `python -m shimpaku.api` with `SHIMPAKU_REPLAY` |
 
 ## Why a replay and not the live system
 
@@ -26,6 +27,24 @@ JSON file. On the way out it drops management addresses, rewrites home paths to 
 each `--redact` term (the lab host's name, the service user) with `<redacted>`, and **refuses to
 write** if any of those terms survives, or if the live audit chain does not verify. `deploy.sh`
 then refuses to ship it if it mentions the ssh names of the lab host or the VPS.
+
+## Static serving and caching
+
+`Dockerfile` builds the SPA once (stage `web`) and copies `web/dist` into two images: the replay
+(`target: replay`, which still serves it for direct use) and the edge (`target: edge`, `caddy:2`
+with the files at `/srv/app`). On `app.<domain>` Caddy serves the files itself and proxies only
+`/api/*` to the replay, so the SPA stays up and cacheable while the replay restarts.
+
+- The build writes `.br`, `.gz` and (Node >= 22.15) `.zst` next to every text asset over 1 KB
+  (`web/vite.config.ts`); `file_server precompressed br zstd gzip` sends them with no runtime
+  compression cost.
+- `/assets/*` (content-hashed): `Cache-Control: public, max-age=31536000, immutable`; a missing
+  asset is a 404, never the SPA shell.
+- Everything else (`index.html`, client routes via `try_files {path} /index.html`, `mark.svg`):
+  `Cache-Control: no-cache`, so a deploy is visible on the next load.
+- Static responses carry the same CSP and `X-Frame-Options` the replay sets on its pages.
+
+Pages are code-split per route (`web/src/App.tsx`); recharts loads after first paint.
 
 ## Container hardening
 

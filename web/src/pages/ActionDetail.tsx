@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router";
 import { Layer } from "grommet";
 import { api, useApi, useSse } from "../api";
 import TopBar from "../components/TopBar";
-import { SleChart } from "../components/charts";
+import { SleChart } from "../components/LazyCharts";
 import { Busy, Diff, Load, Pill, StatusPill, ToneIcon } from "../components/ui";
 import { time } from "../format";
 import { useSession } from "../session";

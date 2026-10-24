@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useApi } from "../api";
 import TopBar from "../components/TopBar";
-import { SleChart } from "../components/charts";
+import { SleChart } from "../components/LazyCharts";
 import { Empty, Load, Seg, ToneIcon } from "../components/ui";
 import { pct100, sleTone, time } from "../format";
 

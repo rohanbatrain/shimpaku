@@ -1,18 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
 import { Robot, Dashboard, Tree, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, type Who } from "./session";
 import { Loading } from "./components/ui";
-import AssistantPanel from "./components/AssistantPanel";
-import ServiceLevels from "./pages/ServiceLevels";
-import RootCause, { RootCauseIndex } from "./pages/RootCause";
-import Actions from "./pages/Actions";
-import ActionDetail from "./pages/ActionDetail";
-import Benchmark from "./pages/Benchmark";
-import Login from "./pages/Login";
-import Agents from "./pages/Agents";
-import Settings from "./pages/Settings";
+const AssistantPanel = lazy(() => import("./components/AssistantPanel"));
+const ServiceLevels = lazy(() => import("./pages/ServiceLevels"));
+const RootCause = lazy(() => import("./pages/RootCause"));
+const RootCauseIndex = lazy(() => import("./pages/RootCause").then((m) => ({ default: m.RootCauseIndex })));
+const Actions = lazy(() => import("./pages/Actions"));
+const ActionDetail = lazy(() => import("./pages/ActionDetail"));
+const Benchmark = lazy(() => import("./pages/Benchmark"));
+const Login = lazy(() => import("./pages/Login"));
+const Agents = lazy(() => import("./pages/Agents"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -116,10 +117,12 @@ export default function App() {
   if (!who) return <Loading label="Starting" />;
   if (who.mode === "local" && !who.authenticated) {
     return (
+      <Suspense fallback={<Loading label="Loading" />}>
       <Routes>
         <Route path="/login" element={<Login onDone={() => { refresh(); nav("/sle"); }} />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      </Suspense>
     );
   }
   const signOut = () => api("/api/logout", { method: "POST" }).finally(refresh);
@@ -130,6 +133,7 @@ export default function App() {
       <div className={`shell${panel.open ? " with-panel" : ""}`}>
         <Nav who={who} onSignOut={signOut} />
         <main className="main" id="main">
+          <Suspense fallback={<Loading label="Loading" />}>
           <Routes>
             <Route path="/" element={<Navigate to="/sle" replace />} />
             <Route path="/login" element={<Navigate to="/sle" replace />} />
@@ -143,8 +147,9 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<div className="content"><h1>Not found</h1><p className="weak">No page at {loc.pathname}.</p></div>} />
           </Routes>
+          </Suspense>
         </main>
-        {panel.open && <AssistantPanel key={panel.n} seed={panel.seed} onClose={() => setPanel((p) => ({ ...p, open: false, seed: undefined }))} />}
+        {panel.open && <Suspense fallback={null}><AssistantPanel key={panel.n} seed={panel.seed} onClose={() => setPanel((p) => ({ ...p, open: false, seed: undefined }))} /></Suspense>}
       </div>
     </SessionCtx.Provider>
   );
