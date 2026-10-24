@@ -51,7 +51,6 @@ step_check() {
     [[ $totp == 1 ]] && ok "TOTP enabled" || no "TOTP (run: lab-secrets)"
     [[ $auth == local ]] && ok "auth mode local" || no "auth mode is '${auth:-off}' (run: lab-config)"
     [[ $view == 1 ]] && ok "public read-only view on" || no "public view off (run: lab-config)"
-    [[ $contact -ge 1 ]] && ok "privacy contact set" || no "privacy contact (run: lab-config)"
   else no "cannot ssh to $LAB_HOST"; fi
   echo "VPS ($VPS_HOST)"
   if ssh -o ConnectTimeout=10 -o BatchMode=yes "$VPS_HOST" true 2>/dev/null; then
@@ -64,7 +63,7 @@ step_check() {
       && ok "VPS reaches the lab over NetBird" || no "VPS cannot reach ${LAB_NETBIRD_IP:-?}:${LAB_PORT}"
   else no "cannot ssh to $VPS_HOST (run: vps-key)"; fi
   echo "settings"
-  for v in DOMAIN REPO_URL PRIVACY_CONTACT LAB_NETBIRD_IP VPS_NETBIRD_IP; do
+  for v in DOMAINS REPO_URL LAB_NETBIRD_IP VPS_NETBIRD_IP; do
     [[ -n "${!v:-}" && "${!v}" != *"<"* ]] && ok "$v" || no "$v in $SETTINGS"; done
   echo; ((MISSING == 0)) && echo "ready: run deploy" || echo "$MISSING item(s) missing"
 }
@@ -95,9 +94,9 @@ step_lab_secrets() {
 }
 
 step_lab_config() {
-  need DOMAIN PRIVACY_CONTACT LAB_NETBIRD_IP VPS_NETBIRD_IP
+  need DOMAINS LAB_NETBIRD_IP VPS_NETBIRD_IP
   lab_env_set SHIMPAKU_AUTH_MODE local SHIMPAKU_PUBLIC_VIEW 1 SHIMPAKU_BIND "$LAB_NETBIRD_IP" \
-    SHIMPAKU_PORT "$LAB_PORT" SHIMPAKU_PUBLIC_URL "https://app.$DOMAIN" SHIMPAKU_PRIVACY_CONTACT "$PRIVACY_CONTACT" \
+    SHIMPAKU_PORT "$LAB_PORT" SHIMPAKU_PUBLIC_URL "https://app.${DOMAINS%% *}" \
     SHIMPAKU_TRUSTED_PROXIES "$VPS_NETBIRD_IP" FORWARDED_ALLOW_IPS "$VPS_NETBIRD_IP"
   ssh "$LAB_HOST" '[ -s ~/.local/share/shimpaku/admin.hash ] && [ -s ~/.local/share/shimpaku/totp.json ]' \
     || { echo "run lab-secrets first: public view refuses operator sign-in without a password and TOTP" >&2; exit 1; }
@@ -108,18 +107,19 @@ step_lab_config() {
 }
 
 step_deploy() {
-  need DOMAIN REPO_URL LAB_NETBIRD_IP
-  SHIMPAKU_LAB_HOST="$LAB_HOST" SHIMPAKU_VPS_HOST="$VPS_HOST" SHIMPAKU_DOMAIN="$DOMAIN" SHIMPAKU_REPO_URL="$REPO_URL" \
+  need DOMAINS REPO_URL LAB_NETBIRD_IP
+  SHIMPAKU_LAB_HOST="$LAB_HOST" SHIMPAKU_VPS_HOST="$VPS_HOST" SHIMPAKU_DOMAINS="$DOMAINS" SHIMPAKU_REPO_URL="$REPO_URL" \
     SHIMPAKU_LAB_UPSTREAM="$LAB_NETBIRD_IP:$LAB_PORT" SHIMPAKU_VPS_SUDO_SECRETS="${VPS_SUDO_SECRETS/#\~/$HOME}" deploy/vps/deploy.sh "$@" 2>&1 | tee -a "$LOG"
 }
 
 step_verify() {
-  need DOMAIN
-  local a="https://app.$DOMAIN"
+  need DOMAINS
+  local d; for d in $DOMAINS; do echo "== $d"; local a="https://app.$d" DOMAIN=$d
   curl -fsS -o /dev/null -w "landing %{http_code}\n" "https://$DOMAIN/" | tee -a "$LOG"
   curl -fsS "$a/api/whoami" | python3 -c 'import json,sys; w=json.load(sys.stdin); print("whoami:", w.get("role") or w.get("kind"), "replay" if w.get("replay") else "live")' | tee -a "$LOG"
   echo "mcp without token: $(curl -s -o /dev/null -w '%{http_code}' -X POST "$a/mcp")" | tee -a "$LOG"
   echo "anonymous approve: $(curl -s -o /dev/null -w '%{http_code}' -X POST "$a/api/actions/x/approve")" | tee -a "$LOG"
+  done
 }
 
 case "${1:-}" in

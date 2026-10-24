@@ -2,7 +2,7 @@
 # Publish the read-only replay: snapshot the lab, render the landing page, ship to the VPS.
 #   SHIMPAKU_LAB_HOST  ssh name of the lab host (runs shimpakud)
 #   SHIMPAKU_VPS_HOST  ssh name of the VPS (Docker + compose installed, ports 80/443 open)
-#   SHIMPAKU_DOMAIN    landing page domain; the dashboard is app.<domain>
+#   SHIMPAKU_DOMAINS   landing domains, space-separated; each serves the landing and app.<domain> the dashboard
 #   SHIMPAKU_REPO_URL  public repository URL linked from the landing page
 #   SHIMPAKU_LAB_UPSTREAM  host:port of shimpakud on the lab's NetBird address (the edge's live upstream)
 #   SHIMPAKU_VPS_SUDO_SECRETS  optional: SOPS file holding ansible_become_password for sudo on the VPS
@@ -10,7 +10,10 @@
 set -euo pipefail
 LAB="${SHIMPAKU_LAB_HOST:?set SHIMPAKU_LAB_HOST}"
 VPS="${SHIMPAKU_VPS_HOST:?set SHIMPAKU_VPS_HOST}"
-DOMAIN="${SHIMPAKU_DOMAIN:?set SHIMPAKU_DOMAIN}"
+DOMAINS="${SHIMPAKU_DOMAINS:?set SHIMPAKU_DOMAINS}"
+DOMAIN="${DOMAINS%% *}"   # checks run against the first
+SITE_HOSTS=$(printf "%s, " $DOMAINS); SITE_HOSTS=${SITE_HOSTS%, }
+APP_HOSTS=$(printf "app.%s, " $DOMAINS); APP_HOSTS=${APP_HOSTS%, }
 REPO="${SHIMPAKU_REPO_URL:?set SHIMPAKU_REPO_URL}"
 LAB_UP="${SHIMPAKU_LAB_UPSTREAM:?set SHIMPAKU_LAB_UPSTREAM (lab NetBird host:port)}"
 [[ "$LAB_UP" =~ ^[^:/[:space:]]+:[0-9]+$ ]] || { echo "SHIMPAKU_LAB_UPSTREAM must be host:port" >&2; exit 1; }
@@ -34,13 +37,13 @@ done
 
 echo "== landing page"
 cp -R "$HERE/site/." "$HERE/site-built/"   # images and any other static files
-sed -e "s#__DOMAIN__#$DOMAIN#g" -e "s#__REPO__#$REPO#g" "$HERE/site/index.html" > "$HERE/site-built/index.html"
+sed -e "s#__REPO__#$REPO#g" "$HERE/site/index.html" > "$HERE/site-built/index.html"
 
 echo "== ship"
 ssh "$VPS" 'mkdir -p ~/shimpaku'
 git archive --format=tar HEAD | ssh "$VPS" 'cd ~/shimpaku && tar -xf -'
 tar -C "$HERE" -cf - snapshot site-built | ssh "$VPS" 'cd ~/shimpaku/deploy/vps && tar -xf -'
-ssh "$VPS" "cd ~/shimpaku/deploy/vps && printf 'SHIMPAKU_DOMAIN=%s\nSHIMPAKU_LAB_UPSTREAM=%s\n' '$DOMAIN' '$LAB_UP' > .env"
+ssh "$VPS" "cd ~/shimpaku/deploy/vps && printf 'SHIMPAKU_SITE_HOSTS=%s\nSHIMPAKU_APP_HOSTS=%s\nSHIMPAKU_LAB_UPSTREAM=%s\n' '$SITE_HOSTS' '$APP_HOSTS' '$LAB_UP' > .env"
 # Docker needs root on the VPS (no docker group: it is root-equivalent). The sudo password is decrypted
 # on this machine and piped to `sudo -S` on stdin, so it is never on a command line or in a log (RUN-0004).
 vps_sudo() {

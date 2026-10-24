@@ -4,7 +4,8 @@
 #   app.<domain>/api/*   the LIVE daemon on the lab host over NetBird ({$SHIMPAKU_LAB_UPSTREAM}),
 #                        falling back to the local read-only replay for reads when the lab is down
 #   app.<domain>/mcp     the live daemon only (never the replay); 503 JSON when the lab is down
-# Env: SHIMPAKU_DOMAIN, SHIMPAKU_LAB_UPSTREAM (host:port, the lab's NetBird address).
+# Env: SHIMPAKU_SITE_HOSTS ("a.example, b.example"), SHIMPAKU_APP_HOSTS ("app.a.example, app.b.example"),
+#      SHIMPAKU_LAB_UPSTREAM (host:port, the lab's NetBird address).
 {
 	# rate_limit is a plugin directive with no default order; run it before anything else.
 	order rate_limit first
@@ -54,13 +55,15 @@
 	}
 }
 
-{$SHIMPAKU_DOMAIN} {
+{$SHIMPAKU_SITE_HOSTS} {
 	import common
 	root * /srv/site
+	# the dashboard link follows the host the visitor used ({{.Host}}), so every domain serves itself
+	templates
 	file_server
 }
 
-app.{$SHIMPAKU_DOMAIN} {
+{$SHIMPAKU_APP_HOSTS} {
 	import common
 
 	# ---- per-client-IP limits ({client_ip} = CF-Connecting-IP from a Cloudflare address) ----
