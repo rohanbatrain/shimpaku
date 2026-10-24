@@ -24,7 +24,10 @@ class Settings(BaseSettings):
     auth_mode: str = "off"  # off | local
     llm_base: str = "http://127.0.0.1:4000"
     llm_key: str | None = Field(default=None, repr=False)
-    llm_models: str = "triage=nvidia-glm-flash,diagnose=tokenharbor-claude-haiku-5.5-free,escalate=nvidia-glm"
+    # Measured 2026-10-24 against the gateway (one tool-calling request each): lightning 10.1 s,
+    # ultra 11.5 s; glm, glm-flash, nemotron-super and gpt-oss timed out at 120 s; the Haiku free
+    # tier is phased out. Override per deployment with SHIMPAKU_LLM_MODELS.
+    llm_models: str = "triage=nvidia-nemotron-lightning,diagnose=nvidia-nemotron-ultra,escalate=nvidia-nemotron-ultra"
 
     # ---- guest testers (docs/DEPLOY-DESIGN.md build steps 4-5) ----
     public_url: str | None = None          # fixed base for invite links; never taken from a Host header
