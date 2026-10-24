@@ -1,6 +1,8 @@
 # Public read-only replay of Shimpaku (see deploy/vps/README.md).
 # No Junos libraries, no device credentials, no LLM key: this image cannot reach a switch.
 
+ARG CADDY_VERSION=2.11
+
 FROM node:22-slim AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
@@ -8,10 +10,25 @@ RUN npm ci
 COPY web/ ./
 RUN npm run build
 
-# Edge: Caddy with the built SPA baked in (hashed assets + .br/.zst/.gz siblings from the build).
-# compose.yaml builds this target for the `caddy` service; the Caddyfile stays a bind mount.
-FROM caddy:2 AS edge
+# Edge: Caddy + two plugins, built with the official builder image (xcaddy), then the built SPA
+# baked in (hashed assets + .br/.zst/.gz siblings). compose.yaml builds this target for `caddy`;
+# the Caddyfile stays a bind mount.
+#   mholt/caddy-ratelimit         `rate_limit` (not an official Caddy-org module)
+#   WeidiDeng/caddy-cloudflare-ip `trusted_proxies cloudflare` (fetches Cloudflare's published ranges)
+# Caddy is pinned to a minor tag; pin the plugins to tags/commits by overriding the ARGs
+# (e.g. --build-arg RATELIMIT_REF=<commit>) once a build has been verified. TODO: pin digests.
+FROM caddy:${CADDY_VERSION}-builder AS edge-builder
+ARG RATELIMIT_REF=latest
+ARG CFIP_REF=latest
+RUN xcaddy build \
+      --with github.com/mholt/caddy-ratelimit@${RATELIMIT_REF} \
+      --with github.com/WeidiDeng/caddy-cloudflare-ip@${CFIP_REF}
+
+FROM caddy:${CADDY_VERSION} AS edge
+COPY --from=edge-builder /usr/bin/caddy /usr/bin/caddy
 COPY --from=web /src/web/dist /srv/app
+COPY deploy/vps/offline /srv/offline
+COPY deploy/vps/Caddyfile /etc/caddy/Caddyfile
 
 FROM python:3.12-slim AS replay
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \

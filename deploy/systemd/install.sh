@@ -16,6 +16,13 @@ install -m 0644 deploy/systemd/shimpakud.service ~/.config/systemd/user/shimpaku
 # shimpakud reads this at start (systemd EnvironmentFile); never logged, never committed.
 # SHIMPAKU_LLM_BASE=http://127.0.0.1:4000
 # SHIMPAKU_LLM_KEY=
+# Behind the public edge (deploy/vps/README.md): bind to the NetBird address only, require sign-in,
+# and trust forwarded headers from the edge's NetBird address only.
+# SHIMPAKU_BIND=<lab netbird ip>
+# SHIMPAKU_AUTH_MODE=local
+# SHIMPAKU_PUBLIC_URL=https://app.<domain>
+# SHIMPAKU_TRUSTED_PROXIES=<edge netbird ip>
+# FORWARDED_ALLOW_IPS=<edge netbird ip>
 EOF
 chmod 600 ~/.config/shimpaku/env
 

@@ -1,5 +1,7 @@
 # docker compose -f deploy/vps/compose.yaml up -d --build   (from the repo root)
-# Needs: deploy/vps/.env with SHIMPAKU_DOMAIN, and deploy/vps/snapshot/snapshot.json.
+# Needs: deploy/vps/.env with SHIMPAKU_DOMAIN and SHIMPAKU_LAB_UPSTREAM, and
+# deploy/vps/snapshot/snapshot.json. The lab is reached through the host's NetBird interface
+# (container egress is NATed by the host, so the NetBird route applies).
 services:
   replay:
     build: { context: ../.., dockerfile: deploy/vps/Dockerfile, target: replay }
@@ -23,6 +25,8 @@ services:
     ports: ["80:80", "443:443", "443:443/udp"]
     environment:
       SHIMPAKU_DOMAIN: ${SHIMPAKU_DOMAIN:?set SHIMPAKU_DOMAIN in deploy/vps/.env}
+      # host:port of shimpakud on the lab's NetBird address, e.g. 100.x.y.z:8780
+      SHIMPAKU_LAB_UPSTREAM: ${SHIMPAKU_LAB_UPSTREAM:?set SHIMPAKU_LAB_UPSTREAM in deploy/vps/.env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./site-built:/srv/site:ro
@@ -31,8 +35,20 @@ services:
     networks: [web]
     depends_on: [replay]
 
+  uptime-kuma:
+    # Admin UI on the VPS loopback only: reach it with `ssh -L 3001:127.0.0.1:3001 <vps>`.
+    # Major-pinned tag from the research note; pin a digest after the first pull.
+    image: louislam/uptime-kuma:2
+    restart: unless-stopped
+    ports: ["127.0.0.1:3001:3001"]
+    volumes:
+      - kuma_data:/app/data
+    networks: [web]          # so it can check replay:8780 directly
+    mem_limit: 512m
+
 networks:
   web: {}
 volumes:
   caddy_data: {}
   caddy_config: {}
+  kuma_data: {}
