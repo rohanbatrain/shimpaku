@@ -11,6 +11,7 @@ export type Who = {
   can_propose: boolean;
   role?: string | null;
   lease_id?: string | null;
+  public_view?: boolean;
 };
 
 export const SessionCtx = createContext<{ who: Who; refresh: () => void; openAssistant: (q?: string) => void }>(null as any);

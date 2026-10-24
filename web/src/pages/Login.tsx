@@ -48,6 +48,7 @@ export default function Login({ onDone }: { onDone: () => void }) {
             {busy && <Busy />} Sign in
           </button>
           <p className="small weak">Set the password on the host with <span className="mono">shimpaku admin set-password</span>.</p>
+          <p className="small">Not the operator? <a href="/request">Request a live session</a>.</p>
         </form>
       </section>
     </main>

@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 import { Close, Send, Robot } from "grommet-icons";
 import { ask, type AskEvent } from "../api";
 import { Busy, Rich } from "./ui";
+import { useSession } from "../session";
 
 type Turn = {
   id: number;
@@ -27,9 +28,11 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
   const seeded = useRef(false);
   const loc = useLocation();
   const busy = turns.length > 0 && !turns[turns.length - 1].done;
+  // public viewers do not spend the LLM budget: Shim needs an operator or a live session
+  const visitor = useSession()?.who.role === "visitor";
 
   const send = (question: string) => {
-    if (!question.trim() || busy) return;
+    if (!question.trim() || busy || visitor) return;
     setQ("");
     const id = ++seq.current;
     setTurns((t) => [...t, { id, q: question, tools: [], evidence: [], text: "", done: false }]);
@@ -70,7 +73,14 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
         </button>
       </div>
       <div className="panel-b" ref={body} aria-live="polite">
-        {turns.length === 0 && (
+        {visitor && (
+          <div className="msg-a">
+            <b>Request a live session to use Shim</b>
+            <span className="weak">You are viewing read-only. During a live session Shim answers with the lab's own tools and can propose the fix for you to approve.</span>
+            <a className="btn primary" href="/request" style={{ alignSelf: "flex-start" }}>Request a live session</a>
+          </div>
+        )}
+        {!visitor && turns.length === 0 && (
           <div className="msg-a">
             <span className="weak">Shim reads the same service layer as this dashboard and can propose, never approve, a change.</span>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -122,7 +132,7 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
           </div>
         ))}
       </div>
-      <div className="panel-f">
+      {!visitor && <div className="panel-f">
         <form onSubmit={(e) => { e.preventDefault(); send(q); }}>
           <label htmlFor="ask" className="sr-only">Ask Shim</label>
           <input id="ask" ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about the lab…" autoComplete="off" />
@@ -130,7 +140,7 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
             <Send size="14px" color="#04261B" />
           </button>
         </form>
-      </div>
+      </div>}
     </aside>
   );
 }

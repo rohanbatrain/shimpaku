@@ -3,13 +3,15 @@ import { api } from "../api";
 import { DISCLAIMER, Mark } from "../App";
 import { Busy } from "../components/ui";
 
-type Status = { valid: boolean; reason: string | null; retention_days: number; lease_minutes: number; contact: string | null };
+type Status = { valid: boolean; reason: string | null; retention_days: number; lease_minutes: number; contact: string | null; opens_at?: number; closes_at?: number };
 const WHY: Record<string, string> = {
   used: "This invite has already been used. Each link works once.",
   expired: "This invite has expired. Ask for a new one.",
   revoked: "This invite was withdrawn.",
   invalid: "This invite link is not valid.",
+  early: "Your session has not opened yet.",
 };
+const at = (t: number) => new Date(t * 1000).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
 
 /** The invite landing page. Opening it never uses the invite up; only "Start demo" does. */
 export default function Start({ onDone }: { onDone: () => void }) {
@@ -31,7 +33,7 @@ export default function Start({ onDone }: { onDone: () => void }) {
       await api("/api/invites/redeem", { json: { token, consent, display_name: name.trim() || null } });
       onDone();
     } catch (e: any) {
-      setErr(e.status === 429 ? "Too many attempts. Wait a minute." : e.message);
+      setErr(e.status === 429 ? "Too many attempts. Wait a minute." : e.status === 425 ? "Your session has not opened yet. Try again at the time shown." : e.message);
     } finally {
       setBusy(false);
     }
@@ -49,9 +51,18 @@ export default function Start({ onDone }: { onDone: () => void }) {
       </section>
       <section className="login-form">
         <form onSubmit={start} style={{ width: 420, maxWidth: "100%" }} aria-labelledby="start-h">
-          <h1 id="start-h" style={{ marginBottom: 4 }}>Tester pass</h1>
+          <h1 id="start-h" style={{ marginBottom: 4 }}>Live session</h1>
+          {st?.opens_at && st.closes_at && (
+            <p className="small" style={{ marginTop: 0 }}>
+              Your slot: opens {at(st.opens_at)}, closes {at(st.closes_at)}. <a href={`/api/invites/ics?i=${encodeURIComponent(token)}`} download>Add to calendar</a>
+            </p>
+          )}
           {st && !st.valid ? (
-            <div className="notice crit" role="alert">{WHY[st.reason ?? "invalid"] ?? WHY.invalid}</div>
+            <div className={`notice ${st.reason === "early" ? "info" : "crit"}`} role="alert">
+              {WHY[st.reason ?? "invalid"] ?? WHY.invalid}
+              {st.reason === "early" && st.opens_at && <> It opens at <b>{at(st.opens_at)}</b>; keep this link and come back then.</>}
+              {st.reason !== "early" && <> <a href="/request">Request a new session</a>.</>}
+            </div>
           ) : (
             <>
               <p className="weak" style={{ marginTop: 0 }}>A {st?.lease_minutes ?? 30}-minute session on the demo fixture. If someone else is using the lab, you join a queue.</p>
@@ -59,8 +70,8 @@ export default function Start({ onDone }: { onDone: () => void }) {
                 <b>Before you start</b>
                 <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
                   <li><b>Purpose:</b> to know who tried this demo and follow up with them.</li>
-                  <li><b>What is kept:</b> the note the owner wrote when inviting you, the display name below if you give one, the times of your session, and what you do in it (your actions are audited under a pass id, not your name).</li>
-                  <li><b>How long:</b> your name and the owner's note are deleted {days} days after your session ends. The audit trail keeps only the pass id.</li>
+                  <li><b>What is kept:</b> your request (name, contact, message) or the owner's note about you, the display name below if you give one, the times of your session, and what you do in it (your actions are audited under a pass id, not your name).</li>
+                  <li><b>How long:</b> your name, contact, message and the owner's note are deleted {days} days after your session ends. The audit trail keeps only the pass id.</li>
                   <li><b>Deletion:</b> ask {st?.contact ? <span className="mono">{st.contact}</span> : "the person who sent you this link"} and it is deleted sooner. You may also complain to India's Data Protection Board.</li>
                 </ul>
               </div>

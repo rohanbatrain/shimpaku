@@ -1,9 +1,10 @@
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, type Who } from "./session";
 import { Loading } from "./components/ui";
+import "./requests.css";
 const AssistantPanel = lazy(() => import("./components/AssistantPanel"));
 const ServiceLevels = lazy(() => import("./pages/ServiceLevels"));
 const Overview = lazy(() => import("./pages/Overview"));
@@ -19,6 +20,9 @@ const Start = lazy(() => import("./pages/Start"));
 const LeaseBanner = lazy(() => import("./components/Lease").then((m) => ({ default: m.LeaseBanner })));
 const Agents = lazy(() => import("./pages/Agents"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Request = lazy(() => import("./pages/Request"));
+const RequestStatus = lazy(() => import("./pages/RequestStatus"));
+const SessionRequests = lazy(() => import("./pages/SessionRequests"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -32,7 +36,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -70,6 +74,15 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
   }, [drawer, onClose]);
   const acts = useApi<{ actions: { status: string }[] }>("/api/actions", { url: "/api/stream/actions", event: "actions" });
   const open = acts.data?.actions.filter((a) => ["proposed", "awaiting_approval"].includes(a.status)).length ?? 0;
+  const op = who.role === "operator";
+  const reqs = useApi<{ pending: number }>(op && who.mode === "local" ? "/api/admin/session-requests?status=pending" : null);
+  useEffect(() => {
+    if (!op || who.mode !== "local") return;
+    const t = setInterval(reqs.reload, 30000);
+    window.addEventListener("shimpaku:requests", reqs.reload); // a decision on the Session requests page
+    return () => { clearInterval(t); window.removeEventListener("shimpaku:requests", reqs.reload); };
+  }, [op, who.mode, reqs.reload]);
+  const pending = reqs.data?.pending ?? 0;
   const ic = { size: "16px", color: "currentColor" } as const;
   return (
     <nav ref={ref} id="main-nav" className={`nav${drawer ? " open" : ""}`} aria-label="Main">
@@ -105,7 +118,7 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
       <NavLink to="/benchmark">
         <BenchIcon {...ic} /> Benchmark
       </NavLink>
-      {who.role !== "tester" && (
+      {op && (
         <>
           <div className="sect">Admin</div>
           <NavLink to="/agents">
@@ -114,13 +127,20 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
           <NavLink to="/settings">
             <SettingsOption {...ic} /> Settings
           </NavLink>
+          {who.mode === "local" && (
+            <NavLink to="/admin/requests">
+              <Calendar {...ic} /> Session requests
+              {pending > 0 && <span className="count" aria-label={`${pending} pending`}>{pending}</span>}
+            </NavLink>
+          )}
         </>
       )}
       <div className="grow" />
       <div className="who">
         <Robot size="14px" color="#8FA79C" aria-hidden />
         <span>{who.user ?? "—"}</span>
-        {who.mode === "local" && who.role !== "tester" && <button onClick={onSignOut}>Sign out</button>}
+        {who.mode === "local" && op && <button onClick={onSignOut}>Sign out</button>}
+        {who.role === "visitor" && <button onClick={() => location.assign("/login")}>Operator sign in</button>}
       </div>
       <div className="foot">{DISCLAIMER}</div>
     </nav>
@@ -191,6 +211,13 @@ export default function App() {
   if (!who) return <Loading label="Starting" />;
   // a full load: the new tester session cookie replaces whatever router state existed
   const started = () => location.replace("/actions");
+  // public pages: no sign-in, outside the app shell
+  if (loc.pathname === "/request" || loc.pathname === "/request/status") {
+    return <Suspense fallback={<Loading label="Loading" />}>{loc.pathname === "/request" ? <Request /> : <RequestStatus />}</Suspense>;
+  }
+  if (loc.pathname === "/login" && who.role === "visitor") {
+    return <Suspense fallback={<Loading label="Loading" />}><Login onDone={() => location.assign("/sle")} /></Suspense>;
+  }
   if (loc.pathname === "/start" && who.role !== "tester") {
     return <Suspense fallback={<Loading label="Loading" />}><Start onDone={started} /></Suspense>;
   }
@@ -230,6 +257,7 @@ export default function App() {
             <Route path="/benchmark" element={<Benchmark />} />
             <Route path="/agents" element={<Agents />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/admin/requests" element={<SessionRequests />} />
             <Route path="*" element={<div className="content"><h1>Not found</h1><p className="weak">No page at {loc.pathname}.</p></div>} />
           </Routes>
           </Suspense>
