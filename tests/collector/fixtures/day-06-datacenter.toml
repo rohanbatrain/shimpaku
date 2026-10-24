@@ -1,0 +1,62 @@
+# Day 6 — small spine/leaf fabric, four vJunos-switch nodes.
+#
+# Underlay link addressing: 10.0.<spine>.<leaf>.0/30
+#   spine1–leaf1 = 10.0.11.0/30     spine2–leaf1 = 10.0.21.0/30
+#   spine1–leaf2 = 10.0.12.0/30     spine2–leaf2 = 10.0.22.0/30
+#
+# Declared memory: 4 x 5120 MiB + 4096 MiB reserve = 24576 MiB must be available.
+
+[lab]
+name = "day-06-datacenter"
+# ordinal_base/link_prefix keep it apart from the day-02 lab, so both can run at once.
+ordinal_base = 10
+link_prefix = "lab-dc"
+description = "Two spines, two leaves: OSPF or eBGP underlay, ECMP, EVPN-VXLAN overlay."
+
+[[nodes]]
+name = "spine1"
+kind = "vjunos-switch"
+mgmt_ip = "10.99.0.31"
+vcpu = 4
+memory_mb = 5120
+
+[[nodes]]
+name = "spine2"
+kind = "vjunos-switch"
+mgmt_ip = "10.99.0.32"
+vcpu = 4
+memory_mb = 5120
+
+[[nodes]]
+name = "leaf1"
+kind = "vjunos-switch"
+mgmt_ip = "10.99.0.41"
+vcpu = 4
+memory_mb = 5120
+
+[[nodes]]
+name = "leaf2"
+kind = "vjunos-switch"
+mgmt_ip = "10.99.0.42"
+vcpu = 4
+memory_mb = 5120
+
+[[links]]
+name = "leaf1-spine1"
+nodes = ["leaf1", "spine1"]
+subnet = "10.0.11.0/30"
+
+[[links]]
+name = "leaf1-spine2"
+nodes = ["leaf1", "spine2"]
+subnet = "10.0.21.0/30"
+
+[[links]]
+name = "leaf2-spine1"
+nodes = ["leaf2", "spine1"]
+subnet = "10.0.12.0/30"
+
+[[links]]
+name = "leaf2-spine2"
+nodes = ["leaf2", "spine2"]
+subnet = "10.0.22.0/30"

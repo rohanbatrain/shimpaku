@@ -1,0 +1,7251 @@
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055057082059,
+  "time": "2026-10-24T11:20:55.057082059+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055057106121,
+  "time": "2026-10-24T11:20:55.057106121+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "PIC"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "166"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "20"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 0
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "fpc0 cosim_interrupt_handler: Chip ID: 0  - interrupt 16777217\n"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 56797
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055057263157,
+  "time": "2026-10-24T11:20:55.057263157+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055057273290,
+  "time": "2026-10-24T11:20:55.05727329+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "fpc0 cosim_interrupt_handler: Chip ID: 0  - interrupt 16777217\n"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648556380,
+  "time": "2026-10-24T11:20:55.64855638+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648582427,
+  "time": "2026-10-24T11:20:55.648582427+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_IFL_NOTIFICATION"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_IFL_NOTIFICATION: IF_TRACE: EVENT [UpDown] ge-0/0/1.0 index 390 [Broadcast Multicast] address #0 2.0.0.0.e.2"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 645111
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648813792,
+  "time": "2026-10-24T11:20:55.648813792+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648824630,
+  "time": "2026-10-24T11:20:55.64882463+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "UpDown"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648840644,
+  "time": "2026-10-24T11:20:55.648840644+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648848719,
+  "time": "2026-10-24T11:20:55.648848719+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648954150,
+  "time": "2026-10-24T11:20:55.64895415+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648961337,
+  "time": "2026-10-24T11:20:55.648961337+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "390"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648975415,
+  "time": "2026-10-24T11:20:55.648975415+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055648981975,
+  "time": "2026-10-24T11:20:55.648981975+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "[Broadcast Multicast] address #0 2.0.0.0.e.2"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055649073170,
+  "time": "2026-10-24T11:20:55.64907317+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055649081209,
+  "time": "2026-10-24T11:20:55.649081209+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_IFA_NOTIFICATION"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_IFA_NOTIFICATION: IF_TRACE: EVENT <UpDown> ge-0/0/1.0 index 390 10.0.22.2/30 -> 10.0.22.3 <Broadcast Multicast Localup>"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 645360
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055649108459,
+  "time": "2026-10-24T11:20:55.649108459+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055649114667,
+  "time": "2026-10-24T11:20:55.649114667+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "UpDown"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055651957555,
+  "time": "2026-10-24T11:20:55.651957555+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055651973440,
+  "time": "2026-10-24T11:20:55.65197344+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055651995564,
+  "time": "2026-10-24T11:20:55.651995564+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652001669,
+  "time": "2026-10-24T11:20:55.652001669+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "390"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652091605,
+  "time": "2026-10-24T11:20:55.652091605+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652099689,
+  "time": "2026-10-24T11:20:55.652099689+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "10.0.22.2/30 -> 10.0.22.3 <Broadcast Multicast Localup>"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652110506,
+  "time": "2026-10-24T11:20:55.652110506+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652116699,
+  "time": "2026-10-24T11:20:55.652116699+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_IFD_NOTIFICATION"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_IFD_NOTIFICATION: IF_TRACE: EVENT <UpDown> ge-0/0/1 index 144 <Broadcast Multicast> agg_parent 0 address #0 2.0.0.0.e.2"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 645517
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652310493,
+  "time": "2026-10-24T11:20:55.652310493+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652320749,
+  "time": "2026-10-24T11:20:55.652320749+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "UpDown"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652332374,
+  "time": "2026-10-24T11:20:55.652332374+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055652338588,
+  "time": "2026-10-24T11:20:55.652338588+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653448803,
+  "time": "2026-10-24T11:20:55.653448803+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653460208,
+  "time": "2026-10-24T11:20:55.653460208+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "144"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653473696,
+  "time": "2026-10-24T11:20:55.653473696+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653478503,
+  "time": "2026-10-24T11:20:55.653478503+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "<Broadcast Multicast> agg_parent 0 address #0 2.0.0.0.e.2"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653510569,
+  "time": "2026-10-24T11:20:55.653510569+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653514853,
+  "time": "2026-10-24T11:20:55.653514853+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "KERNEL"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "7"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "0"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 0
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "IFD_FLAG: ge-0/0/1 NO_PRIORITY_FLAGS_MATCHED mud_flags=0x2"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "kernel"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 646897
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653526696,
+  "time": "2026-10-24T11:20:55.653526696+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653533692,
+  "time": "2026-10-24T11:20:55.653533692+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "IFD_FLAG: ge-0/0/1 NO_PRIORITY_FLAGS_MATCHED mud_flags=0x2"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653591349,
+  "time": "2026-10-24T11:20:55.653591349+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653597413,
+  "time": "2026-10-24T11:20:55.653597413+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_OSPF_NBRDOWN"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "29"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_OSPF_NBRDOWN: OSPF neighbor 10.0.22.1 (realm ospf-v2 ge-0/0/1.0 area 0.0.0.0) state changed from Full to Down due to KillNbr (event reason: interface went down)"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 647025
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653726496,
+  "time": "2026-10-24T11:20:55.653726496+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=neighbor-address]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653735097,
+  "time": "2026-10-24T11:20:55.653735097+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=neighbor-address]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "neighbor-address"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "10.0.22.1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653798229,
+  "time": "2026-10-24T11:20:55.653798229+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=realm-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653812074,
+  "time": "2026-10-24T11:20:55.653812074+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=realm-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "realm-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ospf-v2"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653822000,
+  "time": "2026-10-24T11:20:55.653822+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653827882,
+  "time": "2026-10-24T11:20:55.653827882+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653885645,
+  "time": "2026-10-24T11:20:55.653885645+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=area-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653892173,
+  "time": "2026-10-24T11:20:55.653892173+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=area-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "area-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0.0.0.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653901812,
+  "time": "2026-10-24T11:20:55.653901812+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=old-state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653907821,
+  "time": "2026-10-24T11:20:55.653907821+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=old-state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "old-state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "Full"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653965618,
+  "time": "2026-10-24T11:20:55.653965618+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=new-state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653971780,
+  "time": "2026-10-24T11:20:55.65397178+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=new-state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "new-state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "Down"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653981177,
+  "time": "2026-10-24T11:20:55.653981177+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=event-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055653987483,
+  "time": "2026-10-24T11:20:55.653987483+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=event-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "event-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "KillNbr"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055654034571,
+  "time": "2026-10-24T11:20:55.654034571+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=reason]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055654040947,
+  "time": "2026-10-24T11:20:55.654040947+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRDOWN][priority=29][type=2]/attributes[key=reason]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "reason"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "interface went down"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055656459581,
+  "time": "2026-10-24T11:20:55.656459581+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055656475321,
+  "time": "2026-10-24T11:20:55.656475321+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "PIC"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "166"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "20"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 0
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "fpc0 ifp ge-0/0/1 ifd_mdown: 44578030 ms\n"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 651288
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055656524420,
+  "time": "2026-10-24T11:20:55.65652442+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055656532110,
+  "time": "2026-10-24T11:20:55.65653211+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "fpc0 ifp ge-0/0/1 ifd_mdown: 44578030 ms\n"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055658553525,
+  "time": "2026-10-24T11:20:55.658553525+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055658567492,
+  "time": "2026-10-24T11:20:55.658567492+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "SNMP_TRAP_LINK_DOWN"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "28"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20297
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "SNMP_TRAP_LINK_DOWN: ifIndex 522, ifAdminStatus up(1), ifOperStatus down(2), ifName ge-0/0/1"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mib2d"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 651548
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055658865107,
+  "time": "2026-10-24T11:20:55.658865107+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]/attributes[key=snmp-interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055658876642,
+  "time": "2026-10-24T11:20:55.658876642+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]/attributes[key=snmp-interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "snmp-interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "522"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055658891697,
+  "time": "2026-10-24T11:20:55.658891697+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]/attributes[key=admin-status]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055658898657,
+  "time": "2026-10-24T11:20:55.658898657+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]/attributes[key=admin-status]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "admin-status"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "up(1)"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659000169,
+  "time": "2026-10-24T11:20:55.659000169+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]/attributes[key=operational-status]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659007999,
+  "time": "2026-10-24T11:20:55.659007999+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]/attributes[key=operational-status]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "operational-status"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "down(2)"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659019687,
+  "time": "2026-10-24T11:20:55.659019687+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659028841,
+  "time": "2026-10-24T11:20:55.659028841+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_DOWN][priority=28][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659079793,
+  "time": "2026-10-24T11:20:55.659079793+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659088870,
+  "time": "2026-10-24T11:20:55.65908887+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "BFDD_STATE_UP_TO_DOWN"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "28"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20313
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "BFDD_STATE_UP_TO_DOWN: BFD Session 10.0.22.1 (IFL 390) state Up -> Down LD/RD(20/18) Up time:10:07:49 Local diag: AdminDown Remote diag: None Reason: Received Upstream Destroy Session."
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "bfdd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 654365
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659105959,
+  "time": "2026-10-24T11:20:55.659105959+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=session-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659112028,
+  "time": "2026-10-24T11:20:55.659112028+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=session-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "session-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "10.0.22.1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659248281,
+  "time": "2026-10-24T11:20:55.659248281+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659257078,
+  "time": "2026-10-24T11:20:55.659257078+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "390"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659268909,
+  "time": "2026-10-24T11:20:55.659268909+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=local-discriminator]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659275388,
+  "time": "2026-10-24T11:20:55.659275388+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=local-discriminator]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "local-discriminator"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "20"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659332137,
+  "time": "2026-10-24T11:20:55.659332137+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=remote-discriminator]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659344939,
+  "time": "2026-10-24T11:20:55.659344939+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=remote-discriminator]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "remote-discriminator"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "18"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659357596,
+  "time": "2026-10-24T11:20:55.659357596+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=up-time]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659363933,
+  "time": "2026-10-24T11:20:55.659363933+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=up-time]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "up-time"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "10:07:49"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659411225,
+  "time": "2026-10-24T11:20:55.659411225+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=local-diagnostic]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659417613,
+  "time": "2026-10-24T11:20:55.659417613+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=local-diagnostic]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "local-diagnostic"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "AdminDown"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659427518,
+  "time": "2026-10-24T11:20:55.659427518+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=remote-diagnostic]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659433642,
+  "time": "2026-10-24T11:20:55.659433642+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=remote-diagnostic]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "remote-diagnostic"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "None"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659480766,
+  "time": "2026-10-24T11:20:55.659480766+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=reason]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659487343,
+  "time": "2026-10-24T11:20:55.659487343+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_STATE_UP_TO_DOWN][priority=28][type=2]/attributes[key=reason]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "reason"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "Received Upstream Destroy Session."
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659497722,
+  "time": "2026-10-24T11:20:55.659497722+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659503759,
+  "time": "2026-10-24T11:20:55.659503759+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "BFDD_TRAP_SHOP_STATE_DOWN"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "28"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20313
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "BFDD_TRAP_SHOP_STATE_DOWN: local discriminator: 20, new state: down, interface: ge-0/0/1.0, peer addr: 10.0.22.1"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "bfdd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 654430
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659576638,
+  "time": "2026-10-24T11:20:55.659576638+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]/attributes[key=session-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659586530,
+  "time": "2026-10-24T11:20:55.65958653+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]/attributes[key=session-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "session-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "20"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659598470,
+  "time": "2026-10-24T11:20:55.65959847+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]/attributes[key=state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659620104,
+  "time": "2026-10-24T11:20:55.659620104+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]/attributes[key=state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "down"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659943934,
+  "time": "2026-10-24T11:20:55.659943934+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]/attributes[key=pip-interface]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659952995,
+  "time": "2026-10-24T11:20:55.659952995+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]/attributes[key=pip-interface]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "pip-interface"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659964551,
+  "time": "2026-10-24T11:20:55.659964551+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]/attributes[key=remote-peer]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055659970989,
+  "time": "2026-10-24T11:20:55.659970989+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=BFDD_TRAP_SHOP_STATE_DOWN][priority=28][type=2]/attributes[key=remote-peer]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "remote-peer"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "10.0.22.1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055903524260,
+  "time": "2026-10-24T11:20:55.90352426+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_RT_HWM_NOTICE][priority=29][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055903553639,
+  "time": "2026-10-24T11:20:55.903553639+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_RT_HWM_NOTICE][priority=29][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_RT_HWM_NOTICE"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "29"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_RT_HWM_NOTICE: New FIB highwatermark for routes: 9 [2026-10-24 05:50:55]"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821055
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 902019
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055903823322,
+  "time": "2026-10-24T11:20:55.903823322+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_RT_HWM_NOTICE][priority=29][type=2]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055903833896,
+  "time": "2026-10-24T11:20:55.903833896+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_RT_HWM_NOTICE][priority=29][type=2]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "New FIB highwatermark for routes:"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055903847580,
+  "time": "2026-10-24T11:20:55.90384758+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_RT_HWM_NOTICE][priority=29][type=2]/attributes[key=maximum-value]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055903854321,
+  "time": "2026-10-24T11:20:55.903854321+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_RT_HWM_NOTICE][priority=29][type=2]/attributes[key=maximum-value]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "maximum-value"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "9"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055903965474,
+  "time": "2026-10-24T11:20:55.903965474+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_RT_HWM_NOTICE][priority=29][type=2]/attributes[key=time]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821055903972426,
+  "time": "2026-10-24T11:20:55.903972426+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_RT_HWM_NOTICE][priority=29][type=2]/attributes[key=time]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "time"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "2026-10-24 05:50:55"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821056534235140,
+  "time": "2026-10-24T11:20:56.53423514+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821056534263829,
+  "time": "2026-10-24T11:20:56.534263829+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "KERNEL"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "7"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "0"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 0
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "if_pfe_ge_ifdstat_ipc:handling ALARM ASSERT/CLEAR"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "kernel"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821056
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 533887
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821056534379718,
+  "time": "2026-10-24T11:20:56.534379718+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821056534388463,
+  "time": "2026-10-24T11:20:56.534388463+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "if_pfe_ge_ifdstat_ipc:handling ALARM ASSERT/CLEAR"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063098934488,
+  "time": "2026-10-24T11:21:03.098934488+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063098960120,
+  "time": "2026-10-24T11:21:03.09896012+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CMDLINE_READ_LINE"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CMDLINE_READ_LINE: User 'root', command 'command rpc rpc command show interfaces extensive-local-interfaces-zero-suppress '"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821063
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 39298
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099072569,
+  "time": "2026-10-24T11:21:03.099072569+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=username]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099081278,
+  "time": "2026-10-24T11:21:03.099081278+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=username]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "username"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "root"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099093953,
+  "time": "2026-10-24T11:21:03.099093953+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099100793,
+  "time": "2026-10-24T11:21:03.099100793+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "command rpc rpc command show interfaces extensive-local-interfaces-zero-suppress "
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099266965,
+  "time": "2026-10-24T11:21:03.099266965+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099275544,
+  "time": "2026-10-24T11:21:03.099275544+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_NETCONF_CMD"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_NETCONF_CMD: User 'root' used NETCONF client to run command 'get-interface-information level=extensive-local-interfaces-zero-suppress'"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821063
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 40242
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099294121,
+  "time": "2026-10-24T11:21:03.099294121+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=username]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099300973,
+  "time": "2026-10-24T11:21:03.099300973+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=username]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "username"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "root"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099394926,
+  "time": "2026-10-24T11:21:03.099394926+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099402089,
+  "time": "2026-10-24T11:21:03.099402089+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "get-interface-information level=extensive-local-interfaces-zero-suppress"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099411925,
+  "time": "2026-10-24T11:21:03.099411925+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099417704,
+  "time": "2026-10-24T11:21:03.099417704+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CHILD_START"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CHILD_START: Starting child '/sbin/ifinfo'"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821063
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 40308
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099503571,
+  "time": "2026-10-24T11:21:03.099503571+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063099509819,
+  "time": "2026-10-24T11:21:03.099509819+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "/sbin/ifinfo"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063255560079,
+  "time": "2026-10-24T11:21:03.255560079+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063255590893,
+  "time": "2026-10-24T11:21:03.255590893+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "SYSTEM"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "15"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "1"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 34744
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "PVIDB: Attribute 'platform.is_fpc_less' not present in Db"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "ifinfo"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821063
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 255237
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063255817040,
+  "time": "2026-10-24T11:21:03.25581704+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063255827213,
+  "time": "2026-10-24T11:21:03.255827213+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "PVIDB: Attribute 'platform.is_fpc_less' not present in Db"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063441526024,
+  "time": "2026-10-24T11:21:03.441526024+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063441567869,
+  "time": "2026-10-24T11:21:03.441567869+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CHILD_STATUS"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CHILD_STATUS: Cleanup child '/sbin/ifinfo', PID 34744, status 0"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821063
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 440825
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063441806121,
+  "time": "2026-10-24T11:21:03.441806121+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063441816729,
+  "time": "2026-10-24T11:21:03.441816729+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "/sbin/ifinfo"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063441834316,
+  "time": "2026-10-24T11:21:03.441834316+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=pid]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063441840950,
+  "time": "2026-10-24T11:21:03.44184095+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=pid]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "pid"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "34744"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063441954141,
+  "time": "2026-10-24T11:21:03.441954141+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=status-code]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821063441961244,
+  "time": "2026-10-24T11:21:03.441961244+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=status-code]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "status-code"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073107961641,
+  "time": "2026-10-24T11:21:13.107961641+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073107994706,
+  "time": "2026-10-24T11:21:13.107994706+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CMDLINE_READ_LINE"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CMDLINE_READ_LINE: User 'root', command 'command rpc rpc command show interfaces extensive-local-interfaces-zero-suppress '"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821073
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 37385
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108114944,
+  "time": "2026-10-24T11:21:13.108114944+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=username]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108124859,
+  "time": "2026-10-24T11:21:13.108124859+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=username]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "username"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "root"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108138325,
+  "time": "2026-10-24T11:21:13.108138325+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108144952,
+  "time": "2026-10-24T11:21:13.108144952+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "command rpc rpc command show interfaces extensive-local-interfaces-zero-suppress "
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108343492,
+  "time": "2026-10-24T11:21:13.108343492+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108352391,
+  "time": "2026-10-24T11:21:13.108352391+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_NETCONF_CMD"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_NETCONF_CMD: User 'root' used NETCONF client to run command 'get-interface-information level=extensive-local-interfaces-zero-suppress'"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821073
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 38860
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108372049,
+  "time": "2026-10-24T11:21:13.108372049+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=username]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108378827,
+  "time": "2026-10-24T11:21:13.108378827+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=username]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "username"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "root"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108470736,
+  "time": "2026-10-24T11:21:13.108470736+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108478691,
+  "time": "2026-10-24T11:21:13.108478691+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "get-interface-information level=extensive-local-interfaces-zero-suppress"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108499145,
+  "time": "2026-10-24T11:21:13.108499145+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108505419,
+  "time": "2026-10-24T11:21:13.108505419+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CHILD_START"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CHILD_START: Starting child '/sbin/ifinfo'"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821073
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 39007
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073108991870,
+  "time": "2026-10-24T11:21:13.10899187+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073109005574,
+  "time": "2026-10-24T11:21:13.109005574+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "/sbin/ifinfo"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073207595730,
+  "time": "2026-10-24T11:21:13.20759573+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073207723804,
+  "time": "2026-10-24T11:21:13.207723804+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "SYSTEM"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "15"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "1"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 34745
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "PVIDB: Attribute 'platform.is_fpc_less' not present in Db"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "ifinfo"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821073
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 207316
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073207830110,
+  "time": "2026-10-24T11:21:13.20783011+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073207838415,
+  "time": "2026-10-24T11:21:13.207838415+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "PVIDB: Attribute 'platform.is_fpc_less' not present in Db"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073465496221,
+  "time": "2026-10-24T11:21:13.465496221+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073465521139,
+  "time": "2026-10-24T11:21:13.465521139+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CHILD_STATUS"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CHILD_STATUS: Cleanup child '/sbin/ifinfo', PID 34745, status 0"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821073
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 431440
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073466086487,
+  "time": "2026-10-24T11:21:13.466086487+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073466144291,
+  "time": "2026-10-24T11:21:13.466144291+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "/sbin/ifinfo"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073466213454,
+  "time": "2026-10-24T11:21:13.466213454+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=pid]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073466221432,
+  "time": "2026-10-24T11:21:13.466221432+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=pid]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "pid"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "34745"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073466420037,
+  "time": "2026-10-24T11:21:13.466420037+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=status-code]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821073466430398,
+  "time": "2026-10-24T11:21:13.466430398+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=status-code]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "status-code"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821075164933784,
+  "time": "2026-10-24T11:21:15.164933784+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821075164964055,
+  "time": "2026-10-24T11:21:15.164964055+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "PIC"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "166"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "20"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 0
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "fpc0 cosim_interrupt_handler: Chip ID: 0  - interrupt 33554433\n"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821075
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 164492
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821075165081539,
+  "time": "2026-10-24T11:21:15.165081539+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821075165090828,
+  "time": "2026-10-24T11:21:15.165090828+05:30",
+  "prefix": "juniper:/junos/events/event[facility=20][id=PIC][priority=166][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "fpc0 cosim_interrupt_handler: Chip ID: 0  - interrupt 33554433\n"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517019698,
+  "time": "2026-10-24T11:21:16.517019698+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=LLDP_NEIGHBOR_DOWN][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517045439,
+  "time": "2026-10-24T11:21:16.517045439+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=LLDP_NEIGHBOR_DOWN][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "LLDP_NEIGHBOR_DOWN"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20487
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "LLDP_NEIGHBOR_DOWN: A neighbor of interface ge-0/0/1 has gone down. Now, this interface has 0 neighbor/s."
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "l2cpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 509222
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517146749,
+  "time": "2026-10-24T11:21:16.517146749+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=LLDP_NEIGHBOR_DOWN][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517217778,
+  "time": "2026-10-24T11:21:16.517217778+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=LLDP_NEIGHBOR_DOWN][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517234823,
+  "time": "2026-10-24T11:21:16.517234823+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=LLDP_NEIGHBOR_DOWN][priority=30][type=2]/attributes[key=neighbor-count]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517241515,
+  "time": "2026-10-24T11:21:16.517241515+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=LLDP_NEIGHBOR_DOWN][priority=30][type=2]/attributes[key=neighbor-count]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "neighbor-count"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517351540,
+  "time": "2026-10-24T11:21:16.51735154+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517357853,
+  "time": "2026-10-24T11:21:16.517357853+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_IFL_NOTIFICATION"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_IFL_NOTIFICATION: IF_TRACE: EVENT [UpDown] ge-0/0/1.0 index 390 [Up Broadcast Multicast] address #0 2.0.0.0.e.2"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 509351
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517377497,
+  "time": "2026-10-24T11:21:16.517377497+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517384150,
+  "time": "2026-10-24T11:21:16.51738415+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "UpDown"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517617493,
+  "time": "2026-10-24T11:21:16.517617493+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517730768,
+  "time": "2026-10-24T11:21:16.517730768+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517745727,
+  "time": "2026-10-24T11:21:16.517745727+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517752051,
+  "time": "2026-10-24T11:21:16.517752051+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "390"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517847414,
+  "time": "2026-10-24T11:21:16.517847414+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517854153,
+  "time": "2026-10-24T11:21:16.517854153+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFL_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "[Up Broadcast Multicast] address #0 2.0.0.0.e.2"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517864633,
+  "time": "2026-10-24T11:21:16.517864633+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517870495,
+  "time": "2026-10-24T11:21:16.517870495+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_IFA_NOTIFICATION"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_IFA_NOTIFICATION: IF_TRACE: EVENT <UpDown> ge-0/0/1.0 index 390 10.0.22.2/30 -> 10.0.22.3 <Up Broadcast Multicast>"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 509505
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517955961,
+  "time": "2026-10-24T11:21:16.517955961+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517962238,
+  "time": "2026-10-24T11:21:16.517962238+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "UpDown"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517971900,
+  "time": "2026-10-24T11:21:16.5179719+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076517977834,
+  "time": "2026-10-24T11:21:16.517977834+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518057089,
+  "time": "2026-10-24T11:21:16.518057089+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518064029,
+  "time": "2026-10-24T11:21:16.518064029+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "390"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518074017,
+  "time": "2026-10-24T11:21:16.518074017+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518080004,
+  "time": "2026-10-24T11:21:16.518080004+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFA_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "10.0.22.2/30 -> 10.0.22.3 <Up Broadcast Multicast>"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518254017,
+  "time": "2026-10-24T11:21:16.518254017+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518262622,
+  "time": "2026-10-24T11:21:16.518262622+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_IFD_NOTIFICATION"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_IFD_NOTIFICATION: IF_TRACE: EVENT <UpDown> ge-0/0/1 index 144 <Up Broadcast Multicast> agg_parent 0 address #0 2.0.0.0.e.2"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 509800
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518279374,
+  "time": "2026-10-24T11:21:16.518279374+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518285575,
+  "time": "2026-10-24T11:21:16.518285575+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "UpDown"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518359784,
+  "time": "2026-10-24T11:21:16.518359784+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518366647,
+  "time": "2026-10-24T11:21:16.518366647+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518376989,
+  "time": "2026-10-24T11:21:16.518376989+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518383265,
+  "time": "2026-10-24T11:21:16.518383265+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "144"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518429998,
+  "time": "2026-10-24T11:21:16.518429998+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076518436164,
+  "time": "2026-10-24T11:21:16.518436164+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_IFD_NOTIFICATION][priority=30][type=2]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "<Up Broadcast Multicast> agg_parent 0 address #0 2.0.0.0.e.2"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076573085680,
+  "time": "2026-10-24T11:21:16.57308568+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076573112552,
+  "time": "2026-10-24T11:21:16.573112552+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "SNMP_TRAP_LINK_UP"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "29"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20297
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "SNMP_TRAP_LINK_UP: ifIndex 522, ifAdminStatus up(1), ifOperStatus up(1), ifName ge-0/0/1"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mib2d"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 561430
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076577343028,
+  "time": "2026-10-24T11:21:16.577343028+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]/attributes[key=snmp-interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076577361182,
+  "time": "2026-10-24T11:21:16.577361182+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]/attributes[key=snmp-interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "snmp-interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "522"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076588055436,
+  "time": "2026-10-24T11:21:16.588055436+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]/attributes[key=admin-status]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076588065193,
+  "time": "2026-10-24T11:21:16.588065193+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]/attributes[key=admin-status]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "admin-status"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "up(1)"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076589548060,
+  "time": "2026-10-24T11:21:16.58954806+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]/attributes[key=operational-status]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076589563158,
+  "time": "2026-10-24T11:21:16.589563158+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]/attributes[key=operational-status]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "operational-status"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "up(1)"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076589576936,
+  "time": "2026-10-24T11:21:16.589576936+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076589583843,
+  "time": "2026-10-24T11:21:16.589583843+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=29][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076590124478,
+  "time": "2026-10-24T11:21:16.590124478+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076590135543,
+  "time": "2026-10-24T11:21:16.590135543+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "KERNEL"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "7"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "0"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 0
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "if_pfe_ge_ifdstat_ipc:handling ALARM ASSERT/CLEAR"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "kernel"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 563007
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076590914452,
+  "time": "2026-10-24T11:21:16.590914452+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076590929810,
+  "time": "2026-10-24T11:21:16.59092981+05:30",
+  "prefix": "juniper:/junos/events/event[facility=0][id=KERNEL][priority=7][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "if_pfe_ge_ifdstat_ipc:handling ALARM ASSERT/CLEAR"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591046692,
+  "time": "2026-10-24T11:21:16.591046692+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591054070,
+  "time": "2026-10-24T11:21:16.59105407+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_OSPF_NBRUP"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_OSPF_NBRUP: OSPF neighbor 10.0.22.1 (realm ospf-v2 ge-0/0/1.0 area 0.0.0.0) state changed from Init to ExStart due to 2WayRcvd (event reason: neighbor detected this router)"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 566123
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591071510,
+  "time": "2026-10-24T11:21:16.59107151+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=neighbor-address]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591078807,
+  "time": "2026-10-24T11:21:16.591078807+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=neighbor-address]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "neighbor-address"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "10.0.22.1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591219197,
+  "time": "2026-10-24T11:21:16.591219197+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=realm-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591228034,
+  "time": "2026-10-24T11:21:16.591228034+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=realm-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "realm-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ospf-v2"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591241183,
+  "time": "2026-10-24T11:21:16.591241183+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591247661,
+  "time": "2026-10-24T11:21:16.591247661+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591749398,
+  "time": "2026-10-24T11:21:16.591749398+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=area-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591760106,
+  "time": "2026-10-24T11:21:16.591760106+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=area-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "area-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0.0.0.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591771949,
+  "time": "2026-10-24T11:21:16.591771949+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=old-state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591778403,
+  "time": "2026-10-24T11:21:16.591778403+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=old-state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "old-state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "Init"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591849065,
+  "time": "2026-10-24T11:21:16.591849065+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=new-state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591855905,
+  "time": "2026-10-24T11:21:16.591855905+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=new-state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "new-state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ExStart"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591866543,
+  "time": "2026-10-24T11:21:16.591866543+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=event-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591873672,
+  "time": "2026-10-24T11:21:16.591873672+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=event-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "event-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "2WayRcvd"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591935362,
+  "time": "2026-10-24T11:21:16.591935362+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=reason]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591941758,
+  "time": "2026-10-24T11:21:16.591941758+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=reason]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "reason"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "neighbor detected this router"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591952427,
+  "time": "2026-10-24T11:21:16.591952427+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076591961100,
+  "time": "2026-10-24T11:21:16.5919611+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "SNMP_TRAP_LINK_UP"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20297
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "SNMP_TRAP_LINK_UP: ifIndex 634, ifAdminStatus up(1), ifOperStatus up(1), ifName ge-0/0/1.0"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mib2d"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 571740
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076592023239,
+  "time": "2026-10-24T11:21:16.592023239+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]/attributes[key=snmp-interface-index]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076592030020,
+  "time": "2026-10-24T11:21:16.59203002+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]/attributes[key=snmp-interface-index]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "snmp-interface-index"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "634"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076592041046,
+  "time": "2026-10-24T11:21:16.592041046+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]/attributes[key=admin-status]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076592047347,
+  "time": "2026-10-24T11:21:16.592047347+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]/attributes[key=admin-status]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "admin-status"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "up(1)"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076592096121,
+  "time": "2026-10-24T11:21:16.592096121+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]/attributes[key=operational-status]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076592102514,
+  "time": "2026-10-24T11:21:16.592102514+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]/attributes[key=operational-status]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "operational-status"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "up(1)"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076592112605,
+  "time": "2026-10-24T11:21:16.592112605+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076592118692,
+  "time": "2026-10-24T11:21:16.592118692+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=SNMP_TRAP_LINK_UP][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076726436361,
+  "time": "2026-10-24T11:21:16.726436361+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076726469382,
+  "time": "2026-10-24T11:21:16.726469382+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "RPD_OSPF_NBRUP"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "30"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "3"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20478
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "RPD_OSPF_NBRUP: OSPF neighbor 10.0.22.1 (realm ospf-v2 ge-0/0/1.0 area 0.0.0.0) state changed from Exchange to Full due to ExchangeDone (event reason: DBD exchange of master completed)"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "rpd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821076
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 720941
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076727921531,
+  "time": "2026-10-24T11:21:16.727921531+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=neighbor-address]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076727937201,
+  "time": "2026-10-24T11:21:16.727937201+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=neighbor-address]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "neighbor-address"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "10.0.22.1"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076727951511,
+  "time": "2026-10-24T11:21:16.727951511+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=realm-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076727958027,
+  "time": "2026-10-24T11:21:16.727958027+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=realm-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "realm-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ospf-v2"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076728269213,
+  "time": "2026-10-24T11:21:16.728269213+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=interface-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076728279890,
+  "time": "2026-10-24T11:21:16.72827989+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=interface-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "interface-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ge-0/0/1.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076728292157,
+  "time": "2026-10-24T11:21:16.728292157+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=area-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076728298804,
+  "time": "2026-10-24T11:21:16.728298804+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=area-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "area-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0.0.0.0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076728933294,
+  "time": "2026-10-24T11:21:16.728933294+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=old-state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076729041160,
+  "time": "2026-10-24T11:21:16.72904116+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=old-state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "old-state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "Exchange"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076729058935,
+  "time": "2026-10-24T11:21:16.729058935+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=new-state]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076729065818,
+  "time": "2026-10-24T11:21:16.729065818+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=new-state]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "new-state"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "Full"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076729253429,
+  "time": "2026-10-24T11:21:16.729253429+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=event-name]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076729263271,
+  "time": "2026-10-24T11:21:16.729263271+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=event-name]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "event-name"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "ExchangeDone"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076729275585,
+  "time": "2026-10-24T11:21:16.729275585+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=reason]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821076729283019,
+  "time": "2026-10-24T11:21:16.729283019+05:30",
+  "prefix": "juniper:/junos/events/event[facility=3][id=RPD_OSPF_NBRUP][priority=30][type=2]/attributes[key=reason]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "reason"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "DBD exchange of master completed"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078291940692,
+  "time": "2026-10-24T11:21:18.291940692+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078291969491,
+  "time": "2026-10-24T11:21:18.291969491+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "ALARMD_CLEAR_ALERT"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "13"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "1"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20588
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "ALARMD_CLEAR_ALERT: Alarm cleared: License id=0, color=YELLOW, class=CHASSIS, reason=BGP(47) usage requires a license\n"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "alarmd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821078
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 267745
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292316953,
+  "time": "2026-10-24T11:21:18.292316953+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-device]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292328596,
+  "time": "2026-10-24T11:21:18.292328596+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-device]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-device"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "License"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292345567,
+  "time": "2026-10-24T11:21:18.292345567+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292352438,
+  "time": "2026-10-24T11:21:18.292352438+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292585034,
+  "time": "2026-10-24T11:21:18.292585034+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-color-type]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292594409,
+  "time": "2026-10-24T11:21:18.292594409+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-color-type]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-color-type"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "YELLOW"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292606701,
+  "time": "2026-10-24T11:21:18.292606701+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-class-type]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292612942,
+  "time": "2026-10-24T11:21:18.292612942+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-class-type]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-class-type"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "CHASSIS"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292982319,
+  "time": "2026-10-24T11:21:18.292982319+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-long-reason]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078292991419,
+  "time": "2026-10-24T11:21:18.292991419+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-long-reason]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-long-reason"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "BGP(47) usage requires a license"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078293090466,
+  "time": "2026-10-24T11:21:18.293090466+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078293098904,
+  "time": "2026-10-24T11:21:18.293098904+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "ALARMD_SET_ALERT"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "13"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "1"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20588
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "ALARMD_SET_ALERT: Alarm set: License id=0, color=YELLOW, class=CHASSIS, reason=BGP(47) usage requires a license\n"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "alarmd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821078
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 280386
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078293306910,
+  "time": "2026-10-24T11:21:18.29330691+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-device]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078293316236,
+  "time": "2026-10-24T11:21:18.293316236+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-device]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-device"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "License"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078293328076,
+  "time": "2026-10-24T11:21:18.293328076+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078293334886,
+  "time": "2026-10-24T11:21:18.293334886+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078294009484,
+  "time": "2026-10-24T11:21:18.294009484+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-color-type]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078294020514,
+  "time": "2026-10-24T11:21:18.294020514+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-color-type]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-color-type"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "YELLOW"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078294118338,
+  "time": "2026-10-24T11:21:18.294118338+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-class-type]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078294128075,
+  "time": "2026-10-24T11:21:18.294128075+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-class-type]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-class-type"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "CHASSIS"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078294370513,
+  "time": "2026-10-24T11:21:18.294370513+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-long-reason]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078294379594,
+  "time": "2026-10-24T11:21:18.294379594+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-long-reason]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-long-reason"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "BGP(47) usage requires a license"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078303529752,
+  "time": "2026-10-24T11:21:18.303529752+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078303952287,
+  "time": "2026-10-24T11:21:18.303952287+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "ALARMD_CLEAR_ALERT"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "13"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "1"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20588
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "ALARMD_CLEAR_ALERT: Alarm cleared: License id=0, color=YELLOW, class=CHASSIS, reason=VXLAN(164) usage requires a license\n"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "alarmd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821078
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 294992
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304031572,
+  "time": "2026-10-24T11:21:18.304031572+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-device]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304127586,
+  "time": "2026-10-24T11:21:18.304127586+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-device]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-device"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "License"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304143396,
+  "time": "2026-10-24T11:21:18.304143396+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304195291,
+  "time": "2026-10-24T11:21:18.304195291+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304399067,
+  "time": "2026-10-24T11:21:18.304399067+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-color-type]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304408351,
+  "time": "2026-10-24T11:21:18.304408351+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-color-type]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-color-type"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "YELLOW"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304526205,
+  "time": "2026-10-24T11:21:18.304526205+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-class-type]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304533313,
+  "time": "2026-10-24T11:21:18.304533313+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-class-type]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-class-type"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "CHASSIS"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304790261,
+  "time": "2026-10-24T11:21:18.304790261+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-long-reason]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078304884833,
+  "time": "2026-10-24T11:21:18.304884833+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_CLEAR_ALERT][priority=13][type=2]/attributes[key=alarm-long-reason]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-long-reason"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "VXLAN(164) usage requires a license"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327077416,
+  "time": "2026-10-24T11:21:18.327077416+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327101454,
+  "time": "2026-10-24T11:21:18.327101454+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "ALARMD_SET_ALERT"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "13"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "1"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 20588
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "ALARMD_SET_ALERT: Alarm set: License id=0, color=YELLOW, class=CHASSIS, reason=VXLAN(164) usage requires a license\n"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "alarmd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821078
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 318424
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327282540,
+  "time": "2026-10-24T11:21:18.32728254+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-device]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327293426,
+  "time": "2026-10-24T11:21:18.327293426+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-device]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-device"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "License"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327306892,
+  "time": "2026-10-24T11:21:18.327306892+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-id]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327313534,
+  "time": "2026-10-24T11:21:18.327313534+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-id]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-id"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327954853,
+  "time": "2026-10-24T11:21:18.327954853+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-color-type]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327965390,
+  "time": "2026-10-24T11:21:18.32796539+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-color-type]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-color-type"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "YELLOW"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327977153,
+  "time": "2026-10-24T11:21:18.327977153+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-class-type]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078327983619,
+  "time": "2026-10-24T11:21:18.327983619+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-class-type]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-class-type"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "CHASSIS"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078328268132,
+  "time": "2026-10-24T11:21:18.328268132+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-long-reason]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821078328279585,
+  "time": "2026-10-24T11:21:18.328279585+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=ALARMD_SET_ALERT][priority=13][type=2]/attributes[key=alarm-long-reason]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "alarm-long-reason"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "VXLAN(164) usage requires a license"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083132029742,
+  "time": "2026-10-24T11:21:23.132029742+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083132282461,
+  "time": "2026-10-24T11:21:23.132282461+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CMDLINE_READ_LINE"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CMDLINE_READ_LINE: User 'root', command 'command rpc rpc command show interfaces extensive-local-interfaces-zero-suppress '"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821083
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 37472
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083133259228,
+  "time": "2026-10-24T11:21:23.133259228+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=username]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083133940011,
+  "time": "2026-10-24T11:21:23.133940011+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=username]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "username"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "root"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083133977351,
+  "time": "2026-10-24T11:21:23.133977351+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083133984473,
+  "time": "2026-10-24T11:21:23.133984473+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CMDLINE_READ_LINE][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "command rpc rpc command show interfaces extensive-local-interfaces-zero-suppress "
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083135975926,
+  "time": "2026-10-24T11:21:23.135975926+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083136073384,
+  "time": "2026-10-24T11:21:23.136073384+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_NETCONF_CMD"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_NETCONF_CMD: User 'root' used NETCONF client to run command 'get-interface-information level=extensive-local-interfaces-zero-suppress'"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821083
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 38376
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083136100057,
+  "time": "2026-10-24T11:21:23.136100057+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=username]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083136595913,
+  "time": "2026-10-24T11:21:23.136595913+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=username]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "username"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "root"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083137215816,
+  "time": "2026-10-24T11:21:23.137215816+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083137228692,
+  "time": "2026-10-24T11:21:23.137228692+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_NETCONF_CMD][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "get-interface-information level=extensive-local-interfaces-zero-suppress"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083137245010,
+  "time": "2026-10-24T11:21:23.13724501+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083137251314,
+  "time": "2026-10-24T11:21:23.137251314+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CHILD_START"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CHILD_START: Starting child '/sbin/ifinfo'"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821083
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 38556
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083137520755,
+  "time": "2026-10-24T11:21:23.137520755+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083137530022,
+  "time": "2026-10-24T11:21:23.137530022+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_START][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "/sbin/ifinfo"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083342279640,
+  "time": "2026-10-24T11:21:23.34227964+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083342311808,
+  "time": "2026-10-24T11:21:23.342311808+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "SYSTEM"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "3"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "15"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "1"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 34746
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "PVIDB: Attribute 'platform.is_fpc_less' not present in Db"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "ifinfo"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821083
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 333978
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083342525369,
+  "time": "2026-10-24T11:21:23.342525369+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]/attributes[key=message]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083342803327,
+  "time": "2026-10-24T11:21:23.342803327+05:30",
+  "prefix": "juniper:/junos/events/event[facility=1][id=SYSTEM][priority=15][type=3]/attributes[key=message]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "message"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "PVIDB: Attribute 'platform.is_fpc_less' not present in Db"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083834960207,
+  "time": "2026-10-24T11:21:23.834960207+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083834988533,
+  "time": "2026-10-24T11:21:23.834988533+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]",
+  "updates": [
+    {
+      "Path": "id",
+      "values": {
+        "id": "UI_CHILD_STATUS"
+      }
+    },
+    {
+      "Path": "type",
+      "values": {
+        "type": "2"
+      }
+    },
+    {
+      "Path": "priority",
+      "values": {
+        "priority": "190"
+      }
+    },
+    {
+      "Path": "facility",
+      "values": {
+        "facility": "23"
+      }
+    },
+    {
+      "Path": "pid",
+      "values": {
+        "pid": 24781
+      }
+    },
+    {
+      "Path": "message",
+      "values": {
+        "message": "UI_CHILD_STATUS: Cleanup child '/sbin/ifinfo', PID 34746, status 0"
+      }
+    },
+    {
+      "Path": "daemon",
+      "values": {
+        "daemon": "mgd"
+      }
+    },
+    {
+      "Path": "hostname",
+      "values": {
+        "hostname": "leaf2"
+      }
+    },
+    {
+      "Path": "timestamp/seconds",
+      "values": {
+        "timestamp/seconds": 1792821083
+      }
+    },
+    {
+      "Path": "timestamp/microseconds",
+      "values": {
+        "timestamp/microseconds": 834482
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083835112165,
+  "time": "2026-10-24T11:21:23.835112165+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=command]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083835124278,
+  "time": "2026-10-24T11:21:23.835124278+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=command]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "command"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "/sbin/ifinfo"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083835139764,
+  "time": "2026-10-24T11:21:23.835139764+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=pid]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083835148958,
+  "time": "2026-10-24T11:21:23.835148958+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=pid]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "pid"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "34746"
+      }
+    }
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083835343032,
+  "time": "2026-10-24T11:21:23.835343032+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=status-code]",
+  "deletes": [
+    ""
+  ]
+}
+{
+  "source": "leaf2",
+  "subscription-name": "default-1792821036",
+  "timestamp": 1792821083835351533,
+  "time": "2026-10-24T11:21:23.835351533+05:30",
+  "prefix": "juniper:/junos/events/event[facility=23][id=UI_CHILD_STATUS][priority=190][type=2]/attributes[key=status-code]",
+  "updates": [
+    {
+      "Path": "key",
+      "values": {
+        "key": "status-code"
+      }
+    },
+    {
+      "Path": "value",
+      "values": {
+        "value": "0"
+      }
+    }
+  ]
+}

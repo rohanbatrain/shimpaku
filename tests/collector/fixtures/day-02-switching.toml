@@ -1,0 +1,41 @@
+# Day 2 — routing + switching: two routers and a switch.
+#
+# r1–r2 carries the OSPF exercise; r1–sw1 is a trunk carrying VLAN 10 and 20.
+# Requires the vJunos-switch image in /home/lab/images.
+#
+# Declared memory: 3 x 5120 MiB + 4096 MiB reserve = 19456 MiB must be available.
+
+[lab]
+name = "day-02-switching"
+description = "VLANs, trunks and inter-VLAN routing on a switch, OSPF across the routers."
+
+[[nodes]]
+name = "r1"
+kind = "vjunos-router"
+mgmt_ip = "10.99.0.11"
+vcpu = 4
+memory_mb = 5120
+
+[[nodes]]
+name = "r2"
+kind = "vjunos-router"
+mgmt_ip = "10.99.0.12"
+vcpu = 4
+memory_mb = 5120
+
+[[nodes]]
+name = "sw1"
+kind = "vjunos-switch"
+mgmt_ip = "10.99.0.21"
+vcpu = 4
+memory_mb = 5120
+
+[[links]]
+name = "r1-r2"
+nodes = ["r1", "r2"]
+subnet = "10.0.12.0/30"
+
+[[links]]
+name = "r1-sw1"
+nodes = ["r1", "sw1"]
+# trunk: VLAN 10 (USERS) and VLAN 20 (SERVERS), no L3 address on the link

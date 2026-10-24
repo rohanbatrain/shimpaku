@@ -1,0 +1,117 @@
+<probe-results><probe-test-results><owner>shimpaku</owner><test-name>users-servers</test-name><target-address>10.20.0.1</target-address><probe-type>icmp-ping</probe-type><icmp-id>10</icmp-id><routing-instance-name>USER</routing-instance-name><test-size format="5 probes">
+5
+</test-size><probe-single-results style="verbose"><probe-status>Response received</probe-status><probe-sent-time seconds="1792821210">
+Sat Oct 24 05:53:30 2026
+</probe-sent-time><probe-time seconds="1792821210">
+Sat Oct 24 05:53:30 2026
+</probe-time><hardware-timestamp-status>No hardware timestamps</hardware-timestamp-status><rtt>3414</rtt><round-trip-jitter>1199</round-trip-jitter><round-trip-interarrival-jitter>6639</round-trip-interarrival-jitter></probe-single-results><probe-test-current-results><probe-test-generic-results><results-scope>current test</results-scope><probes-sent>4</probes-sent><probe-responses>4</probe-responses><loss-percentage>0.000000</loss-percentage><probe-test-rtt><probe-summary-results><probe-results-type>Round trip time</probe-results-type><samples>4</samples><min-delay format="2215 usec">
+2215
+</min-delay><max-delay format="3414 usec">
+3414
+</max-delay><avg-delay format="2903 usec">
+2903
+</avg-delay><jitter-delay format="1199 usec">
+1199
+</jitter-delay><stddev-delay format="491 usec">
+491
+</stddev-delay><sum-delay format="11611 usec">
+11611
+</sum-delay></probe-summary-results></probe-test-rtt><probe-test-positive-round-trip-jitter><probe-summary-results><probe-results-type>Positive round trip jitter</probe-results-type><samples>1</samples><min-delay format="1199 usec">
+1199
+</min-delay><max-delay format="1199 usec">
+1199
+</max-delay><avg-delay format="1199 usec">
+1199
+</avg-delay><jitter-delay format="0 usec">
+0
+</jitter-delay><stddev-delay format="0 usec">
+0
+</stddev-delay><sum-delay format="1199 usec">
+1199
+</sum-delay></probe-summary-results></probe-test-positive-round-trip-jitter><probe-test-negative-round-trip-jitter><probe-summary-results><probe-results-type>Negative round trip jitter</probe-results-type><samples>3</samples><min-delay format="448 usec">
+448
+</min-delay><max-delay format="817 usec">
+817
+</max-delay><avg-delay format="640 usec">
+640
+</avg-delay><jitter-delay format="369 usec">
+369
+</jitter-delay><stddev-delay format="151 usec">
+151
+</stddev-delay><sum-delay format="1921 usec">
+1921
+</sum-delay></probe-summary-results></probe-test-negative-round-trip-jitter></probe-test-generic-results></probe-test-current-results><probe-last-test-results><probe-test-generic-results><results-scope>last test</results-scope><probes-sent>5</probes-sent><probe-responses>5</probe-responses><loss-percentage>0.000000</loss-percentage><probe-last-test-info><last-test-time seconds="1792821197">
+Sat Oct 24 05:53:17 2026
+</last-test-time></probe-last-test-info><probe-test-rtt><probe-summary-results><probe-results-type>Round trip time</probe-results-type><samples>5</samples><min-delay format="1854 usec">
+1854
+</min-delay><max-delay format="31958 usec">
+31958
+</max-delay><avg-delay format="8710 usec">
+8710
+</avg-delay><jitter-delay format="30104 usec">
+30104
+</jitter-delay><stddev-delay format="11649 usec">
+11649
+</stddev-delay><sum-delay format="43550 usec">
+43550
+</sum-delay></probe-summary-results></probe-test-rtt><probe-test-positive-round-trip-jitter><probe-summary-results><probe-results-type>Positive round trip jitter</probe-results-type><samples>3</samples><min-delay format="606 usec">
+606
+</min-delay><max-delay format="20452 usec">
+20452
+</max-delay><avg-delay format="7578 usec">
+7578
+</avg-delay><jitter-delay format="19846 usec">
+19846
+</jitter-delay><stddev-delay format="9114 usec">
+9114
+</stddev-delay><sum-delay format="22734 usec">
+22734
+</sum-delay></probe-summary-results></probe-test-positive-round-trip-jitter><probe-test-negative-round-trip-jitter><probe-summary-results><probe-results-type>Negative round trip jitter</probe-results-type><samples>2</samples><min-delay format="1288 usec">
+1288
+</min-delay><max-delay format="28816 usec">
+28816
+</max-delay><avg-delay format="15052 usec">
+15052
+</avg-delay><jitter-delay format="27528 usec">
+27528
+</jitter-delay><stddev-delay format="13764 usec">
+13764
+</stddev-delay><sum-delay format="30104 usec">
+30104
+</sum-delay></probe-summary-results></probe-test-negative-round-trip-jitter></probe-test-generic-results></probe-last-test-results><probe-test-global-results><probe-test-generic-results><results-scope>all tests</results-scope><probes-sent>34</probes-sent><probe-responses>34</probe-responses><loss-percentage>0.000000</loss-percentage><probe-test-rtt><probe-summary-results><probe-results-type>Round trip time</probe-results-type><samples>34</samples><min-delay format="1854 usec">
+1854
+</min-delay><max-delay format="44319 usec">
+44319
+</max-delay><avg-delay format="8950 usec">
+8950
+</avg-delay><jitter-delay format="42465 usec">
+42465
+</jitter-delay><stddev-delay format="11395 usec">
+11395
+</stddev-delay><sum-delay format="304300 usec">
+304300
+</sum-delay></probe-summary-results></probe-test-rtt><probe-test-positive-round-trip-jitter><probe-summary-results><probe-results-type>Positive round trip jitter</probe-results-type><samples>16</samples><min-delay format="477 usec">
+477
+</min-delay><max-delay format="40824 usec">
+40824
+</max-delay><avg-delay format="8925 usec">
+8925
+</avg-delay><jitter-delay format="40347 usec">
+40347
+</jitter-delay><stddev-delay format="13044 usec">
+13044
+</stddev-delay><sum-delay format="142805 usec">
+142805
+</sum-delay></probe-summary-results></probe-test-positive-round-trip-jitter><probe-test-negative-round-trip-jitter><probe-summary-results><probe-results-type>Negative round trip jitter</probe-results-type><samples>17</samples><min-delay format="11 usec">
+11
+</min-delay><max-delay format="39469 usec">
+39469
+</max-delay><avg-delay format="8359 usec">
+8359
+</avg-delay><jitter-delay format="39458 usec">
+39458
+</jitter-delay><stddev-delay format="12171 usec">
+12171
+</stddev-delay><sum-delay format="142108 usec">
+142108
+</sum-delay></probe-summary-results></probe-test-negative-round-trip-jitter></probe-test-generic-results></probe-test-global-results><delay-thresh>0</delay-thresh><jitter-thresh>0</jitter-thresh><stddev-thresh>0</stddev-thresh><loss-thresh-total>1</loss-thresh-total><loss-thresh-succ>1</loss-thresh-succ></probe-test-results></probe-results>
