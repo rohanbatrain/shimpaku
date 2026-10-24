@@ -607,3 +607,20 @@ def test_auth_off_mcp_refuses_a_non_loopback_bind(monkeypatch):
     monkeypatch.setattr(mcp_mod.settings, "bind", "0.0.0.0")
     with pytest.raises(RuntimeError, match="non-loopback"):
         mcp_mod.http_app(object())
+
+
+def test_replay_may_bind_publicly_with_auth_off(monkeypatch):
+    """The public replay container binds 0.0.0.0 with auth off by design (every caller is an
+    anonymous read-only visitor). The bind guard must not stop it — it did, and CI caught the
+    container crash-looping (2026-10-25)."""
+    from shimpaku.api import __main__ as api_main
+    from shimpaku.api import replay
+    from shimpaku.config import settings
+    started = []
+    monkeypatch.setattr(api_main.uvicorn, "run", lambda *a, **k: started.append(k.get("host")))
+    from pathlib import Path
+    monkeypatch.setenv("SHIMPAKU_REPLAY", str(Path(__file__).resolve().parents[1] / "fixtures/live_snapshot.json"))
+    monkeypatch.setattr(settings, "auth_mode", "off")
+    monkeypatch.setattr(settings, "bind", "0.0.0.0")
+    api_main.main()
+    assert started == ["0.0.0.0"]
