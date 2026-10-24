@@ -1,11 +1,14 @@
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, type Who } from "./session";
 import { Loading } from "./components/ui";
 const AssistantPanel = lazy(() => import("./components/AssistantPanel"));
 const ServiceLevels = lazy(() => import("./pages/ServiceLevels"));
+const Overview = lazy(() => import("./pages/Overview"));
+const Topology = lazy(() => import("./pages/Topology"));
+const Device = lazy(() => import("./pages/Device"));
 const RootCause = lazy(() => import("./pages/RootCause"));
 const RootCauseIndex = lazy(() => import("./pages/RootCause").then((m) => ({ default: m.RootCauseIndex })));
 const Actions = lazy(() => import("./pages/Actions"));
@@ -29,13 +32,13 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
 function AppBar({ open, onToggle, btn }: { open: boolean; onToggle: () => void; btn: RefObject<HTMLButtonElement | null> }) {
   const loc = useLocation();
-  const title = TITLES.find(([p]) => loc.pathname.startsWith(p))?.[1] ?? "Shimpaku";
+  const title = TITLES.find(([p]) => loc.pathname.startsWith(p))?.[1] ?? (loc.pathname === "/" ? "Overview" : "Shimpaku");
   return (
     <div className="appbar">
       <Mark size={28} />
@@ -78,6 +81,12 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
         </div>
       </div>
       <div className="sect">Monitor</div>
+      <NavLink to="/" end>
+        <Home {...ic} /> Overview
+      </NavLink>
+      <NavLink to="/topology">
+        <Cluster {...ic} /> Topology
+      </NavLink>
       <NavLink to="/sle">
         <Dashboard {...ic} /> Service levels
       </NavLink>
@@ -208,7 +217,9 @@ export default function App() {
           {who.role === "tester" && <Suspense fallback={null}><LeaseBanner /></Suspense>}
           <Suspense fallback={<Loading label="Loading" />}>
           <Routes>
-            <Route path="/" element={<Navigate to="/sle" replace />} />
+            <Route path="/" element={<Overview />} />
+            <Route path="/topology" element={<Topology />} />
+            <Route path="/devices/:name" element={<Device />} />
             <Route path="/login" element={<Navigate to="/sle" replace />} />
             <Route path="/start" element={<Navigate to="/actions" replace />} />
             <Route path="/sle" element={<ServiceLevels />} />
