@@ -221,3 +221,48 @@ def test_device_health_from_store(store):
     assert d["last"]["status"] == "good"
     assert d["ports"] == {"ge-0/0/0": "up", "ge-0/0/5": "down"}
     assert d["classifiers"] == [{"classifier": "Adjacency", "sub_classifier": "Neighbour down", "minutes": 1}]
+
+
+# ---- guests: anonymous public-view visitors and lease-bound testers ------------------------------
+def test_public_view_visitor_gets_no_mgmt_ip_and_no_config_text(monkeypatch):
+    from shimpaku.api.auth import hash_password
+    monkeypatch.setenv("SHIMPAKU_ADMIN_PASSWORD_HASH", hash_password("pw-pw-pw-pw"))
+    svc = Raw()
+    calls = []
+    orig = svc.port_get_config
+
+    async def spy(device, ifname):
+        calls.append((device, ifname))
+        out = await orig(device, ifname)
+        return {**out, "config_own": "set system root-authentication encrypted-password $6$secret"}
+    svc.port_get_config = spy
+    c = TestClient(create_app(svc, auth_mode="local", public_view=True))
+    assert c.get("/api/whoami").json()["role"] == "visitor"
+    for path in ("/api/viz/topology", "/api/viz/overview", "/api/viz/devices/sw1", "/api/viz/devices/leaf1"):
+        r = c.get(path)
+        assert r.status_code == 200, path
+        assert not _ips(r.text) and "encrypted-password" not in r.text and "set " not in r.text, path
+    # the only config read is the fixture port on the fixture device
+    assert set(calls) == {("sw1", "ge-0/0/5")}
+
+
+@pytest.mark.parametrize("role", ["tester", "visitor"])
+def test_guest_roles_through_the_router(role):
+    from fastapi import FastAPI
+    from shimpaku.api.auth import Principal
+
+    svc = Raw()
+
+    async def call(name, *a, **kw):
+        return await getattr(svc, name)(*a, **kw)
+
+    def reader():
+        return Principal("session" if role == "tester" else "anonymous", "guest", "read", role=role,
+                         lease_id="L1" if role == "tester" else None)
+    app = FastAPI()
+    app.include_router(routes_viz.router(call, reader))
+    c = TestClient(app)
+    for path in ("/api/viz/topology", "/api/viz/overview", "/api/viz/devices/sw1"):
+        r = c.get(path)
+        assert r.status_code == 200 and not _ips(r.text), (role, path)
+        assert "config_inherited" not in r.text and "vlan members" not in r.text
