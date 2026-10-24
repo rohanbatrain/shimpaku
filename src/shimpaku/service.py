@@ -289,6 +289,63 @@ async def action_cancel(action_id: str, caller: Any) -> dict:
     return await _decide("action_cancel", "cancel", action_id, caller, raise_refused=False)
 
 
+# ===================================================================== demo fixture (fault lab)
+
+DEMO_ROLES = ("operator", "tester", "system")
+
+
+async def _demo_op(op: str, caller: Any, *, opener=None, lock_db=None) -> dict:
+    """`demo_seed` / `demo_break`: a Junos write on the fixture devices only, under the device
+    lock (refused while a `commit confirmed` is pending), one audit row per call with the
+    caller's role and lease. Operators, testers (with a lease) and the system may run it."""
+    from shimpaku.actions import fixture
+    from shimpaku.config import settings
+
+    c = _caller(caller)
+    method = f"demo_{op}"
+    refusal = None
+    if c.role not in DEMO_ROLES:
+        refusal = f"{method} refused: role {c.role!r} may not change the demo fixture"
+    elif c.role == "tester" and not c.lease_id:
+        refusal = f"{method} refused: tester has no lease"
+    if refusal:
+        _audit_row(c, method, args={"devices": _demo_devices(op)}, status="refused", reasons=[refusal])
+        return _err("forbidden", refusal)
+    holder = f"shimpaku-demo:{c.role}:{c.lease_id or c.name}"
+    fn = fixture.apply_seed if op == "seed" else fixture.apply_break
+    try:
+        writes = await asyncio.to_thread(fn, holder, opener=opener or devices.open_device,
+                                         lock_db=lock_db or settings.lock_db)
+    except Exception as e:  # noqa: BLE001  (DeviceBusy, PendingConfirm, NETCONF errors)
+        from shimpaku import lock
+        code = "busy" if isinstance(e, (lock.DeviceBusy, lock.PendingConfirm)) else "device_error"
+        out = _err(code, f"{type(e).__name__}: {e}")
+        _audit_row(c, method, args={"devices": _demo_devices(op)}, status=f"error:{type(e).__name__}",
+                   reasons=[str(e)[:300]])
+        return out
+    changed = any(w["changed"] for w in writes)
+    out = {"op": op, "changed": changed, "writes": writes}
+    _audit_row(c, method, args={"devices": _demo_devices(op),
+                                "diff": {w["device"]: w["diff"] for w in writes if w["diff"]}},
+               status="changed" if changed else "no_change")
+    return out
+
+
+def _demo_devices(op: str) -> list[str]:
+    from shimpaku.actions import fixture
+    return [fixture.DEVICE, fixture.CORR_DEVICE] if op == "seed" else [fixture.DEVICE]
+
+
+async def demo_seed(caller: Any, **kw: Any) -> dict:
+    """Create the Missing-VLAN fixture (idempotent). Audited; takes the device lock."""
+    return await _demo_op("seed", caller, **kw)
+
+
+async def demo_break(caller: Any, **kw: Any) -> dict:
+    """Inject the fault: VLAN 999 removed from the sw1 ge-0/0/5 trunk. Audited; takes the lock."""
+    return await _demo_op("break", caller, **kw)
+
+
 async def policy_get() -> dict:
     """The guardrail table and the live policy values (read-only; `lab://policy`)."""
     from shimpaku.actions.policy import CATALOGUE

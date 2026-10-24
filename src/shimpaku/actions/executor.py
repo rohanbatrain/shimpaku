@@ -159,7 +159,9 @@ class Executor:
                 dev.close()
             except Exception:  # noqa: BLE001
                 pass
-        window = int(self.policy.get("validation_window_s", {}).get(kind, 1800))
+        stored = (a.get("policy") or {}).get("validation_window_s")  # per-action (tester), set at propose
+        window = int(stored) if isinstance(stored, int) and not isinstance(stored, bool) and stored >= 0 \
+            else int(self.policy.get("validation_window_s", {}).get(kind, 1800))
         now = time.time()
         return self.store.transition(
             action_id, "validating", f"confirmed; validating for {window} s",

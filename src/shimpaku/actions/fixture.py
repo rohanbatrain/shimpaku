@@ -52,3 +52,66 @@ def tester_policy(policy: dict) -> dict:
     p["demo_vlans"] = [VLAN]
     p["self_drive"] = {}
     return p
+
+
+# ---------------------------------------------------------------------------- seed / break
+# Fault injection is a Junos write, so it follows the executor's rules: lease the device
+# (`lock.device_lock`, which also refuses while a `commit confirmed` is pending), exclusive
+# candidate, comment naming the operation. Callers: `service.demo_seed` / `service.demo_break`
+# (audited, role-checked); `demo_cli.py` calls those, never these directly.
+
+SEED_LINES: dict[str, list[str]] = {
+    DEVICE: [
+        f"set vlans {vlan_name(KEEP_VLAN)} vlan-id {KEEP_VLAN}",
+        f"set vlans {vlan_name(VLAN)} vlan-id {VLAN}",
+        f"set interfaces {IFNAME} unit 0 family ethernet-switching interface-mode trunk",
+        f"set interfaces {IFNAME} unit 0 family ethernet-switching vlan members {vlan_name(KEEP_VLAN)}",
+        f"set interfaces {IFNAME} unit 0 family ethernet-switching vlan members {vlan_name(VLAN)}",
+    ],
+    CORR_DEVICE: [f"set vlans {vlan_name(VLAN)} vlan-id {VLAN}"],
+}
+BREAK_LINE = f"delete interfaces {IFNAME} unit 0 family ethernet-switching vlan members {vlan_name(VLAN)}"
+
+
+def _write(dev_name: str, holder: str, why: str, load, *, opener, lock_db, confirm: int | None,
+           comment: str | None = None) -> dict:
+    """One locked, exclusive write. `load(cu)` loads the candidate. Returns {device, changed, diff}."""
+    from jnpr.junos.utils.config import Config
+
+    from shimpaku import lock
+
+    dev = opener(dev_name)
+    try:
+        with lock.device_lock(dev_name, holder, why, dev=dev, wait=120, db=lock_db):
+            with Config(dev, mode="exclusive") as cu:
+                load(cu)
+                diff = cu.diff()
+                if not diff:
+                    return {"device": dev_name, "changed": False, "diff": None}
+                if confirm:
+                    cu.commit(confirm=confirm, comment=f"shimpaku demo: {why}")
+                    cu.commit(comment=f"shimpaku demo: {why} (confirm)")  # confirms the first
+                else:
+                    cu.commit(comment=comment or f"shimpaku demo: {why}")
+        return {"device": dev_name, "changed": True, "diff": diff}
+    finally:
+        dev.close()
+
+
+def apply_seed(holder: str, *, opener, lock_db) -> list[dict]:
+    """Create the fixture (idempotent): the trunk with 998 + 999 on sw1, VLAN 999 on leaf2."""
+    out = [_write(DEVICE, holder, "seed missing-vlan fixture",
+                  lambda cu: cu.load("\n".join(SEED_LINES[DEVICE]), format="set", merge=True),
+                  opener=opener, lock_db=lock_db, confirm=3)]
+    out.append(_write(CORR_DEVICE, holder, "seed correlation vlan",
+                      lambda cu: cu.load("\n".join(SEED_LINES[CORR_DEVICE]), format="set", merge=True),
+                      opener=opener, lock_db=lock_db, confirm=3))
+    return out
+
+
+def apply_break(holder: str, *, opener, lock_db) -> list[dict]:
+    """Inject the fault: VLAN 999 removed from the trunk (998 keeps the trunk valid)."""
+    return [_write(DEVICE, holder, "inject missing vlan",
+                   lambda cu: cu.load(BREAK_LINE, format="set", ignore_warning=True),
+                   opener=opener, lock_db=lock_db, confirm=None,
+                   comment=f"demo fault: vlan {VLAN} missing from trunk")]

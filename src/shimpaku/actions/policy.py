@@ -44,6 +44,10 @@ DEFAULT_POLICY: dict[str, Any] = {
     "vlan_correlation_device": "leaf2",
     "demo_vlans": [999],
     "validation_interval_s": 30,
+    # Actions a tester proposes validate for this long instead of the per-kind window, so a demo
+    # fits in a lease (Junos's own confirm rollback measured 73–76 s). Stored on the action at
+    # propose time; operators' actions keep `validation_window_s` above.
+    "tester_validation_window_s": 180,
     "bounce_cap_24h": 3,                     # G2
     "max_open_actions": 3,                   # blast-radius cap across the lab
     # Lab write scope (build brief): writes only on these ports. Empty dict = no port writes.

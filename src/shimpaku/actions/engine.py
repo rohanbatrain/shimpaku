@@ -186,10 +186,19 @@ class Engine:
             "ifname": clean_args.get("ifname") if not decision.status == "blocked" else safe_args.get("ifname"),
             "args": safe_args, "reason": reason_c, "caller": caller.as_dict(),
             "incident_id": clean_args.get("incident_id"), "status": "open",
-            "policy": {**decision.as_dict(), "facts": _facts_summary(facts)},
+            "policy": {**decision.as_dict(), "facts": _facts_summary(facts),
+                       **self._window_for(caller)},
         })
         a = self.store.transition(aid, decision.status, "; ".join(decision.reasons))
         return self.view(a)
+
+    def _window_for(self, caller: Caller) -> dict:
+        """A per-action validation window, fixed at propose time: testers get
+        `tester_validation_window_s` (180 s by default); everyone else stores none, so the
+        executor uses the per-kind `validation_window_s` exactly as before."""
+        if caller.role != "tester":
+            return {}
+        return {"validation_window_s": int(self.policy.get("tester_validation_window_s", 180))}
 
     def _decision_refusal(self, action_id: str, caller: Caller, verb: str) -> str | None:
         """Who may approve/reject: a dashboard session whose role is operator (any action) or
