@@ -1,4 +1,5 @@
-"""``shimpaku admin set-password``, ``admin invite create|list|revoke``, ``admin purge``.
+"""``shimpaku admin set-password``, ``admin invite create|list|revoke``, ``admin requests
+list|approve|decline``, ``admin purge``.
 
 ``set-password``: store the admin's argon2id hash in ``<data>/admin.hash`` (0600).
 
@@ -102,7 +103,73 @@ def invite_revoke(invite_id: str) -> None:
 def purge() -> None:
     """Delete tester identity data (invite notes, display names) past the retention period."""
     out = _leases().purge()
-    typer.echo(f"purged: {out['invites']} invite notes, {out['leases']} display names")
+    typer.echo(f"purged: {out['invites']} invite notes, {out['leases']} display names, "
+               f"{out.get('requests', 0)} session requests")
+
+
+# ---- session requests ---------------------------------------------------------------------------
+requests_app = typer.Typer(help="Live-session requests from the public Request page.", no_args_is_help=True)
+admin_app.add_typer(requests_app, name="requests")
+
+
+@requests_app.command("list")
+def requests_list(status: str = typer.Option(None, "--status", help="pending|approved|declined|expired|used")) -> None:
+    for r in _leases().requests.list(status):
+        slots = ", ".join(_when(t) for t in r["slots"])
+        chosen = f" slot {_when(r['slot_start'])}" if r["slot_start"] else ""
+        who = "(purged)" if r["purged"] else f"{r['name']} <{r['contact']}>"
+        typer.echo(f"{r['id']}  {r['status']:<8} {who}{chosen}\n    asked: {slots}"
+                   + (f"\n    {r['message']}" if r["message"] else ""))
+
+
+@requests_app.command("approve")
+def requests_approve(
+    request_id: str,
+    choice: int = typer.Option(None, "--choice", help="Use the requester's slot 1, 2 or 3."),
+    slot: str = typer.Option(None, "--slot", help="Another start, ISO 8601 with a timezone (2026-11-02T15:00+05:30)."),
+) -> None:
+    from datetime import datetime
+
+    from shimpaku.api.app import invite_link
+    from shimpaku.api.requests import RequestError
+
+    if not settings.public_url:
+        typer.echo("refused: set SHIMPAKU_PUBLIC_URL (the fixed https base the link is built from)", err=True)
+        raise typer.Exit(2)
+    rq = _leases().requests
+    try:
+        if slot:
+            dt = datetime.fromisoformat(slot)
+            if dt.tzinfo is None:
+                typer.echo("refused: give the slot with a timezone", err=True)
+                raise typer.Exit(2)
+            start = dt.timestamp()
+        else:
+            slots = rq.get(request_id)["slots"]
+            if not choice or not 1 <= choice <= len(slots):
+                typer.echo(f"refused: pass --choice 1..{len(slots)} or --slot", err=True)
+                raise typer.Exit(2)
+            start = slots[choice - 1]
+        out = rq.approve(request_id, start, "cli")
+    except RequestError as e:
+        typer.echo(f"refused: {e}", err=True)
+        raise typer.Exit(1) from None
+    typer.echo(f"approved {request_id}: {_when(out['slot_start'])} - {_when(out['slot_end'])}"
+               f" (link opens {_when(out['opens_at'])}):")
+    typer.echo(invite_link(out["invite_token"]))
+    typer.echo(f"calendar file: {settings.public_url.rstrip('/')}/api/invites/ics?i={out['invite_token']}")
+
+
+@requests_app.command("decline")
+def requests_decline(request_id: str, note: str = typer.Option("", "--note", help="Shown to the requester.")) -> None:
+    from shimpaku.api.requests import RequestError
+
+    try:
+        _leases().requests.decline(request_id, note, "cli")
+    except RequestError as e:
+        typer.echo(f"refused: {e}", err=True)
+        raise typer.Exit(1) from None
+    typer.echo(f"declined {request_id}")
 
 
 if __name__ == "__main__":

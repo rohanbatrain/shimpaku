@@ -73,6 +73,17 @@ app.{$SHIMPAKU_DOMAIN} {
 			window 1m
 		}
 	}
+	@session_requests {
+		method POST
+		path /api/session-requests
+	}
+	rate_limit @session_requests {
+		zone session_requests {
+			key {client_ip}
+			events 5
+			window 10m
+		}
+	}
 	@demo path /api/demo/*
 	rate_limit @demo {
 		zone demo {

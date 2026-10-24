@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     lease_demo_ops: int = 5                # per lease, each of break and seed
     retention_days: int = 90               # tester identity data kept after lease end
     privacy_contact: str | None = None     # how a tester asks for deletion (shown on the Start page)
+    # Anonymous visitors get live read-only access in auth_mode=local (role visitor). Off by default
+    # so a lab without the edge in front of it stays closed.
+    public_view: bool = False
+    session_requests_max_pending: int = 200  # open requests stored at once; more are refused (503)
     # LiteLLM admin/master key used only to mint and delete per-lease virtual keys. Unset: Ask Shim
     # is disabled for testers (never falls back to the operator's key).
     llm_admin_key: str | None = Field(default=None, repr=False)
@@ -44,7 +48,9 @@ class Settings(BaseSettings):
     tester_llm_rpm: int = 10
     tester_llm_models: str = ""            # comma list; empty = the models in llm_models
     # per-principal/global requests per minute: category=per_principal/global
-    rate_limits: str = "write=30/300,demo=6/30,ask=10/60,mcp=60/600,redeem=10/60"
+    # read (anonymous visitors, per address) and request (session requests, per address) were added
+    # with public view; categories missing from an override keep these defaults.
+    rate_limits: str = "write=30/300,demo=6/30,ask=10/60,mcp=60/600,redeem=10/60,read=120/1200,request=3/20"
 
     def require_device_password(self) -> str:
         """Device credentials are never defaulted in code (see .env.example)."""
@@ -67,7 +73,7 @@ class Settings(BaseSettings):
         return sorted(set(self.models().values()))
 
     def rate_limit_table(self) -> dict[str, tuple[int, int]]:
-        out = {}
+        out = dict(DEFAULT_RATE_LIMITS)
         for kv in self.rate_limits.split(","):
             if "=" in kv and "/" in kv:
                 k, v = kv.split("=", 1)
@@ -90,5 +96,8 @@ class Settings(BaseSettings):
     def sqlite_path(self) -> Path:
         return self.data / "state.db"
 
+
+DEFAULT_RATE_LIMITS = {k: (int(v.split("/")[0]), int(v.split("/")[1])) for k, v in
+                       (kv.split("=") for kv in Settings.model_fields["rate_limits"].default.split(","))}
 
 settings = Settings()

@@ -364,11 +364,11 @@ def test_purge_deletes_identity_data_and_audit_still_verifies(world):
     assert unredeemed
     audit_blob = json.dumps(world.audit.query(limit=1000))
     assert NOTE not in audit_blob and NAME not in audit_blob and "Bob" not in audit_blob  # never audited
-    assert world.lm.purge() == {"leases": 0, "invites": 0}  # inside the retention period
+    assert world.lm.purge() == {"leases": 0, "invites": 0, "requests": 0}  # inside the retention period
     world.clock.t += 90 * 86400 + 1
-    assert world.lm.purge() == {"leases": 1, "invites": 1}  # the unredeemed one: 90 d after it expires
+    assert world.lm.purge() == {"leases": 1, "invites": 1, "requests": 0}  # the unredeemed one: 90 d after it expires
     world.clock.t += 72 * 3600
-    assert world.lm.purge() == {"leases": 0, "invites": 1}
+    assert world.lm.purge() == {"leases": 0, "invites": 1, "requests": 0}
     dump = "\n".join(world.auth.db.iterdump())
     assert NOTE not in dump and "Never used" not in dump and f"'{NAME}'" not in dump
     assert all(i["note"] is None for i in world.lm.list_invites())

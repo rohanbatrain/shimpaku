@@ -121,6 +121,15 @@ class LeaseManager:
         self._tick_lock = asyncio.Lock()
         with self._mu:
             self._db.executescript(_SCHEMA)
+            # Added with session requests: an invite bound to a slot opens at ``not_before`` and its
+            # lease ends no later than ``lease_cap`` (copied to the lease as ``ends_cap``).
+            for table, cols in {"invite": ("not_before REAL", "lease_cap REAL"), "lease": ("ends_cap REAL",)}.items():
+                have = {r[1] for r in self._db.execute(f"PRAGMA table_info({table})")}
+                for col in cols:
+                    if col.split()[0] not in have:
+                        self._db.execute(f"ALTER TABLE {table} ADD COLUMN {col}")
+        from shimpaku.api.requests import SessionRequests
+        self.requests = SessionRequests(self)
 
     # ------------------------------------------------------------------ helpers
     def _q(self, sql: str, p: tuple = ()) -> list[dict]:
@@ -145,13 +154,17 @@ class LeaseManager:
             self._db.execute("UPDATE lease SET cleanup=? WHERE lease_id=?", (json.dumps(c), lease_id))
 
     # ------------------------------------------------------------------ invites
-    def create_invite(self, note: str, created_by: str, ttl_s: float | None = None) -> dict:
+    def create_invite(self, note: str, created_by: str, ttl_s: float | None = None, *,
+                      not_before: float | None = None, expires_at: float | None = None,
+                      lease_cap: float | None = None) -> dict:
+        """``not_before``/``expires_at``/``lease_cap`` bind the invite to a slot (session requests)."""
         token = secrets.token_urlsafe(32)  # 256 bits
         iid = "inv_" + secrets.token_hex(6)
         now = self.clock()
-        exp = now + (ttl_s if ttl_s else self.invite_ttl_s)
-        self._x("INSERT INTO invite (invite_id,token_hash,note,created_by,created_at,expires_at) VALUES (?,?,?,?,?,?)",
-                (iid, _digest(token), (note or "")[:500], created_by, now, exp))
+        exp = expires_at if expires_at is not None else now + (ttl_s if ttl_s else self.invite_ttl_s)
+        self._x("INSERT INTO invite (invite_id,token_hash,note,created_by,created_at,expires_at,not_before,lease_cap)"
+                " VALUES (?,?,?,?,?,?,?,?)",
+                (iid, _digest(token), (note or "")[:500], created_by, now, exp, not_before, lease_cap))
         _audit({"kind": "dashboard" if created_by != "cli" else "cli", "name": created_by, "role": "operator",
                 "transport": "cli" if created_by == "cli" else "rest"},
                "invite_create", {"invite_id": iid, "expires": exp})
@@ -164,14 +177,17 @@ class LeaseManager:
             return "redeemed"
         if self.clock() >= r["expires_at"]:
             return "expired"
+        if r.get("not_before") and self.clock() < r["not_before"]:
+            return "early"
         return "open"
 
     def list_invites(self) -> list[dict]:
-        rows = self._q("SELECT invite_id,note,created_by,created_at,expires_at,redeemed_at,revoked_at,lease_id,purged_at"
-                       " FROM invite ORDER BY created_at DESC")
+        rows = self._q("SELECT invite_id,note,created_by,created_at,expires_at,redeemed_at,revoked_at,lease_id,purged_at,"
+                       "not_before FROM invite ORDER BY created_at DESC")
         return [{"id": r["invite_id"], "note": r["note"], "created_by": r["created_by"], "created": r["created_at"],
                  "expires": r["expires_at"], "redeemed": r["redeemed_at"], "revoked": r["revoked_at"],
-                 "lease_id": r["lease_id"], "purged": r["purged_at"], "status": self._invite_status_row(r)}
+                 "lease_id": r["lease_id"], "purged": r["purged_at"], "not_before": r["not_before"],
+                 "status": self._invite_status_row(r)}
                 for r in rows]
 
     def revoke_invite(self, invite_id: str, by: str = "operator") -> bool:
@@ -192,7 +208,10 @@ class LeaseManager:
         if not rows:
             return {"valid": False, "reason": "invalid"}
         st = self._invite_status_row(rows[0])
-        return {"valid": st == "open", "reason": None if st == "open" else ("used" if st == "redeemed" else st)}
+        out = {"valid": st == "open", "reason": None if st == "open" else ("used" if st == "redeemed" else st)}
+        if rows[0].get("not_before"):  # a slot-bound invite: when it opens and closes
+            out.update(opens_at=rows[0]["not_before"], closes_at=rows[0]["expires_at"])
+        return out
 
     def redeem(self, token: str, *, consent: bool, display_name: str | None = None) -> dict:
         """Consume the invite (atomically, once) and create a lease, queued or active."""
@@ -204,21 +223,26 @@ class LeaseManager:
         with self._mu:
             cur = self._db.execute(
                 "UPDATE invite SET redeemed_at=?, lease_id=? WHERE token_hash=? AND redeemed_at IS NULL"
-                " AND revoked_at IS NULL AND expires_at>?", (now, lease_id, h, now))
+                " AND revoked_at IS NULL AND expires_at>? AND (not_before IS NULL OR not_before<=?)",
+                (now, lease_id, h, now, now))
             if cur.rowcount != 1:
-                row = self._db.execute("SELECT redeemed_at, revoked_at, expires_at FROM invite WHERE token_hash=?",
-                                       (h,)).fetchone()
+                row = self._db.execute("SELECT redeemed_at, revoked_at, expires_at, not_before FROM invite"
+                                       " WHERE token_hash=?", (h,)).fetchone()
                 if row is None:
                     raise InviteError("invalid", "this invite link is not valid")
                 if row[1]:
                     raise InviteError("revoked", "this invite was revoked")
                 if row[0]:
                     raise InviteError("used", "this invite has already been used")
+                if row[3] and now < row[3] and now < row[2]:
+                    raise InviteError("early", "this session has not opened yet; the link works from 10 minutes"
+                                               " before the slot")
                 raise InviteError("expired", "this invite has expired")
-            invite_id = self._db.execute("SELECT invite_id FROM invite WHERE token_hash=?", (h,)).fetchone()[0]
+            invite_id, cap = self._db.execute("SELECT invite_id, lease_cap FROM invite WHERE token_hash=?",
+                                              (h,)).fetchone()
             name = (display_name or "").strip()[:60] or None
-            self._db.execute("INSERT INTO lease (lease_id,invite_id,display_name,state,queued_at) VALUES (?,?,?,?,?)",
-                             (lease_id, invite_id, name, "queued", now))
+            self._db.execute("INSERT INTO lease (lease_id,invite_id,display_name,state,queued_at,ends_cap)"
+                             " VALUES (?,?,?,?,?,?)", (lease_id, invite_id, name, "queued", now, cap))
         _audit({"kind": "dashboard", "name": tester_name(invite_id), "role": "tester", "lease_id": lease_id,
                 "transport": "rest"}, "invite_redeem", {"invite_id": invite_id, "lease_id": lease_id})
         self._promote_sync()
@@ -233,14 +257,20 @@ class LeaseManager:
                 busy = self._db.execute("SELECT COUNT(*) FROM lease WHERE state IN ('active','ending')").fetchone()[0]
                 if busy >= self.max_active:
                     break
-                row = self._db.execute("SELECT lease_id FROM lease WHERE state='queued' ORDER BY queued_at, rowid"
-                                       " LIMIT 1").fetchone()
+                row = self._db.execute("SELECT lease_id, ends_cap FROM lease WHERE state='queued'"
+                                       " ORDER BY queued_at, rowid LIMIT 1").fetchone()
                 if row is None:
                     break
+                # a slot-bound lease ends at min(start + lease_s, slot end + 5 min)
+                ends = now + self.lease_s if row[1] is None else min(now + self.lease_s, row[1])
+                if ends <= now:  # the slot closed while it queued: end it without starting
+                    self._db.execute("UPDATE lease SET state='ending', end_reason='slot_closed', end_requested_at=?"
+                                     " WHERE lease_id=?", (now, row[0]))
+                    continue
                 self._db.execute("UPDATE lease SET state='active', started_at=?, ends_at=? WHERE lease_id=?",
-                                 (now, now + self.lease_s, row[0]))
+                                 (now, ends, row[0]))
             started.append(row[0])
-            _audit(_system(row[0]), "lease_start", {"lease_id": row[0], "ends": now + self.lease_s})
+            _audit(_system(row[0]), "lease_start", {"lease_id": row[0], "ends": ends})
         return started
 
     def lease(self, lease_id: str | None) -> dict | None:
@@ -427,9 +457,10 @@ class LeaseManager:
                 " lease_id IN (SELECT lease_id FROM lease WHERE state='ended' AND ended_at<?)"
                 " OR (redeemed_at IS NULL AND (expires_at<? OR revoked_at<?)))",
                 (stamp, cutoff, cutoff, cutoff)).rowcount
-        if leases or invites:
-            _audit(_system(None), "tester_purge", {"leases": leases, "invites": invites})
-        return {"leases": leases, "invites": invites}
+        requests = self.requests.purge(cutoff, stamp)
+        if leases or invites or requests:
+            _audit(_system(None), "tester_purge", {"leases": leases, "invites": invites, "requests": requests})
+        return {"leases": leases, "invites": invites, "requests": requests}
 
     async def run_forever(self, interval: float = 5.0, purge_every: float = 86400.0) -> None:
         """The daemon task: lease timers every ``interval`` s, purge once a day (and at start)."""
@@ -437,6 +468,7 @@ class LeaseManager:
         while True:
             try:
                 await self.tick()
+                await asyncio.to_thread(self.requests.sweep)
                 if time.monotonic() - last_purge >= purge_every or last_purge == 0.0:
                     await asyncio.to_thread(self.purge)
                     last_purge = time.monotonic()

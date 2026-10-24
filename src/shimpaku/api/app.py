@@ -12,6 +12,10 @@ function names). Rules enforced here, not in the browser:
   the engine limits what it may write. Invites, leases and tokens are operator-only surfaces.
 - Writes, demo operations and Ask Shim are rate-limited per principal and globally (429 with
   ``Retry-After``; ``shimpaku.api.ratelimit``).
+- Public view (``SHIMPAKU_PUBLIC_VIEW=1``, auth mode local): a caller with no session is a
+  ``visitor`` principal: GET routes and SSE only, rate-limited per client address, no Ask Shim, no
+  writes, no tokens. Strangers ask for a live session at ``POST /api/session-requests``; the
+  operator approves a slot (``shimpaku.api.requests``) and the requester gets a slot-bound invite.
 - The session cookie is ``__Host-shimpaku_session`` (Secure) only over https; over plain http it is
   ``shimpaku_session`` without Secure, and ``/api/settings`` reports that so the UI can warn.
 """
@@ -31,11 +35,12 @@ from typing import Any, AsyncIterator, Callable
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 from shimpaku.api import view
 from shimpaku.api import lease as lease_mod
+from shimpaku.api import requests as req_mod
 from shimpaku.api.auth import ADMIN_USER, OFF_MODE_USER, SCOPES, AuthStore, Principal, load_admin_hash, verify_password
 from shimpaku.api.llm_keys import LLMKeyError
 from shimpaku.api.ratelimit import RateLimiter
@@ -87,7 +92,26 @@ def invite_link(token: str) -> str | None:
     return f"{base}/start?i={token}" if base else None
 
 
-NO_REFERRER_PATHS = ("/start", "/api/invites/")
+NO_REFERRER_PATHS = ("/start", "/api/invites/", "/request/status", "/api/session-requests/status")
+
+
+class SessionRequestBody(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    contact: str = Field(min_length=3, max_length=200)
+    message: str = Field(default="", max_length=500)
+    slots: list[AwareDatetime] = Field(min_length=1, max_length=req_mod.MAX_SLOTS)
+    consent: bool = False
+
+
+class ApproveBody(BaseModel):
+    slot_start: AwareDatetime
+
+
+class DeclineBody(BaseModel):
+    note: str = Field(default="", max_length=500)
+
+
+VISITOR_ASK = "Request a live session to use Shim"
 
 
 class AskBody(BaseModel):
@@ -161,6 +185,7 @@ def create_app(
     demo: bool | None = None,
     leases: "lease_mod.LeaseManager | None" = None,
     limiter: RateLimiter | None = None,
+    public_view: bool | None = None,
 ) -> FastAPI:
     """Build the app.
 
@@ -182,6 +207,9 @@ def create_app(
         real = getattr(service, "__name__", "") == "shimpaku.service"
         leases = lease_mod.from_settings(auth, service, action_store=(lambda: service._engine().store) if real else None)
     limiter = limiter or RateLimiter(settings.rate_limit_table())
+    # anonymous read-only visitors: only in local mode (off mode already makes everyone the operator)
+    public = (settings.public_view if public_view is None else public_view) and mode == "local" and not is_replay
+    requests_ = leases.requests
     dist = web_dist or WEB_DIST
 
     app = FastAPI(title="Shimpaku", version="0.0.1", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
@@ -192,6 +220,7 @@ def create_app(
     app.state.auth_mode = mode
     app.state.leases = leases
     app.state.limiter = limiter
+    app.state.public_view = public
 
     async def call(name: str, *args: Any, **kwargs: Any) -> Any:
         fn = getattr(service, name, None)
@@ -221,7 +250,7 @@ def create_app(
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("X-Frame-Options", "DENY")
         # invite pages carry the token in the URL: send no Referer anywhere from them (OWASP)
-        no_ref = request.url.path == "/start" or request.url.path.startswith(NO_REFERRER_PATHS[1])
+        no_ref = request.url.path in ("/start", "/request/status") or request.url.path.startswith(NO_REFERRER_PATHS[1:])
         resp.headers["Referrer-Policy"] = "no-referrer" if no_ref else resp.headers.get("Referrer-Policy", "same-origin")
         if not request.url.path.startswith("/api/docs"):
             resp.headers.setdefault(
@@ -232,6 +261,8 @@ def create_app(
         return resp
 
     # ---- principals ------------------------------------------------------------
+    VISITOR = Principal("anonymous", "visitor", "read", role="visitor")
+
     def principal_or_none(request: Request) -> Principal | None:
         if is_replay:
             return Principal("anonymous", "visitor", "read")
@@ -248,11 +279,15 @@ def create_app(
         rec = auth.session_record(request.cookies.get(sname))
         if rec and rec.get("role") == "tester":
             if not leases.is_live(rec.get("lease_id")):
-                return None if mode != "off" else Principal("session", OFF_MODE_USER, "admin")
+                if mode == "off":
+                    return Principal("session", OFF_MODE_USER, "admin")
+                return VISITOR if public else None
             return Principal("session", rec["user"], "tester", role="tester", lease_id=rec["lease_id"])
         if mode == "off":
             return Principal("session", OFF_MODE_USER, "admin")
-        return Principal("session", rec["user"], "admin") if rec else None
+        if rec:
+            return Principal("session", rec["user"], "admin")
+        return VISITOR if public else None
 
     def check_csrf(request: Request, p: Principal | None) -> None:
         if request.method in SAFE_METHODS or (p is not None and p.kind == "token"):
@@ -269,11 +304,18 @@ def create_app(
         if not cookie or not hmac.compare_digest(cookie, header):
             raise HTTPException(403, "missing or wrong CSRF token")
 
+    def client_ip(request: Request) -> str:
+        return request.client.host if request.client else "?"
+
     def reader(request: Request) -> Principal:
         p = principal_or_none(request)
         if p is None:
             raise HTTPException(401, "sign in required")
         check_csrf(request, p)
+        if p is VISITOR:
+            # anonymous reads: no audit rows (too noisy); limited per address, logged without it
+            rate("read", f"ip:{client_ip(request)}")
+            log.info("visitor %s %s", request.method, request.url.path)
         return p
 
     def rate(category: str, p: Principal | str) -> None:
@@ -336,6 +378,7 @@ def create_app(
             "user": p.name if p else None, "kind": p.kind if p else None, "scope": p.scope if p else None,
             "can_approve": bool(p and p.can_approve), "can_propose": bool(p and p.can_propose),
             "role": p.effective_role if p else None, "lease_id": p.lease_id if p else None,
+            "public_view": public,
         }
 
     @app.get("/api/settings")
@@ -403,7 +446,10 @@ def create_app(
     # ---- reads -----------------------------------------------------------------
     @app.get("/api/inventory")
     async def inventory(site: str | None = None, p: Principal = Depends(reader)):
-        return view.inventory(await call("inventory_list", site=site))
+        out = view.inventory(await call("inventory_list", site=site))
+        if p.effective_role in ("tester", "visitor") and isinstance(out, dict) and isinstance(out.get("devices"), list):
+            out = {**out, "devices": [{k: v for k, v in d.items() if k != "mgmt_ip"} for d in out["devices"]]}  # D4: addresses withheld
+        return out
 
     @app.get("/api/sle")
     async def sle(site: str = "campus", window: int = 60, p: Principal = Depends(reader)):
@@ -467,6 +513,8 @@ def create_app(
 
     @app.post("/api/assistant/ask")
     async def ask(body: AskBody, request: Request, p: Principal = Depends(reader)):
+        if p.effective_role == "visitor" and p.kind == "anonymous":
+            raise HTTPException(403, VISITOR_ASK)  # LLM spend: only operators and live sessions ask
         if ask_fn is None:
             raise HTTPException(503, "the assistant is not wired into this daemon")
         extra: dict = {}
@@ -520,7 +568,7 @@ def create_app(
         try:
             info = leases.redeem(body.token, consent=body.consent, display_name=body.display_name)
         except lease_mod.InviteError as e:
-            status = {"consent": 422, "invalid": 404}.get(e.code, 410)
+            status = {"consent": 422, "invalid": 404, "early": 425}.get(e.code, 410)
             raise HTTPException(status, str(e)) from None
         secure = _is_https(request)
         sname, _ = _cookie_names(secure)
@@ -627,6 +675,103 @@ def create_app(
     @app.post("/api/admin/purge")
     async def admin_purge(p: Principal = Depends(operator)) -> dict:
         return leases.purge()
+
+    # ---- session requests ------------------------------------------------------------------
+    def _req_error(e: req_mod.RequestError) -> HTTPException:
+        return HTTPException({"consent": 422, "bad_argument": 422, "full": 503, "not_found": 404,
+                              "bad_state": 409}.get(e.code, 400), str(e))
+
+    def _req_links(view_: dict, token: str | None) -> dict:
+        return {**view_, "link": invite_link(token) if token else None,
+                "ics_url": f"/api/invites/ics?i={token}" if token else None}
+
+    @app.post("/api/session-requests", status_code=201)
+    async def session_request_create(body: SessionRequestBody, request: Request) -> dict:
+        check_csrf(request, None)
+        if is_replay or mode != "local":
+            raise HTTPException(403, "session requests are taken only by a lab in auth mode local")
+        rate("request", f"ip:{client_ip(request)}")
+        try:
+            out = requests_.create(name=body.name, contact=body.contact, message=body.message,
+                                   slots=[d.timestamp() for d in body.slots], consent=body.consent,
+                                   max_pending=settings.session_requests_max_pending)
+        except req_mod.RequestError as e:
+            raise _req_error(e) from None
+        return {"ok": True, "status_token": out["status_token"], "status_path": f"/request/status?s={out['status_token']}"}
+
+    @app.get("/api/session-requests/status")
+    async def session_request_status(request: Request, s: str = "") -> dict:
+        """The status token is the capability; any unknown token is the same 404."""
+        rate("read", f"ip:{client_ip(request)}")
+        st = requests_.status(s) if not is_replay else None
+        if st is None:
+            raise HTTPException(404, "no such request")
+        tok = st.pop("invite_token")
+        return {**_req_links(st, tok), "retention_days": settings.retention_days}
+
+    @app.get("/api/session-requests/notice")
+    async def session_request_notice() -> dict:
+        return {"retention_days": settings.retention_days, "contact": settings.privacy_contact,
+                "lease_minutes": int(leases.lease_s // 60), "max_slots": req_mod.MAX_SLOTS,
+                "open": mode == "local" and not is_replay}
+
+    @app.get("/api/invites/ics")
+    async def invite_ics(request: Request, i: str = "") -> Response:
+        """Calendar file for a slot-bound invite. Never consumes the invite."""
+        rate("read", f"ip:{client_ip(request)}")
+        r = requests_.request_for_invite(i) if i and not is_replay else None
+        if r is None or not r["slot_start"]:
+            raise HTTPException(404, "no calendar entry for this link")
+        return _ics_response(r["request_id"], requests_.ics_for_request(r["request_id"], invite_link(i)))
+
+    def _ics_response(rid: str, body: str) -> Response:
+        return Response(body, media_type="text/calendar; charset=utf-8",
+                        headers={"Content-Disposition": f'attachment; filename="shimpaku-{rid}.ics"',
+                                 "Cache-Control": "no-store"})
+
+    @app.get("/api/admin/session-requests")
+    async def admin_requests(status: str | None = None, p: Principal = Depends(operator)) -> dict:
+        return {"requests": requests_.list(status), "pending": requests_.pending_count(),
+                "link_warning": None if settings.public_url else "SHIMPAKU_PUBLIC_URL is not set; no link built"}
+
+    @app.get("/api/admin/session-requests/{rid}.ics")
+    async def admin_request_ics(rid: str, p: Principal = Depends(operator)) -> Response:
+        try:
+            r = requests_.get(rid)
+            tok = requests_._row(rid)["invite_token"]  # type: ignore[index]
+            return _ics_response(rid, requests_.ics_for_request(rid, invite_link(tok) if tok else None))
+        except req_mod.RequestError as e:
+            raise _req_error(e) from None
+
+    @app.get("/api/admin/session-requests/{rid}")
+    async def admin_request(rid: str, p: Principal = Depends(operator)) -> dict:
+        try:
+            r = requests_.get(rid)
+        except req_mod.RequestError as e:
+            raise _req_error(e) from None
+        tok = (requests_._row(rid) or {}).get("invite_token")
+        return _req_links(r, tok)
+
+    @app.post("/api/admin/session-requests/{rid}/approve")
+    async def admin_request_approve(rid: str, body: ApproveBody, p: Principal = Depends(operator)) -> dict:
+        rate("write", p)
+        try:
+            out = requests_.approve(rid, body.slot_start.timestamp(), p.name)
+        except req_mod.RequestError as e:
+            raise _req_error(e) from None
+        tok = out.pop("invite_token")
+        return {**_req_links(out, tok), "ics_url": f"/api/admin/session-requests/{rid}.ics",
+                "link_warning": None if settings.public_url else "SHIMPAKU_PUBLIC_URL is not set; no link built"}
+
+    @app.post("/api/admin/session-requests/{rid}/decline")
+    async def admin_request_decline(rid: str, body: DeclineBody, p: Principal = Depends(operator)) -> dict:
+        rate("write", p)
+        try:
+            out = requests_.decline(rid, body.note, p.name)
+        except req_mod.RequestError as e:
+            raise _req_error(e) from None
+        await leases.tick()
+        return out
 
     # ---- SSE -------------------------------------------------------------------
     async def _viewed(fn: Callable[[Any], Any], pending: Any) -> Any:
