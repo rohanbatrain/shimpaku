@@ -21,11 +21,16 @@ Device reads go through `shimpaku.devices` (PyEZ pool) in a worker thread.
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import inspect
+import logging
+import re
 import time
 from typing import Any, Callable, Literal
 
 from shimpaku import devices
+
+log = logging.getLogger("shimpaku.service")
 
 ProbeKind = Literal["ping", "dhcp", "dns", "http", "arp"]
 
@@ -319,9 +324,11 @@ async def _demo_op(op: str, caller: Any, *, opener=None, lock_db=None) -> dict:
     except Exception as e:  # noqa: BLE001  (DeviceBusy, PendingConfirm, NETCONF errors)
         from shimpaku import lock
         code = "busy" if isinstance(e, (lock.DeviceBusy, lock.PendingConfirm)) else "device_error"
-        out = _err(code, f"{type(e).__name__}: {e}")
+        # testers read this reply and every reader sees the audit row: no management addresses
+        log.warning("%s failed: %s: %s", method, type(e).__name__, e)
+        out = _err(code, scrub_hosts(f"{type(e).__name__}: {e}"))
         _audit_row(c, method, args={"devices": _demo_devices(op)}, status=f"error:{type(e).__name__}",
-                   reasons=[str(e)[:300]])
+                   reasons=[scrub_hosts(str(e))[:300]])
         return out
     changed = any(w["changed"] for w in writes)
     out = {"op": op, "changed": changed, "writes": writes}
@@ -329,6 +336,21 @@ async def _demo_op(op: str, caller: Any, *, opener=None, lock_db=None) -> dict:
                                 "diff": {w["device"]: w["diff"] for w in writes if w["diff"]}},
                status="changed" if changed else "no_change")
     return out
+
+
+_IPV4 = re.compile(r"(?<![\w.])\d{1,3}(?:\.\d{1,3}){3}(?![\w.])")
+_IPV6 = re.compile(r"(?<![\w:])[0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7}(?![\w:])")
+
+
+def scrub_hosts(text: str) -> str:
+    """Replace IPv4/IPv6 addresses (management addresses in device errors) with `<host>`."""
+    def sub(m: re.Match) -> str:
+        try:
+            ipaddress.ip_address(m.group(0))
+        except ValueError:
+            return m.group(0)
+        return "<host>"
+    return _IPV6.sub(sub, _IPV4.sub(sub, text))
 
 
 def _demo_devices(op: str) -> list[str]:
