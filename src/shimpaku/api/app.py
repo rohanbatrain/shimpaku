@@ -438,7 +438,9 @@ def create_app(
         rate("ask", p)
         params = inspect.signature(ask_fn).parameters
         if "role" in params:
-            extra["role"] = p.effective_role
+            # Shim proposes as the asker: a principal that may not propose (a `read` token) gets a
+            # visitor's Shim, which the engine refuses to propose or cancel for
+            extra["role"] = p.effective_role if p.can_propose else "visitor"
             extra["lease_id"] = p.lease_id
 
         async def gen():

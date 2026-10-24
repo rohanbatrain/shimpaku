@@ -379,7 +379,8 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
                         lease_id: str | None = None):
     """Run Shim for a dashboard user and translate its events into the panel's contract
     (meta, tool, token, error, done). Shim acts as `shim:<principal>` with the asker's role and
-    lease, so a tester's assistant is held to the tester gate; it can propose, never approve."""
+    lease, so a tester's assistant is held to the tester gate; it can propose, never approve.
+    A `visitor` asker (e.g. a `read` token) gets a Shim that cannot propose either."""
     import time as _t
 
     from shimpaku.actions.engine import Caller
@@ -391,7 +392,7 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
         yield {"type": "error", "message": "the assistant is not wired into this daemon"}
         return
     caller = Caller(kind="assistant", name=f"shim:{principal}", transport="inproc",
-                    role="tester" if role == "tester" else "agent", lease_id=lease_id)
+                    role=role if role in ("tester", "visitor") else "agent", lease_id=lease_id)
     token = mcp_mod._caller.set(caller)
     factory = (lambda name: LLM(name, key=llm_key)) if llm_key else None
     started: dict[str, float] = {}
