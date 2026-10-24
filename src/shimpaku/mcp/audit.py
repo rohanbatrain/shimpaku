@@ -6,8 +6,8 @@ onto it:
 
 | R7 field | StateDB column |
 |---|---|
-| caller (token id / OS user) | actor (JSON text) |
-| transport + method | kind, e.g. `mcp:http:tools/call` |
+| caller (token id / OS user, role, lease_id) | actor (JSON text) |
+| transport + method | kind, e.g. `mcp:http:tools/call`, `rest:approve`, `cli:demo_break` |
 | tool | tool |
 | args (redacted) | args |
 | tier, policy_decision, action_id, incident_id, result_status, latency_ms, device_commit, client_info | result |
@@ -61,14 +61,28 @@ class AuditLog:
     def append(self, *, caller: Any = None, client_info: Any = None, transport: str | None = None,
                method: str = "tools/call", tool: str | None = None, args: Any = None, tier: str | None = None,
                policy_decision: Any = None, action_id: str | None = None, incident_id: str | None = None,
-               result_status: str = "ok", latency_ms: float | None = None, device_commit: Any = None) -> dict:
+               result_status: str = "ok", latency_ms: float | None = None, device_commit: Any = None,
+               source: str = "mcp") -> dict:
+        """`source` names the surface: "mcp" (kind `mcp:<transport>:<method>`), "rest" or "cli"
+        (kind `<source>:<method>`). Every caller dict gains `role` and `lease_id` (null when not a
+        tester's); rows written before these fields existed are left exactly as they were."""
+        if isinstance(caller, dict):
+            from shimpaku.actions.engine import Caller
+            caller = {**caller, "role": caller.get("role") or Caller(kind=str(caller.get("kind")), name="").role,
+                      "lease_id": caller.get("lease_id")}
+        if tool == "executor":
+            kind = "executor"
+        elif source == "mcp":
+            kind = f"mcp:{transport or '?'}:{method}"
+        else:
+            kind = f"{source}:{method}"
         result = {"tier": tier, "policy_decision": policy_decision, "action_id": action_id,
                   "incident_id": incident_id, "result_status": result_status, "latency_ms": latency_ms,
                   "device_commit": device_commit, "client_info": client_info}
         with self._mu:
             row = self.state.audit_append(
                 actor=json.dumps(redact(caller), sort_keys=True, default=str) if caller is not None else None,
-                kind=f"mcp:{transport or '?'}:{method}" if tool != "executor" else "executor",
+                kind=kind,
                 tool=tool, args=redact(args), result=redact(result),
                 status=(result_status or "ok")[:40])
             with self.jsonl.open("a") as f:

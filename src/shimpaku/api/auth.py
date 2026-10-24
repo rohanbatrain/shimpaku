@@ -4,7 +4,9 @@ Modes: ``off`` (no sign-in; the browser user is ``operator``) and ``local`` (one
 argon2id hash comes from ``SHIMPAKU_ADMIN_PASSWORD_HASH`` or ``<data>/admin.hash``).
 
 Principals:
-- a **session user** (browser cookie) may read, propose, cancel and approve;
+- a **session user** (browser cookie) may read, propose, cancel and approve; an operator session
+  may act on any action, a tester session only on the demo fixture of its own lease (enforced in
+  ``shimpaku.actions.engine``, below this layer, so MCP gets the same rule);
 - a **bearer token** (agents) has scope ``read`` or ``propose`` and can never approve.
 
 Sessions and tokens live in SQLite (``state.db`` tables ``session`` and ``token``). Only SHA-256
@@ -70,11 +72,23 @@ class Principal:
     name: str  # "admin", "operator", "token:<name>"
     scope: str  # "admin" for session users, else the token scope
     token_id: str | None = None
+    # operator | tester | visitor | agent. None = derived from kind: a session is the operator, a
+    # token is the operator's agent, anonymous is a visitor. Tester principals (sessions and
+    # tokens bound to one lease) are issued by the lease manager (DEPLOY-DESIGN build step 4).
+    role: str | None = None
+    lease_id: str | None = None
+
+    @property
+    def effective_role(self) -> str:
+        if self.role is not None:
+            return self.role
+        return {"session": "operator", "token": "agent"}.get(self.kind, "visitor")
 
     def caller(self, transport: str = "rest") -> dict:
         """The service-layer caller (shimpaku.actions.engine.Caller fields)."""
         kind = "dashboard" if self.kind == "session" else "mcp"
-        return {"kind": kind, "name": self.name, "token_id": self.token_id, "transport": transport}
+        return {"kind": kind, "name": self.name, "token_id": self.token_id, "transport": transport,
+                "role": self.effective_role, "lease_id": self.lease_id}
 
     @property
     def can_approve(self) -> bool:

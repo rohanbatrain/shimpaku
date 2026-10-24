@@ -14,7 +14,7 @@ it plainly so it can be reviewed.
 | Two writers on one device | SQLite lease across processes and users; refuse while a `commit confirmed` is pending | `lock.py` (G5) |
 | The executor dies mid-change | Every executor change opens with `commit confirmed` and is confirmed only after a fresh-session health check; if the executor dies, Junos rolls back by itself (measured 73–76 s) | `actions/executor.py` |
 | A "fix" that didn't really fix it | Each action is validated on its symptom for a window; recurrence reopens it | `actions/executor.py` |
-| Tampering with history | Every tool call is a hash-chained audit row; a verifier detects an edited row | `mcp/audit.py` |
+| Tampering with history | Every MCP tool call, and every REST propose, approve, reject and cancel (refusals included), is a hash-chained audit row carrying the caller's `role` and `lease_id`; a verifier detects an edited row. Rows written before `role`/`lease_id` existed are kept as written and still verify. (Before 2026-10-24 REST approvals reached only the approvals table, not the chain.) | `mcp/audit.py`, `service.py:_audit_row` |
 | Benchmark gaming | Ground truth lives in a separate store owned by a separate Unix user; external agents can run as a sandbox user that cannot reach the lab devices directly, only the MCP endpoint | `bench/`, `ops/phase0-root.sh` |
 
 ## Credentials

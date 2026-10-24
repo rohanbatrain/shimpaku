@@ -23,27 +23,48 @@ from shimpaku.config import settings
 log = logging.getLogger("shimpaku.actions")
 
 
+ROLES = ("operator", "tester", "visitor", "agent", "system")
+_DEFAULT_ROLE = {"dashboard": "operator", "mcp": "agent", "assistant": "agent", "system": "system"}
+
+
 @dataclass(frozen=True)
 class Caller:
-    """Who is calling. Built by the transport (MCP middleware, API session), never from tool args."""
+    """Who is calling. Built by the transport (MCP middleware, API session), never from tool args.
 
-    kind: str                 # dashboard | mcp | assistant | system | test
+    `role` is what the caller may do (operator | tester | visitor | agent | system); when the
+    transport gives none it is derived from `kind` (dashboard → operator, mcp/assistant → agent,
+    system → system, anything else → visitor, which can do nothing). `lease_id` binds a tester
+    (and anything acting for one) to one demo lease; it is None for everyone else."""
+
+    kind: str                 # dashboard | mcp | assistant | system | cli | test
     name: str
     token_id: str | None = None
     transport: str | None = None
     client: str | None = None
+    role: str | None = None
+    lease_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.role is None:
+            role = _DEFAULT_ROLE.get(self.kind, "visitor")
+        else:  # an unrecognised explicit role grants nothing (fail closed), never the kind's default
+            role = self.role if self.role in ROLES else "visitor"
+        object.__setattr__(self, "role", role)
 
     def as_dict(self) -> dict:
-        return {k: v for k, v in self.__dict__.items() if v is not None}
+        """Audit/storage form. `role` and `lease_id` are always present (lease_id may be null)."""
+        out = {k: v for k, v in self.__dict__.items() if v is not None}
+        out["lease_id"] = self.lease_id
+        return out
 
     @classmethod
     def coerce(cls, c: Any) -> "Caller":
         if isinstance(c, Caller):
             return c
         if isinstance(c, dict):
-            return cls(**{k: c.get(k) for k in ("kind", "name", "token_id", "transport", "client")
-                          if c.get(k) is not None} | {"kind": c.get("kind", "unknown"),
-                                                       "name": c.get("name", "unknown")})
+            keys = ("kind", "name", "token_id", "transport", "client", "role", "lease_id")
+            return cls(**{k: c.get(k) for k in keys if c.get(k) is not None}
+                       | {"kind": c.get("kind", "unknown"), "name": c.get("name", "unknown")})
         return cls(kind="unknown", name=str(c))
 
 

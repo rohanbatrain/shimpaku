@@ -42,7 +42,7 @@ TIERS: dict[str, str] = {
     "action_get": "control", "action_cancel": "control",
 }
 
-# token -> {"id", "client_name", "scopes": [...]}. Plugged in by the API (B-web owns tokens).
+# token -> {"id", "client_name", "scopes": [...], "role"?, "lease_id"?}. Plugged in by the API (B-web owns tokens).
 TokenVerifier = Callable[[str], dict | None]
 _token_verifier: TokenVerifier | None = None
 
@@ -116,8 +116,11 @@ def caller_from_request(ctx) -> Caller:
         tok = _token_verifier(auth[7:].strip())
         if not tok:
             raise Denied("invalid or expired token")
+        # role/lease_id come only from the verified token record (a tester token carries
+        # role="tester" and its lease); absent, the token is the operator's agent.
         return Caller(kind="mcp", name=tok.get("client_name", "token"), token_id=str(tok.get("id")),
-                      transport="http", client=label or client)
+                      transport="http", client=label or client, role=tok.get("role"),
+                      lease_id=tok.get("lease_id"))
     if settings.auth_mode == "off" and _is_loopback(peer):
         return Caller(kind="mcp", name=f"loopback:{label or client or 'anonymous'}", transport="http",
                       client=label or client)
