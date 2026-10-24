@@ -70,6 +70,14 @@ def _human(s: str) -> str:
 
 
 # ---- service levels -------------------------------------------------------------
+def _sle_name(sle: str, site: str | None) -> str:
+    # fabric_health is device health (CPU, adjacency, links) on every site's devices; on the campus
+    # the word "fabric" would mislabel r1/r2/sw1
+    if sle == "fabric_health" and site and site != "fabric":
+        return "Device health"
+    return _human(sle)
+
+
 def sle_summary(real: Any) -> Any:
     if _skip(real, "sles") or not isinstance(real.get("sle"), dict):
         return real
@@ -83,16 +91,16 @@ def sle_summary(real: Any) -> Any:
             cls.append({"id": f"{c.get('classifier')}/{c.get('sub_classifier')}", "name": name,
                         "share_pct": c.get("share_pct"), "units": c.get("units")})
         sles.append({
-            "id": s.get("sle", key), "name": _human(s.get("sle", key)), "domain": None,
+            "id": s.get("sle", key), "name": _sle_name(s.get("sle", key), real.get("site")), "domain": None,
             "goal_pct": None,          # no SLE goal is configured in the real service
             "value_pct": s.get("pct"), "n": s.get("n"), "good": s.get("good"), "bad": s.get("bad"),
             "unit": "units", "label": s.get("label"),
-            "series": [],              # per-minute series is not returned by the summary
+            "series": ((real.get("series") or {}).get(key) or []),  # [] when the provider has none
             "classifiers": cls,
             "incident_id": None,       # the summary does not link an incident
         })
     return _carry(real, {"site": real.get("site"), "window_min": real.get("window_min"), "sites": None,
-                         "sles": sles, "changes": None})
+                         "sles": sles, "changes": real.get("changes")})
 
 
 # ---- incidents -----------------------------------------------------------------

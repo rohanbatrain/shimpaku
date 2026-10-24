@@ -12,6 +12,7 @@ a provider must never open its own `Store`.
 from __future__ import annotations
 
 import json
+import logging
 import time
 
 import pandas as pd
@@ -20,6 +21,9 @@ from shimpaku import service
 from shimpaku.analytics import db as adb
 from shimpaku.analytics.sle import APP, FABRIC, summarise
 from shimpaku.config import settings
+
+
+log = logging.getLogger("shimpaku.providers")
 
 
 def register_all(store) -> None:
@@ -43,8 +47,59 @@ def register_all(store) -> None:
         # touched r1/r2/sw1.
         if "site" in units.columns:
             units = units[units["site"] == site]
+        start = end - pd.Timedelta(minutes=window_min)
         return {"site": site, "window_min": window_min,
-                "sle": {s: summarise(units, s).as_dict() for s in (FABRIC, APP)}}
+                "sle": {s: summarise(units, s).as_dict() for s in (FABRIC, APP)},
+                "series": {s: _series(units, s, window_min) for s in (FABRIC, APP)},
+                "changes": _changes(site, start, end)}
+
+    def _series(units, sle: str, window_min: int) -> list[dict]:
+        """Per-bucket success rate from the same units the summary counts (≤ ~60 points)."""
+        u = units[units["sle"] == sle] if "sle" in units.columns else units
+        if u.empty:
+            return []
+        step = max(1, window_min // 60)
+        b = pd.to_datetime(u["minute"]).dt.floor(f"{step}min")
+        g = u.assign(bucket=b, good=(u["status"] == "good")).groupby("bucket")["good"].agg(["sum", "count"])
+        return [{"t": ts.tz_localize("UTC").timestamp() if ts.tzinfo is None else ts.timestamp(),
+                 "value": round(100.0 * float(r["sum"]) / float(r["count"]), 1), "n": int(r["count"])}
+                for ts, r in g.iterrows()]
+
+    def _changes(site: str, start, end) -> list[dict]:
+        """Faults (incidents opened) and actions in the window, from the stores; nothing synthesised."""
+        out: list[dict] = []
+        t0, t1 = start.tz_localize("UTC").timestamp(), end.tz_localize("UTC").timestamp()
+        with adb.lock_of(store):
+            cur = _cursor()
+            try:
+                rows = cur.execute("SELECT incident_id, t_open, root_causes FROM incident WHERE t_open >= ? AND t_open < ?",
+                                   [start, end]).fetchall()
+            finally:
+                cur.close()
+        for iid, t_open, rc in rows:
+            if not str(iid).endswith(f"-{site}"):
+                continue
+            top = (json.loads(rc) if rc else [{}]) or [{}]
+            out.append({"t": pd.Timestamp(t_open).tz_localize("UTC").timestamp(), "kind": "fault",
+                        "text": f"{iid}: {top[0].get('fault_class', 'incident')} {top[0].get('entity', '')}".strip(),
+                        "device": None})
+        try:
+            from shimpaku.actions.engine import engine
+            from shimpaku import devices as _dev
+            nodes = {n.name for n in _dev.inventory().nodes.values() if n.site == site}
+            for a in engine().list(None):
+                if a.get("device") not in nodes:
+                    continue
+                for c in a.get("commits") or []:
+                    if t0 <= float(c.get("ts") or 0) < t1:
+                        out.append({"t": float(c["ts"]), "kind": "commit", "device": a.get("device"),
+                                    "text": c.get("comment") or a["id"]})
+                if t0 <= float(a.get("created") or 0) < t1:
+                    out.append({"t": float(a["created"]), "kind": "action", "device": a.get("device"),
+                                "text": f"{a['id']} {a.get('kind')} → {a.get('status')}"})
+        except Exception:  # noqa: BLE001  # the timeline is optional; never fail the summary for it
+            log.debug("changes: actions unavailable", exc_info=True)
+        return sorted(out, key=lambda c: c["t"])
 
     def _inc_row(r) -> dict:
         return {"incident_id": r[0], "t_open": str(r[1]), "t_detect": str(r[2]) if r[2] else None,

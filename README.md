@@ -31,6 +31,16 @@ open http://127.0.0.1:8780             # the dashboard: Service levels → Root 
 - **Benchmark**: an injected-fault scenario, verified independently of the system under test,
   scored against four baselines (see [Benchmark](#benchmark)).
 
+## Screens (live lab, 2026-10-24)
+
+Every screen below is the running system against the real vJunos lab. No demo data is used.
+
+| | |
+|---|---|
+| ![Service levels, campus, 24 h](docs/screens/01-service-levels-campus.png) **Service levels.** Real probe- and device-minutes, with `n` shown. The change timeline lists every commit and action on sw1 today, including the blocked, recurred and cancelled ones. | ![Root cause](docs/screens/03-root-cause.png) **Root cause.** The fabric BFD incident: classifier breakdown, blast-radius verdict and scored evidence. |
+| ![An action that recurred](docs/screens/05-action-recurred.png) **An action that recurred.** VLAN 999 was restored under `commit confirmed`, then removed again during validation. The system reopened the issue instead of trusting its own fix. | ![A tester blocked](docs/screens/07-action-blocked-tester-scope.png) **A guest tester blocked.** A tester tried a port bounce on leaf2, and the engine refused it as outside the tester scope. |
+| ![Benchmark](docs/screens/08-benchmark.png) **Benchmark.** 16 fault scenarios × 5 trials, each injected, verified independently and reverted. | ![Tester pass](docs/screens/10-tester-start.png) **Tester pass.** An invited guest's start page, with a privacy notice and consent before a 30-minute session. |
+
 ## Architecture
 
 ```mermaid
