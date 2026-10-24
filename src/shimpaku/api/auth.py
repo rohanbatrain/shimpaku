@@ -118,11 +118,12 @@ class AuthStore:
         self._lock = threading.Lock()
         self._logins: dict[str, deque[float]] = {}
         self.clock = time.time  # token expiry clock (tests replace it)
+        self.session_clock = time.time  # session expiry clock (tests replace it)
 
     # Columns added after the first release. Existing token rows get NULL expires_at = no expiry
     # (the operator's agent tokens); NULL role = derived from kind, as before.
     _ADDED = {"token": ("expires_at TEXT", "role TEXT", "lease_id TEXT"),
-              "session": ("role TEXT", "lease_id TEXT")}
+              "session": ("role TEXT", "lease_id TEXT", "idle_s INTEGER", "absolute_s INTEGER")}
 
     def _migrate(self) -> None:
         for table, cols in self._ADDED.items():
@@ -152,13 +153,19 @@ class AuthStore:
             return True
 
     # ---- sessions ---------------------------------------------------------
-    def create_session(self, user: str, role: str | None = None, lease_id: str | None = None) -> str:
+    def create_session(self, user: str, role: str | None = None, lease_id: str | None = None, *,
+                       idle_s: int | None = None, absolute_s: int | None = None) -> str:
+        """``idle_s`` / ``absolute_s`` override the defaults for this session (operator sessions
+        in public mode: 30 min idle, 4 h absolute); NULL in the row means the defaults."""
         sid = secrets.token_urlsafe(32)
-        now = time.time()
+        now = self.session_clock()
+        idle = idle_s or SESSION_IDLE_S
         with self._lock:
             self._db.execute(
-                "INSERT INTO session (session_id,user,csrf,created_at,expires_at,role,lease_id) VALUES (?,?,?,?,?,?,?)",
-                (_digest(sid), user, "double-submit-cookie", _iso(now), _iso(now + SESSION_IDLE_S), role, lease_id),
+                "INSERT INTO session (session_id,user,csrf,created_at,expires_at,role,lease_id,idle_s,absolute_s)"
+                " VALUES (?,?,?,?,?,?,?,?,?)",
+                (_digest(sid), user, "double-submit-cookie", _iso(now),
+                 _iso(min(now + idle, now + (absolute_s or SESSION_ABSOLUTE_S))), role, lease_id, idle_s, absolute_s),
             )
         return sid
 
@@ -167,17 +174,18 @@ class AuthStore:
         if not sid:
             return None
         h = _digest(sid)
-        now = time.time()
+        now = self.session_clock()
         with self._lock:
-            row = self._db.execute("SELECT user, created_at, expires_at, role, lease_id FROM session WHERE session_id=?",
-                                   (h,)).fetchone()
+            row = self._db.execute("SELECT user, created_at, expires_at, role, lease_id, idle_s, absolute_s"
+                                   " FROM session WHERE session_id=?", (h,)).fetchone()
             if row is None:
                 return None
             user, created, expires = row[0], _ts(row[1]), _ts(row[2])
-            if now > expires or now - created > SESSION_ABSOLUTE_S:
+            idle, absolute = row[5] or SESSION_IDLE_S, row[6] or SESSION_ABSOLUTE_S
+            if now > expires or now - created > absolute:
                 self._db.execute("DELETE FROM session WHERE session_id=?", (h,))
                 return None
-            new_exp = min(now + SESSION_IDLE_S, created + SESSION_ABSOLUTE_S)
+            new_exp = min(now + idle, created + absolute)
             self._db.execute("UPDATE session SET expires_at=? WHERE session_id=?", (_iso(new_exp), h))
             return {"user": user, "role": row[3], "lease_id": row[4]}
 
@@ -188,6 +196,11 @@ class AuthStore:
     def drop_lease_sessions(self, lease_id: str) -> int:
         with self._lock:
             return self._db.execute("DELETE FROM session WHERE lease_id=?", (lease_id,)).rowcount
+
+    def drop_operator_sessions(self) -> int:
+        """Sign the operator out everywhere: every session that is not a tester's."""
+        with self._lock:
+            return self._db.execute("DELETE FROM session WHERE role IS NULL OR role='operator'").rowcount
 
     def drop_session(self, sid: str | None) -> None:
         if sid:

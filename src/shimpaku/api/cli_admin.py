@@ -1,4 +1,4 @@
-"""``shimpaku admin set-password``, ``admin invite create|list|revoke``, ``admin requests
+"""``shimpaku admin set-password``, ``admin totp enable|disable|status``, ``admin invite create|list|revoke``, ``admin requests
 list|approve|decline``, ``admin purge``.
 
 ``set-password``: store the admin's argon2id hash in ``<data>/admin.hash`` (0600).
@@ -43,6 +43,58 @@ def set_password(
         fh.write(h + "\n")
     os.chmod(f, 0o600)
     typer.echo(f"admin password set ({f}); restart shimpakud with SHIMPAKU_AUTH_MODE=local")
+
+
+# ---- operator second factor (TOTP) -------------------------------------------------------------
+totp_app = typer.Typer(help="Operator two-factor sign-in (TOTP + one-time recovery codes).", no_args_is_help=True)
+admin_app.add_typer(totp_app, name="totp")
+
+
+def _totp():
+    from shimpaku.api.totp import TotpStore, totp_file
+
+    return TotpStore(totp_file(settings.ensure_data()))
+
+
+@totp_app.command("enable")
+def totp_enable(force: bool = typer.Option(False, "--force", help="Replace an existing secret and recovery codes.")) -> None:
+    """Create the TOTP secret and 8 recovery codes; print them once (to this terminal only)."""
+    from shimpaku.api.totp import terminal_qr
+
+    store = _totp()
+    if store.enabled and not force:
+        typer.echo("refused: TOTP is already enabled (use --force to replace the secret and recovery codes)", err=True)
+        raise typer.Exit(2)
+    out = store.enable()
+    typer.echo("Add this to your authenticator app (shown once; it is not logged):\n")
+    qr = terminal_qr(out["uri"])
+    if qr:
+        typer.echo(qr)
+    else:
+        typer.echo("(no QR library installed (qrcode or segno): paste the URI or the secret by hand)")
+    typer.echo(out["uri"])
+    typer.echo(f"secret: {out['secret']}\n")
+    typer.echo("Recovery codes (each works once; store them offline, e.g. in Bitwarden, not on this host):")
+    for c in out["recovery_codes"]:
+        typer.echo(f"  {c}")
+    typer.echo(f"\nstored in {store.path} (0600). Operator sign-in now asks for a code; restart not needed.")
+
+
+@totp_app.command("disable")
+def totp_disable() -> None:
+    if not _totp().disable():
+        typer.echo("TOTP was not enabled")
+        return
+    typer.echo("TOTP disabled. With SHIMPAKU_PUBLIC_VIEW=1 the operator cannot sign in until it is enabled again.")
+
+
+@totp_app.command("status")
+def totp_status() -> None:
+    st = _totp().status()
+    if not st["enabled"]:
+        typer.echo("TOTP: disabled")
+        return
+    typer.echo(f"TOTP: enabled; {st['recovery_codes_left']} recovery codes left")
 
 
 # ---- tester passes (DEPLOY-DESIGN build step 4) -------------------------------------------------

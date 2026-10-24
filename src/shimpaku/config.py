@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # Anonymous visitors get live read-only access in auth_mode=local (role visitor). Off by default
     # so a lab without the edge in front of it stays closed.
     public_view: bool = False
+    # Operator sessions while public view is on (the owner may sign in from someone else's laptop):
+    # sliding idle timeout in minutes and absolute lifetime in hours. Off public view: 12 h / 7 d.
+    operator_idle_min: float = 30.0
+    operator_max_h: float = 4.0
     session_requests_max_pending: int = 200  # open requests stored at once; more are refused (503)
     # LiteLLM admin/master key used only to mint and delete per-lease virtual keys. Unset: Ask Shim
     # is disabled for testers (never falls back to the operator's key).

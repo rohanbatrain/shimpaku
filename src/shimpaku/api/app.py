@@ -44,6 +44,7 @@ from shimpaku.api import requests as req_mod
 from shimpaku.api.auth import ADMIN_USER, OFF_MODE_USER, SCOPES, AuthStore, Principal, load_admin_hash, verify_password
 from shimpaku.api.llm_keys import LLMKeyError
 from shimpaku.api.ratelimit import RateLimiter
+from shimpaku.api.totp import TotpStore, totp_file
 from shimpaku.config import settings
 
 log = logging.getLogger("shimpaku.api")
@@ -62,6 +63,12 @@ EVENTS_TICK_S = 5.0
 class LoginBody(BaseModel):
     password: str = Field(min_length=1, max_length=1024)
     username: str = ADMIN_USER
+    code: str | None = Field(default=None, max_length=16)           # 6-digit TOTP code
+    recovery_code: str | None = Field(default=None, max_length=64)  # one-time recovery code
+
+
+TOTP_SETUP_NEEDED = ("Two-factor sign-in is required on the public site and is not set up. On the lab host run "
+                     "`shimpaku admin totp enable`, add the code to your authenticator app, then sign in again.")
 
 
 class TokenBody(BaseModel):
@@ -186,6 +193,7 @@ def create_app(
     leases: "lease_mod.LeaseManager | None" = None,
     limiter: RateLimiter | None = None,
     public_view: bool | None = None,
+    totp: TotpStore | None = None,
 ) -> FastAPI:
     """Build the app.
 
@@ -211,6 +219,10 @@ def create_app(
     public = (settings.public_view if public_view is None else public_view) and mode == "local" and not is_replay
     requests_ = leases.requests
     dist = web_dist or WEB_DIST
+    totp = totp or TotpStore(totp_file(settings.data))
+    # operator sessions on the public site are short (shared computers); unchanged otherwise
+    op_idle_s = int(settings.operator_idle_min * 60) if public else None
+    op_abs_s = int(settings.operator_max_h * 3600) if public else None
 
     app = FastAPI(title="Shimpaku", version="0.0.1", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
     app.add_middleware(BodyLimit)
@@ -221,6 +233,7 @@ def create_app(
     app.state.leases = leases
     app.state.limiter = limiter
     app.state.public_view = public
+    app.state.totp = totp
 
     async def call(name: str, *args: Any, **kwargs: Any) -> Any:
         fn = getattr(service, name, None)
@@ -379,6 +392,9 @@ def create_app(
             "can_approve": bool(p and p.can_approve), "can_propose": bool(p and p.can_propose),
             "role": p.effective_role if p else None, "lease_id": p.lease_id if p else None,
             "public_view": public,
+            # sign-in form hints: whether a code is asked for, and the operator idle timeout
+            "totp_required": mode == "local" and (public or totp.enabled),
+            "operator_idle_min": settings.operator_idle_min if public else None,
         }
 
     @app.get("/api/settings")
@@ -396,26 +412,62 @@ def create_app(
             "mcp_loopback_only": mode == "off",
             "models": settings.models(), "token_scopes": list(SCOPES),
             "admin_configured": load_admin_hash(settings.data) is not None,
+            "public_view": public, "totp_enabled": totp.enabled,
+            "operator_session": ({"idle_min": settings.operator_idle_min, "max_h": settings.operator_max_h,
+                                  "persistent_cookie": False} if public else
+                                 {"idle_min": 12 * 60, "max_h": 7 * 24, "persistent_cookie": False}),
         }
+
+    def audit_login(status: str, args: dict, ok: bool) -> None:
+        # never the password, the code or the recovery code: only which factor and why it failed
+        caller = ({"kind": "dashboard", "name": ADMIN_USER, "role": "operator", "transport": "rest"} if ok else
+                  {"kind": "dashboard", "name": "anonymous", "role": "visitor", "transport": "rest"})
+        lease_mod._audit(caller, "login", args, status=status)
 
     @app.post("/api/login")
     async def login(body: LoginBody, request: Request, response: Response) -> dict:
         check_csrf(request, None)
         if mode != "local":
             raise HTTPException(400, f"auth mode is {mode}; there is nothing to sign in to")
-        client = request.client.host if request.client else "?"
+        client = client_ip(request)  # the real client: uvicorn trusts only SHIMPAKU_TRUSTED_PROXIES
         if not auth.login_allowed(client):
+            audit_login("rate_limited", {"reason": "rate_limited"}, ok=False)
             raise HTTPException(429, "too many sign-in attempts; wait a minute")
-        if body.username != ADMIN_USER or not verify_password(load_admin_hash(settings.data), body.password):
-            raise HTTPException(401, "wrong user name or password")
+        two_factor = totp.enabled
+        pw_ok = body.username == ADMIN_USER and verify_password(load_admin_hash(settings.data), body.password)
+        if not pw_ok:
+            audit_login("denied", {"reason": "bad_credentials"}, ok=False)
+            log.info("login failed (password)")
+            raise HTTPException(401, "wrong password or code" if two_factor or public else "wrong user name or password")
+        if public and not two_factor:
+            audit_login("denied", {"reason": "totp_not_enabled"}, ok=False)
+            raise HTTPException(403, TOTP_SETUP_NEEDED)
+        factor = "password"
+        if two_factor:
+            if body.recovery_code:
+                ok, factor = totp.use_recovery(body.recovery_code), "recovery_code"
+            elif body.code:
+                ok, factor = totp.verify_code(body.code), "totp"
+            else:
+                audit_login("denied", {"reason": "code_missing"}, ok=False)
+                raise HTTPException(401, "enter the 6-digit code from your authenticator app")
+            if not ok:
+                audit_login("denied", {"reason": f"bad_{factor}"}, ok=False)
+                log.info("login failed (%s)", factor)
+                raise HTTPException(401, "wrong password or code")
         secure = _is_https(request)
         sname, _ = _cookie_names(secure)
         auth.drop_session(request.cookies.get(sname))  # rotate at login
-        sid = auth.create_session(ADMIN_USER)
+        sid = auth.create_session(ADMIN_USER, idle_s=op_idle_s, absolute_s=op_abs_s)
+        # no max_age / expires: a browser-session cookie, gone when the browser closes
         response.set_cookie(sname, sid, httponly=True, secure=secure, samesite="lax", path="/")
         set_csrf(request, response, rotate=True)
-        log.info("login ok user=%s", ADMIN_USER)
-        return {"ok": True, "user": ADMIN_USER}
+        audit_login("ok", {"factor": factor}, ok=True)
+        log.info("login ok user=%s factor=%s", ADMIN_USER, factor)
+        out = {"ok": True, "user": ADMIN_USER}
+        if factor == "recovery_code":
+            out["recovery_codes_left"] = totp.status().get("recovery_codes_left")
+        return out
 
     @app.post("/api/logout")
     async def logout(request: Request, response: Response) -> dict:
@@ -425,6 +477,18 @@ def create_app(
         auth.drop_session(request.cookies.get(sname))
         response.delete_cookie(sname, path="/", secure=secure, httponly=True, samesite="lax")
         return {"ok": True}
+
+    @app.post("/api/logout-all")
+    async def logout_all(request: Request, response: Response, p: Principal = Depends(reader)) -> dict:
+        if not p.is_operator:
+            raise HTTPException(403, "operator only")
+        n = auth.drop_operator_sessions()
+        secure = _is_https(request)
+        sname, _ = _cookie_names(secure)
+        response.delete_cookie(sname, path="/", secure=secure, httponly=True, samesite="lax")
+        lease_mod._audit({"kind": "dashboard", "name": p.name, "role": "operator", "transport": "rest"},
+                         "logout_all", {"sessions": n})
+        return {"ok": True, "sessions": n}
 
     # ---- tokens (Connected agents) -----------------------------------------------
     @app.get("/api/tokens")

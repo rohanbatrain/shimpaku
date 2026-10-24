@@ -21,6 +21,8 @@ from shimpaku.actions import engine as engmod  # noqa: E402
 from shimpaku.actions import fixture  # noqa: E402
 from shimpaku.actions import policy as P  # noqa: E402
 from shimpaku.api.app import create_app  # noqa: E402
+from shimpaku.api.totp import TotpStore, b32_key  # noqa: E402
+from shimpaku.api.totp import totp as totp_code  # noqa: E402
 from shimpaku.api.auth import AuthStore, hash_password  # noqa: E402
 from shimpaku.api.lease import LeaseManager  # noqa: E402
 from shimpaku.api.llm_keys import LiteLLMKeys  # noqa: E402
@@ -83,11 +85,14 @@ def world(tmp_path, monkeypatch, box):  # noqa: F811
     dist = tmp_path / "dist"
     dist.mkdir()
     (dist / "index.html").write_text("<!doctype html><title>spa</title>")
+    totp = TotpStore(tmp_path / "totp.json")
+    totp_secret = totp.enable()["secret"]
     app = create_app(service, auth_mode="local", web_dist=dist, leases=lm,
-                     limiter=RateLimiter({"write": (1000, 1000)}))
+                     limiter=RateLimiter({"write": (1000, 1000)}), totp=totp)
     assert app.state.auth is auth  # the app shares the lease manager's store
     yield type("W", (), dict(app=app, lm=lm, auth=auth, clock=clock, seeder=seeder, eng=e, audit=audit,
-                             tmp=tmp_path, keys=keys))
+                             tmp=tmp_path, keys=keys,
+                             totp=totp, totp_secret=totp_secret))
     service.set_audit_log(None)
     engmod.set_engine(None)
 
@@ -102,9 +107,16 @@ def csrf(c: TestClient) -> dict:
     return {"X-CSRF-Token": tok, "Origin": str(c.base_url).rstrip("/")}
 
 
+def otp(w) -> str:
+    """A fresh TOTP code: each call moves the TOTP clock one step on (a code is accepted once)."""
+    w.totp_t = getattr(w, "totp_t", w.clock.t) + 30
+    w.totp.clock = lambda: w.totp_t
+    return totp_code(b32_key(w.totp_secret), w.totp_t)
+
+
 def operator(w) -> tuple[TestClient, dict]:
     c = client(w)
-    r = c.post("/api/login", json={"password": PW}, headers=csrf(c))
+    r = c.post("/api/login", json={"password": PW, "code": otp(w)}, headers=csrf(c))
     assert r.status_code == 200
     return c, csrf(c)
 

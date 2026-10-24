@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "actions"))
 from test_engine import box  # noqa: E402,F401
-from test_tester_passes import PW, csrf, world  # noqa: E402,F401
+from test_tester_passes import PW, csrf, otp, world  # noqa: E402,F401
 
 from shimpaku import service  # noqa: E402
 from shimpaku.actions import fixture  # noqa: E402
@@ -30,7 +30,7 @@ def app_for(w, *, public=True, table=None):
     lim = RateLimiter(table or {"write": (1000, 1000), "read": (1000, 1000), "request": (1000, 1000),
                                "redeem": (1000, 1000)}, clock=w.clock)
     return create_app(service, auth_mode="local", web_dist=w.tmp / "dist", leases=w.lm, limiter=lim,
-                      public_view=public)
+                      public_view=public, totp=w.totp)
 
 
 def cl(app) -> TestClient:
@@ -63,7 +63,7 @@ def op(w):
     """One signed-in operator client per world (sign-in is limited to 5 a minute per address)."""
     if getattr(w, "_op", None) is None or w._op[2] is not w.pv:
         c = cl(w.pv)
-        assert c.post("/api/login", json={"password": PW}, headers=csrf(c)).status_code == 200
+        assert c.post("/api/login", json={"password": PW, "code": otp(w)}, headers=csrf(c)).status_code == 200
         w._op = (c, csrf(c), w.pv)
     return w._op[0], w._op[1]
 
@@ -140,7 +140,7 @@ def test_visitor_reads_are_rate_limited_per_address_and_not_audited(pv, caplog):
     assert "testclient" not in caplog.text and "visitor GET /api/actions" in caplog.text
     # the operator is not held to the visitor bucket
     o = cl(app)
-    o.post("/api/login", json={"password": PW}, headers=csrf(o))
+    o.post("/api/login", json={"password": PW, "code": otp(pv)}, headers=csrf(o))
     assert o.get("/api/actions").status_code == 200
 
 

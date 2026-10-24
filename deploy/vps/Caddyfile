@@ -84,6 +84,19 @@ app.{$SHIMPAKU_DOMAIN} {
 			window 10m
 		}
 	}
+	# Operator sign-in (password + TOTP): brute force stops here before it reaches the lab; the
+	# app's own limiter (5 a minute per client address) still applies behind it.
+	@login {
+		method POST
+		path /api/login /api/logout-all
+	}
+	rate_limit @login {
+		zone login {
+			key {client_ip}
+			events 10
+			window 10m
+		}
+	}
 	@demo path /api/demo/*
 	rate_limit @demo {
 		zone demo {

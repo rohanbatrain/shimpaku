@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "actions"))
 from test_engine import box  # noqa: E402,F401
 from test_public_view import (CONTACT, HOUR, NAME, a_request, app_for, approve, body, cl, op,  # noqa: E402
                               pv, redeem, send)
-from test_tester_passes import csrf, invite, world  # noqa: E402,F401
+from test_tester_passes import PW as PW_, csrf, invite, otp, world  # noqa: E402,F401
 
 from shimpaku.actions import fixture  # noqa: E402
 
@@ -137,3 +137,53 @@ def test_an_early_link_cannot_be_redeemed_by_racing_the_clock_edge(pv):  # noqa:
     assert redeem(pv, tok)[1].status_code == 425
     pv.clock.t = start - 600
     assert redeem(pv, tok)[1].status_code == 200
+
+
+# ================================================================ operator sign-in over the internet
+
+def _login(c, **kw):
+    return c.post("/api/login", json={"password": PW_, **kw}, headers=csrf(c))
+
+
+def test_operator_password_brute_force_is_cut_off(pv):  # noqa: F811
+    c = cl(pv.pv)
+    codes = [c.post("/api/login", json={"password": f"guess-{i}", "code": "000000"}, headers=csrf(c)).status_code
+             for i in range(8)]
+    assert codes[:5] == [401] * 5 and set(codes[5:]) == {429}
+    # spoofed forwarding headers do not buy a new bucket (no trusted proxy in front of the test app)
+    r = c.post("/api/login", json={"password": "x", "code": "000000"},
+               headers={**csrf(c), "X-Forwarded-For": "203.0.113.9", "X-Real-IP": "203.0.113.9"})
+    assert r.status_code == 429
+    # and even the right password with the right code waits out the window
+    assert _login(c, code=otp(pv)).status_code == 429
+
+
+def test_totp_code_brute_force_with_the_right_password_is_cut_off(pv):  # noqa: F811
+    c = cl(pv.pv)
+    codes = [_login(c, code=f"{i:06d}").status_code for i in range(7)]
+    assert 429 in codes and c.get("/api/whoami").json()["role"] == "visitor"
+
+
+def test_an_observed_totp_code_cannot_be_reused(pv):  # noqa: F811
+    code = otp(pv)
+    assert _login(cl(pv.pv), code=code).status_code == 200
+    thief = cl(pv.pv)
+    assert _login(thief, code=code).status_code == 401
+    assert thief.get("/api/whoami").json()["role"] == "visitor"
+
+
+def test_a_used_recovery_code_cannot_be_reused(pv):  # noqa: F811
+    rc = pv.totp.enable()
+    pv.totp_secret = rc["secret"]
+    assert _login(cl(pv.pv), recovery_code=rc["recovery_codes"][0]).status_code == 200
+    thief = cl(pv.pv)
+    assert _login(thief, recovery_code=rc["recovery_codes"][0]).status_code == 401
+    assert thief.get("/api/whoami").json()["role"] == "visitor"
+
+
+def test_password_alone_never_signs_in_on_the_public_site(pv):  # noqa: F811
+    c = cl(pv.pv)
+    assert _login(c).status_code == 401
+    pv.totp.disable()
+    assert _login(c).status_code == 403
+    assert c.get("/api/whoami").json()["role"] == "visitor"
