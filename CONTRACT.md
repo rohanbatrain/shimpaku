@@ -1,6 +1,6 @@
 # Shimpaku — build contract (binding for every builder)
 
-Source of design: lab-book `research/2026-10-24-mist-emulation/PLAN.md` (+ R1–R9, REVIEW). This file fixes the
+Source of design: research notes `research/2026-10-24-mist-emulation/PLAN.md` (+ R1–R9, REVIEW). This file fixes the
 interfaces so parallel builders do not collide. Change it only through the orchestrator.
 
 ## Process model
@@ -10,7 +10,7 @@ process: the collector, the analytics loop, the executor and validation timers, 
 and the MCP server (Streamable HTTP mounted at `/mcp`). Everything else is a client:
 
 - `shimpaku mcp-stdio` — stdio MCP server that **proxies** every call to `shimpakud` `/mcp` (for Claude Code /
-  OpenCode spawned over `ssh sitar`). It never opens the database.
+  OpenCode spawned over `ssh <lab-host>`). It never opens the database.
 - `shimpaku assistant` / the dashboard's chat — MCP client of `/mcp` + LLM via LiteLLM.
 - `bench` — separate process (later separate Unix user); own NETCONF; reads only the audit API.
 
@@ -47,7 +47,7 @@ and the MCP server (Streamable HTTP mounted at `/mcp`). Everything else is a cli
 | `SHIMPAKU_TOPOLOGIES` | `day-02-switching.toml,day-06-datacenter.toml` | sites: `campus`, `fabric` |
 | `SHIMPAKU_DEVICE_USER` / `SHIMPAKU_DEVICE_PASSWORD` | `admin` / (lab default) | NETCONF + gNMI |
 | `SHIMPAKU_GNMIC` | `~/.local/bin/aiops-gnmic` | gnmic binary |
-| `SHIMPAKU_BIND` | `127.0.0.1` | API+MCP bind; may add the NetBird address |
+| `SHIMPAKU_BIND` | `127.0.0.1` | API+MCP bind; may add the the operator's VPN address |
 | `SHIMPAKU_PORT` | `8780` | REST, SSE, `/mcp`, and the built dashboard at `/` |
 | `SHIMPAKU_AUTH_MODE` | `off` | `off` \| `local` (oidc later). `off` refuses non-loopback bind for MCP |
 | `SHIMPAKU_LLM_BASE` | `http://127.0.0.1:4000` | operator's LiteLLM gateway |
@@ -99,5 +99,5 @@ Juniper Networks." Our status labels: Open / Running / Automatic / Fixed by oper
 ## Rules
 
 Verify on the lab, not by intention. Junos writes only via the executor (lock + `commit confirmed`). Lab
-access from the dev Mac: `ssh sitar`; code is synced to `~/src/shimpaku` on sitar. Never print secrets.
+access from the dev Mac: `ssh <lab-host>`; code is synced to `~/src/shimpaku` on <lab-host>. Never print secrets.
 No HPE/Juniper marks in names. Builders do not commit; the orchestrator commits.

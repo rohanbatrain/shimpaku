@@ -55,6 +55,7 @@ class CombinedASGI:
 
 async def async_main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    settings.require_device_password()
     settings.ensure_data()
     log.info("data dir: %s", settings.data)
 

@@ -2,7 +2,7 @@
 
 All six MVP workstreams (telemetry, mcp+actions, analytics, web/api, assistant, bench) were
 built in parallel against `CONTRACT.md` and are committed individually. This is the record of
-assembling them into one running daemon and proving the result live on sitar, 2026-10-24.
+assembling them into one running daemon and proving the result live on <lab-host>, 2026-10-24.
 
 ## What was built
 
@@ -62,7 +62,7 @@ own `tests/<area>/`, DuckDB's single-writer rule only bites with two *different*
 instances open in the *same process*, and the conftest collision only appears when the *whole*
 suite is collected together.
 
-## Live proof, sitar, 2026-10-24 (full log: `/tmp/shimpakud.log` on sitar)
+## Live proof, <lab-host>, 2026-10-24 (full log: `/tmp/shimpakud.log` on <lab-host>)
 
 ```text
 $ SHIMPAKU_DATA=/tmp/shp-daemon-data SHIMPAKU_PORT=8780 python -m shimpaku.daemon
@@ -89,7 +89,7 @@ tool call landing in a tamper-evident audit trail.
 
 ## Full test suite
 
-`pytest -q` (Mac and sitar): **242 passed, 2 skipped** (the two `-m lab` live-device tests,
+`pytest -q` (Mac and <lab-host>): **242 passed, 2 skipped** (the two `-m lab` live-device tests,
 correctly gated — see B-mcp's `tests/mcp/conftest.py`).
 
 ## Known gaps carried into the README (not fixed here — out of scope for integration)

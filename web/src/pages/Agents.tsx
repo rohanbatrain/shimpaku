@@ -63,7 +63,7 @@ export default function Agents() {
           </div>
           <div className="card">
             <h2>How agents connect</h2>
-            <p style={{ marginTop: 0 }}>MCP over Streamable HTTP at <span className="mono">{mcp}</span> with <span className="mono">Authorization: Bearer &lt;token&gt;</span>, or stdio through <span className="mono">ssh sitar shimpaku mcp-stdio</span>.</p>
+            <p style={{ marginTop: 0 }}>MCP over Streamable HTTP at <span className="mono">{mcp}</span> with <span className="mono">Authorization: Bearer &lt;token&gt;</span>, or stdio through <span className="mono">ssh &lt;lab-host&gt; shimpaku mcp-stdio</span>.</p>
             <div className="notice info"><b>No token can approve.</b> Approval is a click by a signed-in person on the action page. Agents propose with evidence; the executor commits with <span className="mono">commit confirmed</span>.</div>
           </div>
         </div>

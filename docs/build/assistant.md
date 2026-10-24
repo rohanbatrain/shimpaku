@@ -1,6 +1,6 @@
 # Shim: the assistant (`shimpaku.assistant`) — owner B-assistant
 
-Built 2026-10-24. Sources: CONTRACT.md; lab-book `research/2026-10-24-mist-emulation/R7-agentic-layer.md`
+Built 2026-10-24. Sources: CONTRACT.md; research notes `research/2026-10-24-mist-emulation/R7-agentic-layer.md`
 (§1A Claude-first via LiteLLM, §2.3 tools, §3 orchestration, §4.3 state machine, §5 evaluation) and
 `R7-files/` (14 mocked scenarios + scoring, vendored into `shimpaku/assistant/r7_scenarios.py`); PLAN.md
 §5 phase 6; B-mcp's real `src/shimpaku/mcp/server.py` and `src/shimpaku/service.py` (commit 364075a),

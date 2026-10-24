@@ -1,12 +1,12 @@
 # MCP server, service layer and actions (`shimpaku.mcp`, `shimpaku.actions`) — owner B-mcp
 
 Built 2026-10-24. Sources: PLAN §2, §4 rows 5–8, §5 phases 2 and 5, §7; R7 §2.3–2.6, §4; R9 §1.2, §2.3;
-R2 §6–7; REVIEW B1–B3. Everything below marked **live** was run on vJunos 26.2 on sitar on 2026-10-24.
+R2 §6–7; REVIEW B1–B3. Everything below marked **live** was run on vJunos 26.2 on <lab-host> on 2026-10-24.
 
 ## 1. Design
 
 ```
-Claude Code / OpenCode ──ssh sitar── shimpaku.mcp.proxy (stdio) ──HTTP──┐
+Claude Code / OpenCode ──ssh <lab-host>── shimpaku.mcp.proxy (stdio) ──HTTP──┐
 assistant (MCP client) ─────────────────────────────────────────────────┤
                                                                         ▼
                                shimpakud: /mcp  (MCPServer "shimpaku", mcp 2.3.0)
@@ -101,15 +101,15 @@ over `DEFAULT_POLICY` (a broken file never loosens anything).
 
 Plus: reason text is NFKC-normalised, control/bidi characters stripped, stored, never executed.
 
-Tests: `pytest tests/actions tests/mcp` → **93 passed** (Mac and sitar). `tests/actions/test_engine.py`
+Tests: `pytest tests/actions tests/mcp` → **93 passed** (Mac and <lab-host>). `tests/actions/test_engine.py`
 covers lifecycle → verified, commit legs `[confirm=2, plain]`, agent approval refused (4 forgeries),
 blocked can't be approved, self-drive, pending confirm at execution, failed health check never confirms,
 recurrence, validation timer across restart, crash recovery not re-driven, bounce cap, cancel rules.
 `tests/mcp/test_lab_live.py` (`-m lab`) holds read-only live checks.
 
-## 4. Live evidence (sitar, 2026-10-24 UTC; test instance `SHIMPAKU_DATA=~/.local/share/shimpaku-bmcp`, port 8791, shared lock db `/home/lab/shimpaku/locks.db`, `confirm_minutes=1`, bounce window 60 s; scripts and full output in `sitar:~/aiops-bmcp/`)
+## 4. Live evidence (<lab-host>, 2026-10-24 UTC; test instance `SHIMPAKU_DATA=~/.local/share/shimpaku-bmcp`, port 8791, shared lock db `/home/lab/shimpaku/locks.db`, `confirm_minutes=1`, bounce window 60 s; scripts and full output in `<lab-host>:~/aiops-bmcp/`)
 
-**(1) Bounce spine2 ge-0/0/9** via the stdio proxy (run on sitar) → `/mcp` → executor (`live1b.out`), `act-20261024-46ea40`:
+**(1) Bounce spine2 ge-0/0/9** via the stdio proxy (run on <lab-host>) → `/mcp` → executor (`live1b.out`), `act-20261024-46ea40`:
 precheck `live_role=unused admin=up oper=down unconfigured` → 05:52:33 `awaiting_approval` ("T1 self-driving
 is off") → dashboard-kind approval → `approved` → 05:52:36 `running` ("lease taken on spine2 (lock db
 /home/lab/shimpaku/locks.db)") → leg 1 commit 14.6 s → fresh-session check `{pending_confirm: True,
@@ -156,7 +156,7 @@ fabric-disable row) to `ok` → `{"ok": false, "first_bad_seq": 88}`.
 Raw path: `junos_show(leaf2, "show bgp summary")` via junos-mcp-server, backend tools listed:
 `execute_junos_command, execute_junos_command_batch, gather_device_facts, get_junos_config, get_router_list,
 junos_config_diff` (no write tools); `show configuration system` → refused.
-From the Mac: `ssh sitar … python -m shimpaku.mcp.proxy` → 20 tools, resources, prompts in 1.3 s.
+From the Mac: `ssh <lab-host> … python -m shimpaku.mcp.proxy` → 20 tools, resources, prompts in 1.3 s.
 
 **Left as found:** spine2 ge-0/0/9 and leaf2 ge-0/0/5 have no config, no pending confirm; no shimpaku
 lease left; test server stopped; `deploy.py lab/topologies/day-06-datacenter.toml --validate-only` →
@@ -165,16 +165,16 @@ legs), leaf2 2 (`…04c0b0 leg1` + the Junos auto-rollback), net change none.
 
 ## 5. Connecting clients
 
-Claude Code, stdio over ssh (the daemon must be running on sitar):
+Claude Code, stdio over ssh (the daemon must be running on <lab-host>):
 
 ```bash
-claude mcp add --transport stdio shimpaku -- ssh sitar 'cd ~/src/shimpaku && exec .venv/bin/python -m shimpaku.mcp.proxy'
+claude mcp add --transport stdio shimpaku -- ssh <lab-host> 'cd ~/src/shimpaku && exec .venv/bin/python -m shimpaku.mcp.proxy'
 ```
 
 Claude Code, HTTP (auth_mode=local, token minted on the dashboard's tokens page), `.mcp.json`:
 
 ```json
-{ "mcpServers": { "shimpaku": { "type": "http", "url": "${SHIMPAKU_MCP_URL:-http://100.64.78.110:8780/mcp}",
+{ "mcpServers": { "shimpaku": { "type": "http", "url": "${SHIMPAKU_MCP_URL:-http://<lab-host-vpn-ip>:8780/mcp}",
   "headers": { "Authorization": "Bearer ${SHIMPAKU_TOKEN}" } } } }
 ```
 
@@ -187,8 +187,8 @@ OpenCode (`opencode.json`):
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "shimpaku": { "type": "local", "command": ["ssh", "sitar", "cd ~/src/shimpaku && exec .venv/bin/python -m shimpaku.mcp.proxy"] },
-    "shimpaku-http": { "type": "remote", "url": "http://100.64.78.110:8780/mcp", "oauth": false,
+    "shimpaku": { "type": "local", "command": ["ssh", "<lab-host>", "cd ~/src/shimpaku && exec .venv/bin/python -m shimpaku.mcp.proxy"] },
+    "shimpaku-http": { "type": "remote", "url": "http://<lab-host-vpn-ip>:8780/mcp", "oauth": false,
       "headers": { "Authorization": "Bearer {env:SHIMPAKU_TOKEN}" }, "enabled": false }
   },
   "permission": { "shimpaku_action_*": "ask" }
@@ -207,9 +207,9 @@ OpenCode (`opencode.json`):
 - Settings candidates (read as constants today): `jmcp_dir`, `jmcp_python` (junos_raw.py). No new deps.
 - Open: `rerun_deploy` execution waits for deploy.py commit-confirmed. The phase 5 exit's live red
   team through the gateway's default model is documented and harnessed (§7) but has not been run:
-  no gateway key exists for Shimpaku yet (confirmed on sitar 2026-10-24: no
+  no gateway key exists for Shimpaku yet (confirmed on <lab-host> 2026-10-24: no
   `~/.config/shimpaku/litellm.key`, and `SHIMPAKU_LLM_KEY` unset). A key file happened to exist on the
-  B-mcp builder's own Mac (unrelated, pre-dates this task, not sitar, not verified as a Shimpaku
+  B-mcp builder's own Mac (unrelated, pre-dates this task, not <lab-host>, not verified as a Shimpaku
   gateway credential) — it was not used; a quick wiring smoke-test against it only reached
   `ConnectError` (nothing listening), proving the harness fails safely with no key and makes no
   device calls when the gateway or MCP endpoint is unreachable.
@@ -222,8 +222,8 @@ Shimpaku — it is a single command, no new code needed.
 ### 7.1 One-time setup (operator or orchestrator)
 
 1. Mint a LiteLLM key for Shimpaku on the gateway and either set `SHIMPAKU_LLM_KEY` or write it to
-   `~/.config/shimpaku/litellm.key` (0600) **on sitar**, where the lab and the daemon live.
-2. Start `shimpakud` (or the standalone `python -m shimpaku.mcp.serve`) on sitar with the real write
+   `~/.config/shimpaku/litellm.key` (0600) **on <lab-host>**, where the lab and the daemon live.
+2. Start `shimpakud` (or the standalone `python -m shimpaku.mcp.serve`) on <lab-host> with the real write
    scope from `lab://policy` (spine2 `ge-0/0/9`; leaf2's unused data ports — verify unused first, same
    as §4). Do **not** point this at a widened write scope: the point of this run is the real guardrails
    on the real write surface.
@@ -234,7 +234,7 @@ Shimpaku — it is a single command, no new code needed.
 ### 7.2 Run it — one command
 
 ```bash
-ssh sitar
+ssh <lab-host>
 cd ~/src/shimpaku
 .venv/bin/python -m shimpaku.mcp.redteam_llm --mcp http://127.0.0.1:8780/mcp --model auto --repeats 3
 ```

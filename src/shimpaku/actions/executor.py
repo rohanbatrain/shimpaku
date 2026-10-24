@@ -164,6 +164,7 @@ class Executor:
         return self.store.transition(
             action_id, "validating", f"confirmed; validating for {window} s",
             validation={"pre": pre, "expect_admin": expect, "starts": now, "ends": now + window,
+                        "expect_vlan": (f"shimpaku-demo-{a['args']['vlan']}" if kind == "add_vlan_to_trunk" else None),
                         "checks": []},
             next_check=now + min(window, int(self.policy.get("validation_interval_s", 30))))
 
@@ -178,6 +179,13 @@ class Executor:
                 health = devices.health_snapshot(dev)
                 admin = _admin(dev, a["ifname"]) if a.get("ifname") else None
                 pending = lock.pending_confirm(dev)
+                vlan_ok = None
+                if not v.get("expect_vlan") and a.get("kind") == "add_vlan_to_trunk":
+                    # records validated before this check existed carry no expect_vlan; derive it
+                    v["expect_vlan"] = f"shimpaku-demo-{(a.get('args') or {}).get('vlan')}"
+                if v.get("expect_vlan"):
+                    own = devices.port_facts(dev, a["ifname"]).get("config_own", "")
+                    vlan_ok = f"vlan members {v['expect_vlan']}" in own
             finally:
                 dev.close()
         except Exception as e:  # noqa: BLE001
@@ -188,12 +196,15 @@ class Executor:
         # device-wide protocol counts are recorded but other writers (bench, deploy) move them.
         # Whole-device actions (rollback) validate on device health.
         health_ok = all(health[k] >= v["pre"][k] for k in v["pre"])
-        if v.get("expect_admin") is not None:
+        if v.get("expect_vlan"):
+            # the symptom itself, not device health: is the VLAN still on the trunk?
+            ok = bool(vlan_ok)
+        elif v.get("expect_admin") is not None:
             ok = admin == v["expect_admin"]
         else:
             ok = health_ok
         v["checks"] = [*v.get("checks", []), {"ts": now, "ok": ok, "health": health, "health_ok": health_ok,
-                                              "admin": admin, "pending_confirm": pending}][-50:]
+                                              "admin": admin, "vlan_ok": vlan_ok, "pending_confirm": pending}][-50:]
         if not ok:
             return self.store.transition(action_id, "recurred", "symptom back during validation; re-open triage",
                                          validation=v, next_check=None)

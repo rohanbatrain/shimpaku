@@ -2,7 +2,7 @@
 
 Tool names, arguments and the action-result shape here follow the REAL server
 (``src/shimpaku/mcp/server.py``, B-mcp, commit 364075a) and CONTRACT.md's MVP action catalogue —
-not just R7's exploratory research. Concretely, vs. the R7 lab-book draft:
+not just R7's exploratory research. Concretely, vs. the R7 research notes draft:
 
 - An action result's id field is ``id`` (not ``action_id``); status is one of the real
   ``shimpaku.actions.state`` values: ``blocked | awaiting_approval | automatic | approved |

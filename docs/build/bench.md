@@ -7,7 +7,7 @@ FAB-12 (ospf-timer-mismatch) promoted to self-tested at `--repeat 5`, journal em
 incrementally while those runs were still executing, per the coordinator's instruction to persist
 partial results against interruption; §3 below is now the final record, not a draft.
 
-Sources: PLAN.md §5 phase 1 and phase 8, §6 (demo set), §7 (benchmark); lab-book research
+Sources: PLAN.md §5 phase 1 and phase 8, §6 (demo set), §7 (benchmark); research notes research
 `R9-failures-and-benchmark.md` (the aiops-bench prototype that passed 10 live self-tests on
 2026-10-23) + `R9-files/` (`bench.py`, `catalogue.yaml`, `to_r5.py`); R5 §6 (scoring contract) +
 `R5-files/06_scoring.py`/`r5common.py`; `REVIEW.md` B1–B5 (isolation, commit-diff leak, held-out
@@ -58,7 +58,7 @@ determinism/design, decoy scheduling, the B0b keyword classifier, and all three 
 
 ```
 $ .venv/bin/python -m pytest tests/bench -q
-46 passed in 7.14s          (same 46 passed on sitar)
+46 passed in 7.14s          (same 46 passed on <lab-host>)
 ```
 
 ## 2. REVIEW fixes, as designed
@@ -85,7 +85,7 @@ $ .venv/bin/python -m pytest tests/bench -q
   were scrubbed from the catalogue's Junos lines (see §1). The `show system commit` "rollback in Nmins"
   leak is unresolved for run A (confirmed mode shows it by design) — run B's plain-commit mode has none.
 
-## 3. Live proof so far (sitar, vJunos 26.2, 2026-10-24 UTC)
+## 3. Live proof so far (<lab-host>, vJunos 26.2, 2026-10-24 UTC)
 
 ### 3.1 Pipeline smoke (single run, before the repeat-5 batch)
 ```
@@ -110,7 +110,7 @@ Five of six passed cold; only WAN-03's intensity range needed correcting (measur
 
 ### 3.3 `--repeat 5` batch
 
-Launched detached on sitar (`~/aiops-bench-store/run-repeat5.sh`), two stages: (1) the 9 self-tested
+Launched detached on <lab-host> (`~/aiops-bench-store/run-repeat5.sh`), two stages: (1) the 9 self-tested
 network scenarios + CFG-02 (phase-1 exit requirement), then (2) the six promotion candidates.
 
 **Phase-1 batch, first attempt (`phase1-repeat5.log`): 9/10 scenarios 5/5, CAM-05 4/5 FAIL.**
@@ -232,14 +232,14 @@ are promoted to `selftested` at `--repeat 5` — satisfying the phase-8 prerequi
 
 **Published.** `publish.selftest_summary()` + `publish.write()` run against the final recorded JSONL
 (no live re-run needed) produced the `bench_results()` contract file at
-`$SHIMPAKU_DATA/bench/results.json` (`/home/rohan/.local/share/shimpaku/bench/results.json` on
-sitar): **16 scenarios, 80/80 trials passed**, with per-scenario counts, median/max times and
+`$SHIMPAKU_DATA/bench/results.json` (`~/.local/share/shimpaku/bench/results.json` on
+<lab-host>): **16 scenarios, 80/80 trials passed**, with per-scenario counts, median/max times and
 `config_restored_all` — the exact shape `docs/build/bench.md` tables above are drawn from. This is
 the file the dashboard's `GET /api/bench/results` (via `shimpaku.service.bench_results()`) reads.
 
 ## 4. Known deviations / notes
 
-- No `matplotlib` on the sitar host venv, so `publish.scoreboard_svg()` draws the ECDF-left /
+- No `matplotlib` on the <lab-host> host venv, so `publish.scoreboard_svg()` draws the ECDF-left /
   Wilson-CI-right plot as hand-built inline SVG instead of a PNG. Same columns and story as R5
   §6.5's plot spec; tested in `test_publish_outputs_are_json_clean`.
 - `virga` needs `bench/` on `PYTHONPATH` (it is not declared in `pyproject.toml`, which this builder
@@ -261,14 +261,14 @@ all live runs above used `~/aiops-bench-store` (0700, created by this builder, o
 Once a human with sudo moves the store:
 ```
 sudo -u aiops-bench env VIRGA_STORE=/home/aiops-bench/store \
-    VIRGA_CATALOGUE=/home/rohan/src/shimpaku/bench/catalogue.yaml \
+    VIRGA_CATALOGUE=~/src/shimpaku/bench/catalogue.yaml \
     SHIMPAKU_LOCK_DB=/home/lab/shimpaku/locks.db \
-    SHIMPAKU_LAB_REPO=/home/rohan/juniper-7-day-sprint \
-    PYTHONPATH=/home/rohan/src/shimpaku/bench:/home/rohan/src/shimpaku/src \
-    /home/rohan/src/shimpaku/.venv/bin/python -m virga selftest --repeat 5
+    SHIMPAKU_LAB_REPO=~/juniper-7-day-sprint \
+    PYTHONPATH=~/src/shimpaku/bench:~/src/shimpaku/src \
+    ~/src/shimpaku/.venv/bin/python -m virga selftest --repeat 5
 
 sudo -u aiops-bench env VIRGA_STORE=/home/aiops-bench/store ... \
-    /home/rohan/src/shimpaku/.venv/bin/python -m virga run PLAN.json --agent shimpaku --publish
+    ~/src/shimpaku/.venv/bin/python -m virga run PLAN.json --agent shimpaku --publish
 ```
 `aiops-bench` needs read access to the shared venv and to `bench/catalogue.yaml` (both currently
 `rohan`-owned; either group-readable or copied under `aiops-bench`'s home) and membership in group

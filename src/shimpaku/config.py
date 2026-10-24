@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     lab_repo: Path = Path.home() / "juniper-7-day-sprint"
     topologies: str = "day-02-switching.toml,day-06-datacenter.toml"
     device_user: str = "admin"
-    device_password: str = Field(default="admin@123", repr=False)
+    device_password: str | None = Field(default=None, repr=False)  # required: SHIMPAKU_DEVICE_PASSWORD
     gnmic: Path = Path.home() / ".local/bin/aiops-gnmic"
     gnmi_port: int = 32767
     bind: str = "127.0.0.1"
@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     llm_base: str = "http://127.0.0.1:4000"
     llm_key: str | None = Field(default=None, repr=False)
     llm_models: str = "triage=nvidia-glm-flash,diagnose=tokenharbor-claude-haiku-5.5-free,escalate=nvidia-glm"
+
+    def require_device_password(self) -> str:
+        """Device credentials are never defaulted in code (see .env.example)."""
+        if not self.device_password:
+            raise SystemExit("SHIMPAKU_DEVICE_PASSWORD is not set — see .env.example")
+        return self.device_password
 
     def llm_key_value(self) -> str | None:
         if self.llm_key:

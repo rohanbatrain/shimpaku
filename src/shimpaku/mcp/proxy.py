@@ -1,6 +1,6 @@
 """`shimpaku mcp-stdio`: a stdio MCP server that forwards every request to shimpakud's `/mcp`.
 
-For clients that spawn a process (Claude Code / OpenCode over `ssh sitar …`). It never opens the
+For clients that spawn a process (Claude Code / OpenCode over `ssh <lab-host> …`). It never opens the
 database or a device: the daemon does policy, audit and execution, so there is one path only.
 It labels itself with `X-Shimpaku-Client: stdio-proxy:<os user>`; a bearer token (for
 auth_mode=local) is read from `--token-file` (default `~/.config/shimpaku/mcp.token` if present).

@@ -10,9 +10,11 @@ import typer
 
 from shimpaku.api.cli_admin import admin_app
 from shimpaku.assistant.cli import ask
+from shimpaku.demo_cli import app as demo_app
 
 app = typer.Typer(add_completion=False, help="Shimpaku: a Mist-style assurance NMS for one Junos home lab.")
 app.add_typer(admin_app, name="admin")
+app.add_typer(demo_app, name="demo")
 app.command("ask")(ask)  # `shimpaku ask "question"`
 
 

@@ -38,16 +38,6 @@ nft add chain inet shimpaku_sandbox out '{ type filter hook output priority filt
 nft add rule inet shimpaku_sandbox out meta skuid shim-agent ip daddr 10.99.0.0/24 counter reject
 echo "  (runtime only; re-run this script after a reboot, like lab-net-up.sh)"
 
-step "5. disk: local LLM mode is out of scope — remove the two models R7 pulled (asks first)"
-df -h / | tail -1
-read -r -p "  remove ollama models qwen3:4b-instruct and granite4.1:3b? [y/N] " ans
-if [ "${ans,,}" = y ]; then
-  sudo -u "$OP" env OLLAMA_HOST=100.64.78.110:11434 ollama rm qwen3:4b-instruct granite4.1:3b || true
-  df -h / | tail -1
-else
-  echo "  skipped"
-fi
-
 step "verify"
 printf '  linger:          %s\n' "$(loginctl show-user "$OP" -p Linger --value)"
 printf '  bridge masks:    %s\n' "$(cat /sys/class/net/lab-*/bridge/group_fwd_mask | sort -u | tr '\n' ' ')"

@@ -233,3 +233,33 @@ def test_cancel_rules(tmp_path, box):
     with pytest.raises(ApprovalRefused):
         e.cancel(a["id"], Caller(kind="mcp", name="someone-else"))
     assert e.cancel(a["id"], AGENT)["status"] == "cancelled"
+
+
+def test_add_vlan_validates_the_vlan_itself_not_device_health(tmp_path, box, monkeypatch):
+    """Found live 2026-10-24: validation checked only device health, so a VLAN removed again
+    during the window would still have ended 'verified'. It must watch the symptom."""
+    state = {"vlan": False}
+    orig = FakeConfig.commit
+
+    def commit(self, comment=None, confirm=None):
+        orig(self, comment, confirm)
+        state["vlan"] = True
+
+    monkeypatch.setattr(FakeConfig, "commit", commit)
+    member = "set interfaces ge-0/0/9 unit 0 family ethernet-switching vlan members shimpaku-demo-999"
+    monkeypatch.setattr(X.devices, "port_facts", lambda dev, ifn: {
+        "live_role": "trunk", "interface_range_lines": [], "lldp_neighbor": None,
+        "config_own": member if state["vlan"] else ""})
+    e = make_engine(tmp_path, box, validation_window_s={"add_vlan_to_trunk": 3600})
+    e.facts_fn = lambda kind, args: P.Facts(
+        known_devices={"spine2"}, topology_role="unused", pending_confirm=False, vlan_seen_elsewhere=True,
+        port={"live_role": "trunk", "interface_range_lines": [], "lldp_neighbor": None,
+              "config_own": "", "config_inherited": ""})
+    a = e.propose("add_vlan_to_trunk", {"device": "spine2", "ifname": "ge-0/0/9", "vlan": 999}, "restore", AGENT)
+    assert a["status"] == "awaiting_approval", a["policy"]["reasons"]
+    e.approve(a["id"], HUMAN)
+    e.tick()
+    assert e.get(a["id"])["status"] == "validating"
+    state["vlan"] = False          # VLAN removed again; device health is untouched
+    e.tick()
+    assert e.get(a["id"])["status"] == "recurred"

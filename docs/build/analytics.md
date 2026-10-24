@@ -61,7 +61,7 @@ is a probe-minute: it measures the probe schedule, not people (PLAN §4 fact 1).
 
 Anomalies (gauge detectors) go to `anomaly` every 5 minutes. They do not open incidents.
 
-## Tests (`tests/analytics`, synthetic, no lab): 21 pass on the Mac and 19 of 19 on sitar (before the last 2 were added)
+## Tests (`tests/analytics`, synthetic, no lab): 21 pass on the Mac and 19 of 19 on <lab-host> (before the last 2 were added)
 
 The tests cover: classifier sums and n; that a healthy run is 100% good; precedence; probe-minutes; the RPM
 XML parse; **the phase-3 exit on synthetic telemetry**, where FAB-01→Redundancy, FAB-02→Adjacency,
@@ -74,14 +74,14 @@ opens nothing, while sustained CPU opens a Resources incident.
 
 Run: `.venv/bin/python -m pytest tests/analytics -q`
 
-## Live check on sitar (read-only)
+## Live check on <lab-host> (read-only)
 
-`~/.local/share/shimpaku/aiops.duckdb` did **not exist** on sitar. B-telemetry's measurement collector was
+`~/.local/share/shimpaku/aiops.duckdb` did **not exist** on <lab-host>. B-telemetry's measurement collector was
 writing `~/shp-measure/run1.duckdb` (started 05:43 UTC). I copied it with its WAL to `~/shp-analytics-check/`
 and ran the replay on the copy:
 
 ```
-ssh sitar 'bash -s' <<'EOF'
+ssh <lab-host> 'bash -s' <<'EOF'
 cd ~/shp-analytics-check && cp ~/shp-measure/run1.duckdb copy.duckdb && cp ~/shp-measure/run1.duckdb.wal copy.duckdb.wal
 cd ~/src/shimpaku && .venv/bin/python -m shimpaku.analytics --db ~/shp-analytics-check/copy.duckdb --minutes 15
 EOF
@@ -117,7 +117,7 @@ Preconditions:
    seconds), which is shorter than T1's 2-minute persistence. So the exit uses `virga run`, whose agent
    window holds `detect_budget_s = 300`.
 
-Exact commands, on sitar from `~/src/shimpaku`:
+Exact commands, on <lab-host> from `~/src/shimpaku`:
 
 ```
 .venv/bin/python -m virga plan --seed 3 --count 5 --control-p 0 --only FAB-01,FAB-02,FAB-04,FAB-05,CAM-05
@@ -125,7 +125,7 @@ Exact commands, on sitar from `~/src/shimpaku`:
 # then, per trial, check classifier + timing straight from the store (read-only):
 .venv/bin/python - <<'EOF'
 import duckdb, json
-c = duckdb.connect('/home/rohan/.local/share/shimpaku/aiops.duckdb', read_only=True)
+c = duckdb.connect('~/.local/share/shimpaku/aiops.duckdb', read_only=True)
 for iid, t_open, t_detect, sle, rc in c.execute("SELECT incident_id, t_open, t_detect, sle, root_causes FROM incident ORDER BY t_open").fetchall():
     r = json.loads(rc)[0]; print(iid, t_detect, sle, r['classifier'], r['sub_classifier'], r['fault_class'], r['entity'])
 EOF

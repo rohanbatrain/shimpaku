@@ -1,6 +1,6 @@
 # Virga fault catalogue. Multi-document YAML: one `kind: lab` header, then one document per scenario
 # (schema virga/scenario/v1; validated by `virga validate`, rules in virga/schema.py).
-# Ported from lab-book research R9 (aiops-bench prototype) with R5 ground-truth fields added
+# Ported from research notes research R9 (aiops-bench prototype) with R5 ground-truth fields added
 # (fault_class / target_entity / entity_aliases, R5 §6.1 canonical IDs).
 #
 # status:      selftested  passed `virga selftest` live (see docs/build/bench.md for counts)

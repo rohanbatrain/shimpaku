@@ -1,7 +1,7 @@
 """Registers the `lab` marker and keeps live-lab tests out of the default run.
 
 CONTRACT.md: "pytest; no live lab in unit tests; live checks behind `-m lab`". Without this,
-`pytest tests/mcp` would run `test_lab_live.py` against whatever real device state sitar happens
+`pytest tests/mcp` would run `test_lab_live.py` against whatever real device state <lab-host> happens
 to be in at that moment (other builders' and the bench runner's writes included), which is
 exactly the flakiness the contract is avoiding. `pytest -m lab tests/mcp` still runs them.
 """
