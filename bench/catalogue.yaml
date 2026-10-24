@@ -1,0 +1,941 @@
+# Virga fault catalogue. Multi-document YAML: one `kind: lab` header, then one document per scenario
+# (schema virga/scenario/v1; validated by `virga validate`, rules in virga/schema.py).
+# Ported from research notes research R9 (aiops-bench prototype) with R5 ground-truth fields added
+# (fault_class / target_entity / entity_aliases, R5 §6.1 canonical IDs).
+#
+# status:      selftested  passed `virga selftest` live (see docs/build/bench.md for counts)
+#              executable  runnable now on the Junos topology, not yet self-tested
+#              designed    needs a component listed in `requires` (aiops-farm = R3 client farm VM, ...)
+# executable:  true -> the runner may run it today with `--have day-06-fabric,day-02-campus`
+# bench:       false -> never scheduled in a bench plan (validation checks, controls handled by the planner)
+# holdout:     true -> excluded from dev plans (B4). Held-out scenarios belong in the private store
+#              ($VIRGA_STORE/holdout.yaml, merged at load time), never in this repo file.
+kind: lab
+schema: virga/lab/v1
+nodes:
+  r1: {mgmt: 10.99.0.11}
+  r2: {mgmt: 10.99.0.12}
+  sw1: {mgmt: 10.99.0.21}
+  spine1: {mgmt: 10.99.0.31}
+  spine2: {mgmt: 10.99.0.32}
+  leaf1: {mgmt: 10.99.0.41}
+  leaf2: {mgmt: 10.99.0.42}
+allocation: {write: [leaf1, spine1, r1]}   # Virga's share; B-mcp may touch spine2 ge-0/0/9 and leaf2 spare ports
+vars:
+  intent_dir: ~/juniper-7-day-sprint/artifacts/fabric
+  host_mgmt: 10.99.0.1
+decoys:                                    # B3: neutral change noise so the newest commit is usually not the fault
+  # each decoy is a pair (apply, revert); `${word}` and `${n}` are drawn from the run seed
+  words: [spare, reserved, patch, future, lab, tbd, cab, rack, xconn, port]
+  kinds:
+    - {nodes: [leaf1, spine1], apply: ["set interfaces ge-0/0/9 description ${word}-${n}"], revert: ["delete interfaces ge-0/0/9"]}
+    - {nodes: [r1], apply: ["set interfaces ge-0/0/9 description ${word}-${n}"], revert: ["delete interfaces ge-0/0/9"]}
+    - {nodes: [leaf1, spine1, r1], apply: ["set policy-options prefix-list pl-${word}${n} 192.0.2.${n}/32"], revert: ["delete policy-options prefix-list pl-${word}${n}"]}
+timing_defaults: {preflight_timeout_s: 90, inject_timeout_s: 90, revert_timeout_s: 150, poll_s: 4,
+                  fast_poll_s: 0.5, stable: 2, inject_ttl_min: 5, detect_budget_s: 300, cooldown_s: 10}
+health_sets:
+  fabric:
+    - {id: lf1-ospf-sp1, kind: ospf, args: {node: leaf1, ifname: ge-0/0/0.0}, healthy: Full}
+    - {id: lf1-ospf-sp2, kind: ospf, args: {node: leaf1, ifname: ge-0/0/1.0}, healthy: Full}
+    - {id: lf1-bfd-sp1, kind: bfd, args: {node: leaf1, ifname: ge-0/0/0.0}, healthy: Up}
+    - {id: lf1-ecmp, kind: nexthops, args: {node: leaf1, prefix: 10.255.0.42/32}, healthy: 2}
+    - {id: lf1-bgp, kind: bgp, args: {node: leaf1, peer: 10.255.0.42}, healthy: Established}
+    - {id: vxlan-ping, kind: ping, args: {node: leaf1, target: 10.100.0.42, instance: HOST}, healthy: 0}
+    - {id: sp1-ospf-lf1, kind: ospf, args: {node: spine1, ifname: ge-0/0/0.0}, healthy: Full}
+  campus:
+    - {id: r1-ospf-r2, kind: ospf, args: {node: r1, ifname: ge-0/0/0.0}, healthy: Full}
+    - {id: users-to-servers, kind: ping, args: {node: sw1, target: 10.20.0.1, instance: USER}, healthy: 0}
+    - {id: r1-ssh, kind: tcp, args: {host: r1, port: 22}, healthy: open}
+    - {id: r1-netconf, kind: tcp, args: {host: r1, port: 830}, healthy: open}
+---
+kind: scenario
+id: FAB-01
+title: Fabric link down (local admin disable, carrier lost)
+layer: fabric-underlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off}
+health: [fabric]
+health_override:
+  - {id: "fabric:lf1-ospf-sp1", faulted: absent}
+  - {id: "fabric:lf1-bfd-sp1", faulted: absent}
+  - {id: "fabric:lf1-ecmp", faulted: 1}
+  - {id: "fabric:sp1-ospf-lf1", faulted: absent}
+  - {id: "fabric:vxlan-ping", faulted: 0}
+probes:
+  - {id: lf1-port, kind: iface, args: {node: leaf1, ifname: ge-0/0/0}, healthy: up/up, faulted: {match: "^down/"}, ttd: true}
+  - {id: sp1-port, kind: iface, args: {node: spine1, ifname: ge-0/0/0}}
+inject: [{junos: {node: leaf1, lines: ["set interfaces ge-0/0/0 disable"]}}]
+revert: [{junos: {node: leaf1, lines: ["delete interfaces ge-0/0/0 disable"]}}]
+expect: {sle: [{sle: fabric-health, classifier: Redundancy}], user_impact: none}
+ground_truth:
+  fault_class: link-down
+  target_entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"
+  entity_aliases: ["intf:leaf1:ge-0/0/0", "intf:spine1:ge-0/0/0"]
+  root_cause: {entity: "leaf1:ge-0/0/0", kind: admin-disabled, via: commit}
+  classifiers: [Redundancy, Adjacency]
+  blast_radius: {entities: ["leaf1:ge-0/0/0", "spine1:ge-0/0/0"], devices: [leaf1, spine1], vlans: [], clients: [],
+                 note: "ECMP leaf1->leaf2 2->1; overlay and VLAN 100 unaffected"}
+remediation: {accept: [null, {tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G1-infra-ports-need-approval}
+risk: low
+cleanup: revert is idempotent; config equality vs snapshot proves it
+---
+kind: scenario
+id: FAB-02
+title: One-sided link failure, carrier stays up (far end shut)
+layer: fabric-underlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off}
+health: [fabric]
+health_override:
+  - {id: "fabric:lf1-ospf-sp1", faulted: {ne: Full}}
+  - {id: "fabric:lf1-bfd-sp1", faulted: {ne: Up}}
+  - {id: "fabric:lf1-ecmp", faulted: 1}
+  - {id: "fabric:vxlan-ping", faulted: 0}
+probes:
+  - {id: lf1-carrier, kind: iface, args: {node: leaf1, ifname: ge-0/0/0}, healthy: up/up, faulted: up/up}
+  - {id: lf1-ecmp-fast, kind: nexthops, args: {node: leaf1, prefix: 10.255.0.42/32}, faulted: 1, ttd: true}
+inject: [{junos: {node: spine1, lines: ["set interfaces ge-0/0/0 disable"]}}]
+revert: [{junos: {node: spine1, lines: ["delete interfaces ge-0/0/0 disable"]}}]
+expect: {sle: [{sle: fabric-health, classifier: Adjacency, sub: Neighbour down}], detection: "BFD <1 s; without BFD 40 s dead interval"}
+ground_truth:
+  fault_class: link-down
+  target_entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"
+  entity_aliases: ["intf:leaf1:ge-0/0/0", "intf:spine1:ge-0/0/0"]
+  root_cause: {entity: "spine1:ge-0/0/0", kind: admin-disabled-far-end}
+  classifiers: [Adjacency, Redundancy]
+  blast_radius: {entities: ["spine1:ge-0/0/0", "leaf1:ge-0/0/0"], devices: [spine1, leaf1], vlans: [], clients: []}
+remediation: {accept: [null, {tool: rollback_config, args: {node: spine1, rollback_id: 1}}], guardrail: G1-infra-ports-need-approval}
+risk: low
+---
+kind: scenario
+id: FAB-03
+title: BFD removed from a fabric link (latent, no user impact)
+layer: fabric-underlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off}
+health: [fabric]
+health_override: [{id: "fabric:lf1-bfd-sp1", faulted: absent}]
+probes:
+  - {id: lf1-intent, kind: intent_missing, args: {node: leaf1, intent: "${intent_dir}/leaf1.set"}, healthy: 0, faulted: 2}
+  - {id: lf1-ospf-still-full, kind: ospf, args: {node: leaf1, ifname: ge-0/0/0.0}, faulted: Full}
+inject:
+  - {junos: {node: leaf1, lines: ["delete protocols ospf area 0.0.0.0 interface ge-0/0/0.0 bfd-liveness-detection"]}}
+  - {junos: {node: spine1, lines: ["delete protocols ospf area 0.0.0.0 interface ge-0/0/0.0 bfd-liveness-detection"]}}
+revert:
+  - {junos: {node: leaf1, lines: ["set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 bfd-liveness-detection minimum-interval 300",
+                                  "set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 bfd-liveness-detection multiplier 3"]}}
+  - {junos: {node: spine1, lines: ["set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 bfd-liveness-detection minimum-interval 300",
+                                   "set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 bfd-liveness-detection multiplier 3"]}}
+expect: {sle: [], compliance: "intent drift: BFD missing", user_impact: "none until a silent failure (then 40 s black hole, FAB-08)"}
+ground_truth:
+  fault_class: bfd-removed
+  target_entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"
+  entity_aliases: ["intf:leaf1:ge-0/0/0", "intf:spine1:ge-0/0/0"]
+  root_cause: {entity: "leaf1:ge-0/0/0.0", kind: config-drift-bfd-missing}
+  classifiers: [Compliance]
+  blast_radius: {entities: ["leaf1:ge-0/0/0", "spine1:ge-0/0/0"], devices: [leaf1, spine1], vlans: [], clients: []}
+remediation: {accept: [{tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G8-restore-intent-from-source}
+risk: low
+---
+kind: scenario
+id: FAB-04
+title: OSPF MTU mismatch on a fabric link (adjacency stuck)
+layer: fabric-underlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off, intensity: {mtu: {default: 1400, range: [1280, 1480]}}}
+health: [fabric]
+health_override:
+  - {id: "fabric:lf1-ospf-sp1", faulted: {ne: Full}}
+  - {id: "fabric:lf1-bfd-sp1", faulted: Up}   # measured: BFD stays Up while OSPF is stuck in ExStart
+  - {id: "fabric:lf1-ecmp", faulted: 1}
+  - {id: "fabric:sp1-ospf-lf1", faulted: {ne: Full}}
+  - {id: "fabric:vxlan-ping", faulted: 0}
+probes:
+  - {id: lf1-port-up, kind: iface, args: {node: leaf1, ifname: ge-0/0/0}, faulted: up/up}
+inject:
+  - {junos: {node: leaf1, lines: ["set interfaces ge-0/0/0 unit 0 family inet mtu ${mtu}"]}}
+  - {junos_op: {node: leaf1, cmd: "clear ospf neighbor 10.0.11.1"}}
+revert: [{junos: {node: leaf1, lines: ["delete interfaces ge-0/0/0 unit 0 family inet mtu"]}}]
+timing: {stable: 3, poll_s: 6}
+expect: {sle: [{sle: fabric-health, classifier: Adjacency}], decision_tree: "MTU mismatch (link up, adjacency not Full)"}
+ground_truth:
+  fault_class: mtu-mismatch
+  target_entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"
+  entity_aliases: ["intf:leaf1:ge-0/0/0", "intf:spine1:ge-0/0/0"]
+  root_cause: {entity: "leaf1:ge-0/0/0", kind: mtu-mismatch}
+  classifiers: [Adjacency]
+  blast_radius: {entities: ["leaf1:ge-0/0/0", "spine1:ge-0/0/0"], devices: [leaf1, spine1], vlans: [], clients: []}
+remediation: {accept: [{tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G1-infra-ports-need-approval}
+risk: low
+---
+kind: scenario
+id: FAB-05
+title: Overlay BGP EVPN session down (VLAN 100 cut, underlay healthy)
+layer: fabric-overlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off}
+health: [fabric]
+health_override:
+  - {id: "fabric:lf1-bgp", faulted: {ne: Established}}
+  - {id: "fabric:vxlan-ping", faulted: 100}
+  - {id: "fabric:lf1-ecmp", faulted: 2}
+probes:
+  - {id: lf2-bgp-view, kind: bgp, args: {node: leaf2, peer: 10.255.0.41}}
+inject: [{junos: {node: leaf1, lines: ["deactivate protocols bgp group overlay neighbor 10.255.0.42"]}}]
+revert: [{junos: {node: leaf1, lines: ["activate protocols bgp group overlay neighbor 10.255.0.42"]}}]
+timing: {revert_timeout_s: 240}
+expect: {sle: [{sle: successful-connects, classifier: Unreachable}, {sle: application, classifier: Unreachable}]}
+ground_truth:
+  fault_class: bgp-overlay-down
+  target_entity: "node:leaf1"
+  entity_aliases: ["intf:leaf1:lo0.0"]
+  root_cause: {entity: "leaf1:bgp:10.255.0.42", kind: overlay-session-deactivated}
+  classifiers: [Unreachable, Overlay]
+  blast_radius: {entities: ["vlan:100", "leaf1", "leaf2"], devices: [leaf1, leaf2], vlans: [100], clients: ["all VLAN 100 hosts across leaves"]}
+remediation: {accept: [{tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G4-commit-confirmed-and-approval}
+risk: medium (cuts VLAN 100 for other workstreams for ~1-2 min)
+---
+kind: scenario
+id: FAB-06
+title: VNI mismatch for VLAN 100 (control plane up, data plane cut)
+layer: fabric-overlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off}
+health: [fabric]
+health_override:
+  - {id: "fabric:vxlan-ping", faulted: 100}
+  - {id: "fabric:lf1-bgp", faulted: Established}
+inject: [{junos: {node: leaf1, lines: ["set vlans v100 vxlan vni 10199"]}}]
+revert: [{junos: {node: leaf1, lines: ["set vlans v100 vxlan vni 10100"]}}]
+expect: {sle: [{sle: application, classifier: Unreachable}]}
+ground_truth:
+  fault_class: vni-mismatch
+  target_entity: "node:leaf1"
+  entity_aliases: []
+  root_cause: {entity: "leaf1:vlan:v100", kind: vni-mismatch}
+  classifiers: [Unreachable, Overlay]
+  blast_radius: {entities: ["vlan:100", "leaf1"], devices: [leaf1, leaf2], vlans: [100], clients: ["VLAN 100 hosts on leaf1"]}
+remediation: {accept: [{tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G4-commit-confirmed-and-approval}
+risk: medium
+---
+kind: scenario
+id: FAB-07
+title: ECMP path lost while all adjacencies are Full (metric skew)
+layer: fabric-underlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off, intensity: {metric: {default: 100, range: [10, 1000]}}}
+health: [fabric]
+health_override: [{id: "fabric:lf1-ecmp", faulted: 1}]
+probes:
+  - {id: lf1-ospf-sp1-full, kind: ospf, args: {node: leaf1, ifname: ge-0/0/0.0}, faulted: Full}
+  - {id: lf1-bfd-up, kind: bfd, args: {node: leaf1, ifname: ge-0/0/0.0}, faulted: Up}
+inject: [{junos: {node: leaf1, lines: ["set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 metric ${metric}"]}}]
+revert: [{junos: {node: leaf1, lines: ["delete protocols ospf area 0.0.0.0 interface ge-0/0/0.0 metric"]}}]
+expect: {sle: [{sle: fabric-health, classifier: Redundancy}], user_impact: "capacity halved for leaf1->leaf2"}
+ground_truth:
+  fault_class: ospf-metric-skew
+  target_entity: "intf:leaf1:ge-0/0/0"
+  entity_aliases: ["node:leaf1", "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"]
+  root_cause: {entity: "leaf1:ge-0/0/0.0", kind: ospf-metric-change}
+  classifiers: [Redundancy]
+  blast_radius: {entities: ["leaf1"], devices: [leaf1], vlans: [], clients: []}
+remediation: {accept: [{tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G4-commit-confirmed-and-approval}
+risk: low
+---
+kind: scenario
+id: FAB-08
+title: "Compound: BFD off + silent far-end failure = ~40 s black hole"
+layer: fabric-underlay
+status: designed
+executable: false
+compound: [FAB-03, FAB-02]
+requires: [day-06-fabric]
+inject: [{note: "run FAB-03 inject, then FAB-02 inject; probe ECMP width every 1 s and HOST pings per flow"}]
+revert: [{note: "FAB-02 revert then FAB-03 revert"}]
+ground_truth:
+  fault_class: link-down
+  target_entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"
+  entity_aliases: ["intf:leaf1:ge-0/0/0", "intf:spine1:ge-0/0/0"]
+  root_cause: {entity: "spine1:ge-0/0/0", kind: far-end-down-undetected, contributing: "leaf1:ge-0/0/0.0 bfd-missing"}
+  classifiers: [Adjacency, Loss]
+  blast_radius: {entities: ["spine1", "leaf1:ge-0/0/0"], devices: [leaf1, spine1, leaf2], vlans: [100], clients: ["flows hashed via spine1 for ~40 s"]}
+risk: medium
+---
+kind: scenario
+id: FAB-09
+title: Underlay loses leaf1 loopback (overlay falls as a consequence)
+layer: fabric-underlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+health: [fabric]
+health_override:
+  - {id: "fabric:lf1-bgp", faulted: {ne: Established}}
+  - {id: "fabric:vxlan-ping", faulted: 100}
+  - {id: "fabric:lf1-ecmp", faulted: 2}
+timing: {inject_timeout_s: 240, revert_timeout_s: 300}
+inject: [{junos: {node: leaf1, lines: ["deactivate protocols ospf area 0.0.0.0 interface lo0.0"]}}]
+revert: [{junos: {node: leaf1, lines: ["activate protocols ospf area 0.0.0.0 interface lo0.0"]}}]
+ground_truth:
+  fault_class: ospf-loopback-missing
+  target_entity: "node:leaf1"
+  entity_aliases: ["intf:leaf1:lo0.0"]
+  root_cause: {entity: "leaf1:lo0.0", kind: loopback-not-advertised}
+  classifiers: [Unreachable, Overlay]
+  blast_radius: {entities: ["leaf1", "vlan:100"], devices: [leaf1, leaf2], vlans: [100], clients: ["VLAN 100 hosts"]}
+remediation: {accept: [{tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G4-commit-confirmed-and-approval}
+risk: medium
+---
+kind: scenario
+id: CAM-01
+title: VLAN missing on the router-side trunk (servers VLAN 20)
+layer: campus-l2
+status: designed
+executable: false
+requires: [day-02-campus, aiops-farm]
+inject: [{junos: {node: r1, lines: ["deactivate interfaces ge-0/0/1 unit 20"]}}]
+revert: [{junos: {node: r1, lines: ["activate interfaces ge-0/0/1 unit 20"]}}]
+verify: "farm client in VLAN 20: arping 10.20.0.1 fails; DHCP (if served) times out; VLAN 10 client still OK"
+ground_truth:
+  fault_class: vlan-missing
+  target_entity: "intf:r1:ge-0/0/1"
+  entity_aliases: ["node:r1"]
+  root_cause: {entity: "r1:ge-0/0/1.20", kind: vlan-missing}
+  classifiers: [DHCP, ARP]
+  blast_radius: {entities: ["vlan:20"], devices: [r1, sw1], vlans: [20], clients: ["all VLAN 20 clients"]}
+remediation: {accept: [{tool: add_vlan_to_trunk, args: {node: sw1, ifname: ge-0/0/0, vlan: 20}}], guardrail: G3-correlate-two-observers}
+risk: low
+---
+kind: scenario
+id: CAM-02
+title: L2 loop / broadcast storm on sw1 access ports
+layer: campus-l2
+status: designed
+executable: false
+requires: [day-02-campus, aiops-farm, farm-two-access-nics]
+inject: [{sh: {on: aiops-farm, cmd: "ip link add aiops-loop type bridge stp_state 0; ip link set eth1 master aiops-loop; ip link set eth2 master aiops-loop; tc qdisc add dev aiops-loop root tbf rate ${pps_cap}kbit burst 32k latency 50ms; ip link set aiops-loop up"}}]
+revert: [{sh: {on: aiops-farm, cmd: "ip link del aiops-loop"}}]
+verify: "sw1 `show interfaces ge-0/0/3 extensive` broadcast pps delta > 500/s; mac-move log shows the farm MAC flapping; revert: delta back < 10/s"
+ground_truth:
+  fault_class: l2-loop
+  target_entity: "intf:sw1:ge-0/0/3"
+  entity_aliases: ["intf:sw1:ge-0/0/4"]
+  root_cause: {entity: "sw1:ge-0/0/3", kind: l2-loop, pair: "sw1:ge-0/0/4"}
+  classifiers: [Loop, Throughput]
+  blast_radius: {entities: ["vlan:10", "sw1"], devices: [sw1, r1], vlans: [10], clients: ["all VLAN 10"]}
+remediation: {accept: [{tool: disable_port, args: {node: sw1, ifname: ge-0/0/3}}], guardrail: G1-access-port-only}
+risk: high (host CPU; rate-capped by tbf; 60 s max hold)
+---
+kind: scenario
+id: CAM-03
+title: Rogue DHCP server on an access port
+layer: campus-l2
+status: designed
+executable: false
+requires: [day-02-campus, aiops-farm]
+inject: [{sh: {on: aiops-farm, cmd: "ip netns exec rogue dnsmasq --no-daemon --port=0 --dhcp-range=192.168.0.20,192.168.0.40,1m --dhcp-option=3,192.168.0.1 --pid-file=/run/aiops-rogue.pid &"}}]
+revert: [{sh: {on: aiops-farm, cmd: "kill $(cat /run/aiops-rogue.pid)"}}]
+verify: "scapy DISCOVER from a probe namespace collects OFFERs for 3 s: two server-ids (10.10.0.1 and 192.168.0.1); revert: one"
+ground_truth:
+  fault_class: rogue-dhcp
+  target_entity: "intf:sw1:ge-0/0/5"
+  entity_aliases: []
+  root_cause: {entity: "sw1:ge-0/0/5", kind: rogue-dhcp}
+  classifiers: [DHCP]
+  blast_radius: {entities: ["vlan:10"], devices: [sw1], vlans: [10], clients: ["new VLAN 10 leases (~50%)"]}
+remediation: {accept: [{tool: disable_port, args: {node: sw1, ifname: ge-0/0/5}}], guardrail: G1-access-port-only}
+risk: medium
+---
+kind: scenario
+id: CAM-04
+title: DHCP pool exhaustion
+layer: campus-l3
+status: designed
+executable: false
+requires: [day-02-campus, aiops-farm, dhcp-server]
+inject: [{sh: {on: aiops-farm, cmd: "python3 /opt/aiops/dhcp_starve.py --iface cl0 --leases ${pool_size}"}}]
+revert: [{sh: {on: aiops-farm, cmd: "python3 /opt/aiops/dhcp_starve.py --release-all"}}]
+verify: "fresh-MAC udhcpc -n -q -t 3 exits 1 (no OFFER); server binding count == pool size; revert: udhcpc exits 0"
+ground_truth:
+  fault_class: dhcp-exhausted
+  target_entity: "service:dhcp@aiops-farm"
+  entity_aliases: []
+  root_cause: {entity: "dhcp-pool:vlan10", kind: pool-exhausted}
+  classifiers: [DHCP]
+  blast_radius: {entities: ["vlan:10"], devices: [], vlans: [10], clients: ["new clients only; existing leases fine"]}
+remediation: {accept: [null], guardrail: G9-services-driver-assist}
+risk: low
+---
+kind: scenario
+id: CAM-05
+title: Shadowing filter term drops users -> servers (no counter)
+layer: campus-l3
+status: selftested
+executable: true
+requires: [day-02-campus]
+toggle: {default: off}
+timing: {stable: 1}
+health: [campus]
+health_override: [{id: "campus:users-to-servers", faulted: 100}]
+probes:
+  # measured 2026-10-24 (--repeat 5): an exact `healthy: 3` match on 3 pings flaked under host load
+  # (load ~19-20) -- occasional ICMP loss on an otherwise-healthy path left the delta at 0-2 and the
+  # poll never held `stable` within revert_timeout_s, 4/5 repeats. {ge: 1} still proves the filter is
+  # not blocking (the faulted case is unambiguous: delta == 0, no packet gets through at all).
+  - {id: icmp-counter, kind: ping_counter_delta, args: {node: sw1, target: 10.20.0.1, instance: USER, counter_node: r1,
+     filter: F-USERS-IN, counter: users-icmp, count: 5}, healthy: {ge: 1}, faulted: 0}
+inject:
+  - {junos: {node: r1, lines: ["set firewall family inet filter F-USERS-IN term quarantine from source-address 10.10.0.0/24",
+                               "set firewall family inet filter F-USERS-IN term quarantine then discard",
+                               "insert firewall family inet filter F-USERS-IN term quarantine before term dns"]}}
+revert: [{junos: {node: r1, lines: ["delete firewall family inet filter F-USERS-IN term quarantine"]}}]
+expect: {sle: [{sle: application, classifier: Unreachable}], hint: "every counter in the filter reads zero"}
+ground_truth:
+  fault_class: acl-shadow-term
+  target_entity: "node:r1"
+  entity_aliases: ["intf:r1:ge-0/0/1"]
+  root_cause: {entity: "r1:F-USERS-IN:quarantine", kind: filter-shadow-term}
+  classifiers: [Unreachable]
+  blast_radius: {entities: ["vlan:10", "r1:ge-0/0/1.10"], devices: [r1], vlans: [10], clients: ["all VLAN 10 users"]}
+remediation: {accept: [{tool: rollback_config, args: {node: r1, rollback_id: 1}}], guardrail: G4-commit-confirmed-and-approval}
+risk: low
+---
+kind: scenario
+id: CAM-06
+title: Management-plane lockout (SSH/NETCONF blocked, forwarding fine)
+layer: mgmt
+status: selftested
+executable: true
+requires: [day-02-campus]
+toggle: {default: off}
+health: [campus]
+health_override:
+  - {id: "campus:r1-ssh", faulted: timeout}
+  - {id: "campus:r1-netconf", faulted: timeout}
+  - {id: "campus:users-to-servers", faulted: 0}
+probes:
+  - {id: r1-icmp, kind: host_ping, args: {host: r1}, healthy: 0, faulted: 0}
+inject:
+  - {junos: {node: r1, ttl_min: 1, lines: [
+      "set firewall family inet filter PROTECT-RE term mgmt-deny from source-address ${host_mgmt}/32",
+      "set firewall family inet filter PROTECT-RE term mgmt-deny from protocol tcp",
+      "set firewall family inet filter PROTECT-RE term mgmt-deny from destination-port 22",
+      "set firewall family inet filter PROTECT-RE term mgmt-deny from destination-port 830",
+      "set firewall family inet filter PROTECT-RE term mgmt-deny from tcp-initial",
+      "set firewall family inet filter PROTECT-RE term mgmt-deny then discard",
+      "insert firewall family inet filter PROTECT-RE term mgmt-deny before term mgmt"]}}
+  - {close_sessions: [r1]}
+revert: [{auto: {node: r1}}]
+timing: {inject_timeout_s: 40, stable: 1}
+expect: {sle: [{sle: device-health, classifier: Management unreachable}], user_impact: none}
+ground_truth:
+  fault_class: mgmt-lockout
+  target_entity: "node:r1"
+  entity_aliases: []
+  root_cause: {entity: "r1:PROTECT-RE:mgmt-deny", kind: mgmt-lockout}
+  classifiers: [Management]
+  blast_radius: {entities: ["r1:mgmt"], devices: [r1], vlans: [], clients: []}
+remediation: {accept: [null], guardrail: G7-no-fix-over-the-broken-path (wait for commit-confirmed rollback / console)}
+risk: medium (protected by commit confirmed 1)
+---
+kind: scenario
+id: CAM-07
+title: OSPF r1-r2 adjacency lost (interface made passive)
+layer: campus-l3
+status: selftested
+executable: true
+requires: [day-02-campus]
+health: [campus]
+health_override: [{id: "campus:r1-ospf-r2", faulted: absent}]
+inject: [{junos: {node: r1, lines: ["set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 passive"]}}]
+revert: [{junos: {node: r1, lines: ["delete protocols ospf area 0.0.0.0 interface ge-0/0/0.0 passive"]}}]
+ground_truth:
+  fault_class: ospf-passive
+  target_entity: "intf:r1:ge-0/0/0"
+  entity_aliases: ["node:r1"]
+  root_cause: {entity: "r1:ge-0/0/0.0", kind: ospf-passive}
+  classifiers: [Adjacency, Unreachable]
+  blast_radius: {entities: ["r1", "r2"], devices: [r1, r2], vlans: [10, 20], clients: ["routes behind r2"]}
+remediation: {accept: [{tool: rollback_config, args: {node: r1, rollback_id: 1}}], guardrail: G4-commit-confirmed-and-approval}
+risk: low
+---
+kind: scenario
+id: CAM-08
+title: Port stuck (client link up, no RX) -- fixable by a bounce
+layer: campus-l2
+status: designed
+executable: false
+requires: [day-02-campus, aiops-farm]
+inject: [{sh: {on: aiops-farm, cmd: "aiops-stuck arm cl3   # drops all egress until it sees carrier flap"}}]
+revert: [{sh: {on: aiops-farm, cmd: "aiops-stuck disarm cl3"}}]
+verify: "sw1 ge-0/0/3 input packet delta == 0 over 30 s while oper up; client ping gw fails; revert/bounce: delta > 0"
+ground_truth:
+  fault_class: port-stuck
+  target_entity: "intf:sw1:ge-0/0/3"
+  entity_aliases: []
+  root_cause: {entity: "sw1:ge-0/0/3", kind: port-stuck}
+  classifiers: [Throughput, DHCP]
+  blast_radius: {entities: ["sw1:ge-0/0/3"], devices: [sw1], vlans: [10], clients: ["desk on ge-0/0/3"]}
+remediation: {accept: [{tool: bounce_port, args: {node: sw1, ifname: ge-0/0/3}}], guardrail: G2-retry-cap-3-per-24h}
+risk: low
+---
+kind: scenario
+id: SVC-01
+title: RADIUS server down
+layer: services
+status: designed
+executable: false
+requires: [aiops-farm, radius]
+inject: [{sh: {on: aiops-farm, cmd: "ip netns exec srv-radius pkill -STOP freeradius || systemctl stop aiops-radius"}}]
+revert: [{sh: {on: aiops-farm, cmd: "systemctl start aiops-radius"}}]
+verify: "eapol_test -t 5 for user good1 -> TIMEOUT (rc!=0); revert -> SUCCESS"
+ground_truth:
+  fault_class: radius-down
+  target_entity: "service:radius@aiops-farm"
+  entity_aliases: []
+  root_cause: {entity: "server:radius", kind: service-down}
+  classifiers: [Authorization]
+  blast_radius: {entities: ["server:radius"], devices: [], vlans: [10, 20], clients: ["all 802.1X clients"]}
+remediation: {accept: [null], guardrail: G9-services-driver-assist}
+risk: low
+---
+kind: scenario
+id: SVC-02
+title: RADIUS slow (delay on the server link)
+layer: services
+status: designed
+executable: false
+requires: [aiops-farm, radius]
+toggle: {default: off, intensity: {delay_ms: {default: 3000, range: [500, 8000]}}}
+inject: [{sh: {on: aiops-farm, cmd: "ip netns exec srv-radius tc qdisc add dev veth0 root netem delay ${delay_ms}ms"}}]
+revert: [{sh: {on: aiops-farm, cmd: "ip netns exec srv-radius tc qdisc del dev veth0 root"}}]
+verify: "eapol_test SUCCESS but elapsed >= delay; revert < 300 ms"
+ground_truth:
+  fault_class: radius-slow
+  target_entity: "service:radius@aiops-farm"
+  entity_aliases: []
+  root_cause: {entity: "server:radius", kind: service-latency}
+  classifiers: [Authorization latency]
+  blast_radius: {entities: ["server:radius"], vlans: [10, 20], clients: ["all 802.1X joins slow; Successful Connects stays 100%"]}
+remediation: {accept: [null], guardrail: G9-services-driver-assist}
+risk: low
+---
+kind: scenario
+id: SVC-03
+title: Wrong credentials, one client
+layer: services
+status: designed
+executable: false
+requires: [aiops-farm, radius]
+inject: [{sh: {on: aiops-farm, cmd: "sed -i 's/^good3 .*/good3 Cleartext-Password := \"wrong\"/' /etc/aiops/radius/users && aiops-radius reload"}}]
+revert: [{sh: {on: aiops-farm, cmd: "cp /etc/aiops/radius/users.base /etc/aiops/radius/users && aiops-radius reload"}}]
+verify: "eapol_test good3 -> Access-Reject; good1 -> SUCCESS (mini-probe passes: network exonerated)"
+ground_truth:
+  fault_class: radius-reject
+  target_entity: "client:good3"
+  entity_aliases: []
+  root_cause: {entity: "client:good3", kind: bad-credentials}
+  classifiers: [Authorization]
+  blast_radius: {entities: ["client:good3"], vlans: [], clients: [good3]}
+remediation: {accept: [null], guardrail: G6-no-action-for-client-side}
+risk: low
+---
+kind: scenario
+id: SVC-04
+title: Wrong credentials for all (NAS shared secret changed)
+layer: services
+status: designed
+executable: false
+requires: [aiops-farm, radius]
+inject: [{sh: {on: aiops-farm, cmd: "aiops-radius set-secret wrong-secret && aiops-radius reload"}}]
+revert: [{sh: {on: aiops-farm, cmd: "aiops-radius set-secret base && aiops-radius reload"}}]
+verify: "eapol_test with the NAS secret -> no valid reply (bad authenticator) for every user; revert SUCCESS"
+ground_truth:
+  fault_class: radius-reject
+  target_entity: "service:radius@aiops-farm"
+  entity_aliases: []
+  root_cause: {entity: "server:radius", kind: shared-secret-mismatch}
+  classifiers: [Authorization]
+  blast_radius: {entities: ["server:radius"], clients: ["all 802.1X clients"]}
+remediation: {accept: [null], guardrail: G9-services-driver-assist}
+risk: low
+---
+kind: scenario
+id: SVC-05
+title: DNS slow
+layer: services
+status: designed
+executable: false
+requires: [aiops-farm, dns]
+toggle: {default: off, intensity: {delay_ms: {default: 1500, range: [200, 5000]}}}
+inject: [{sh: {on: aiops-farm, cmd: "ip netns exec srv-dns tc qdisc add dev veth0 root netem delay ${delay_ms}ms"}}]
+revert: [{sh: {on: aiops-farm, cmd: "ip netns exec srv-dns tc qdisc del dev veth0 root"}}]
+verify: "dig @10.20.0.53 app1.lab +tries=1 +time=6: Query time >= delay; revert < 50 ms"
+ground_truth:
+  fault_class: dns-slow
+  target_entity: "service:dns@aiops-farm"
+  entity_aliases: []
+  root_cause: {entity: "server:dns", kind: service-latency}
+  classifiers: [DNS latency]
+  blast_radius: {entities: ["server:dns"], clients: ["all clients"]}
+remediation: {accept: [null], guardrail: G9-services-driver-assist}
+risk: low
+---
+kind: scenario
+id: SVC-06
+title: DNS SERVFAIL
+layer: services
+status: designed
+executable: false
+requires: [aiops-farm, dns]
+inject: [{sh: {on: aiops-farm, cmd: "aiops-dns forward-to 192.0.2.1 && aiops-dns reload"}}]
+revert: [{sh: {on: aiops-farm, cmd: "aiops-dns forward-to base && aiops-dns reload"}}]
+verify: "dig status SERVFAIL for an external name; local zone still NOERROR; revert NOERROR"
+ground_truth:
+  fault_class: dns-down
+  target_entity: "service:dns@aiops-farm"
+  entity_aliases: []
+  root_cause: {entity: "server:dns", kind: upstream-broken}
+  classifiers: [DNS]
+  blast_radius: {entities: ["server:dns"], clients: ["all clients, external names only"]}
+remediation: {accept: [null], guardrail: G9-services-driver-assist}
+risk: low
+---
+kind: scenario
+id: SVC-07
+title: NTP skew on a device (telemetry timestamps wrong)
+layer: services
+status: designed
+executable: false
+requires: [day-02-campus, aiops-farm, ntp]
+toggle: {default: off, intensity: {offset_s: {default: 300, range: [30, 3600]}}}
+inject: [{sh: {on: aiops-farm, cmd: "aiops-ntp offset ${offset_s}   # farm chrony serves skewed time; r1 points at it"}}]
+revert: [{sh: {on: aiops-farm, cmd: "aiops-ntp offset 0"}}]
+verify: "probe clock_offset r1 >= offset-5 (device time vs runner time); revert |offset| < 2"
+ground_truth:
+  fault_class: ntp-skew
+  target_entity: "service:ntp@aiops-farm"
+  entity_aliases: ["node:r1"]
+  root_cause: {entity: "server:ntp", kind: time-skew}
+  classifiers: [Device health]
+  blast_radius: {entities: ["server:ntp", "r1"], devices: [r1], clients: []}
+remediation: {accept: [null], guardrail: G9-services-driver-assist}
+risk: low
+---
+kind: scenario
+id: WIFI-01
+title: Weak signal (coverage hole)
+layer: wifi
+status: designed
+executable: false
+requires: [aiops-farm, hwsim, wmediumd]
+toggle: {default: off, intensity: {snr_db: {default: 8, range: [3, 20]}}}
+inject: [{sh: {on: aiops-farm, cmd: "aiops-wmediumd set-snr ap1 sta3 ${snr_db}"}}]
+revert: [{sh: {on: aiops-farm, cmd: "aiops-wmediumd set-snr ap1 sta3 base"}}]
+verify: "`iw dev ap1-wlan station dump` signal for sta3 <= -75 dBm; revert >= -60"
+ground_truth:
+  fault_class: weak-signal
+  target_entity: "client:sta3"
+  entity_aliases: []
+  root_cause: {entity: "client:sta3", kind: weak-signal}
+  classifiers: [Weak Signal]
+  blast_radius: {entities: ["client:sta3"], clients: [sta3]}
+remediation: {accept: [null]}
+risk: low
+---
+kind: scenario
+id: WIFI-02
+title: Roaming failure (fast roam broken on ap2)
+layer: wifi
+status: designed
+executable: false
+requires: [aiops-farm, hwsim]
+inject: [{sh: {on: aiops-farm, cmd: "aiops-ap ap2 set mobility_domain beef && aiops-ap ap2 reload"}}]
+revert: [{sh: {on: aiops-farm, cmd: "aiops-ap ap2 restore && aiops-ap ap2 reload"}}]
+verify: "wpa_cli -i sta1 roam <ap2 bssid>: FT fails, full auth or no association; time > 1 s; revert FT < 100 ms"
+ground_truth:
+  fault_class: roam-failure
+  target_entity: "ap:ap2"
+  entity_aliases: []
+  root_cause: {entity: "ap:ap2", kind: ft-misconfig}
+  classifiers: [Roaming Stability]
+  blast_radius: {entities: ["ap:ap2"], clients: ["roaming clients"]}
+remediation: {accept: [null]}
+risk: low
+---
+kind: scenario
+id: WIFI-03
+title: AP down
+layer: wifi
+status: designed
+executable: false
+requires: [aiops-farm, hwsim]
+inject: [{sh: {on: aiops-farm, cmd: "aiops-ap ap2 stop"}}]
+revert: [{sh: {on: aiops-farm, cmd: "aiops-ap ap2 start"}}]
+verify: "hostapd_cli -p /run/aiops/ap2 ping fails; stations re-associate to ap1 or are offline; revert PONG + stations"
+ground_truth:
+  fault_class: ap-down
+  target_entity: "ap:ap2"
+  entity_aliases: []
+  root_cause: {entity: "ap:ap2", kind: ap-down}
+  classifiers: [AP Health]
+  blast_radius: {entities: ["ap:ap2"], clients: ["clients of ap2"]}
+remediation: {accept: [null]}
+risk: low
+---
+kind: scenario
+id: WAN-01
+title: WAN latency and jitter (netem)
+layer: wan
+status: designed
+executable: false
+requires: [aiops-farm, wan-ns]
+toggle: {default: off, intensity: {delay_ms: {default: 80, range: [10, 400]}, jitter_ms: {default: 20, range: [0, 100]}}}
+inject: [{sh: {on: aiops-farm, cmd: "ip netns exec wan tc qdisc add dev wan0 root netem delay ${delay_ms}ms ${jitter_ms}ms distribution normal"}}]
+revert: [{sh: {on: aiops-farm, cmd: "ip netns exec wan tc qdisc del dev wan0 root"}}]
+verify: "ping -c 50 branch->cloud: avg rtt >= base + 0.8*delay, mdev >= 0.5*jitter; revert within base +- 2 ms"
+ground_truth:
+  fault_class: app-latency
+  target_entity: "link:wan0"
+  entity_aliases: []
+  root_cause: {entity: "link:wan0", kind: wan-latency}
+  classifiers: [Latency, Jitter]
+  blast_radius: {entities: ["link:wan0"], clients: ["all branch->cloud flows"]}
+remediation: {accept: [null]}
+risk: low
+---
+kind: scenario
+id: WAN-02
+title: WAN packet loss (netem)
+layer: wan
+status: designed
+executable: false
+requires: [aiops-farm, wan-ns]
+toggle: {default: off, intensity: {loss_pct: {default: 5, range: [1, 30]}}}
+inject: [{sh: {on: aiops-farm, cmd: "ip netns exec wan tc qdisc add dev wan0 root netem loss ${loss_pct}%"}}]
+revert: [{sh: {on: aiops-farm, cmd: "ip netns exec wan tc qdisc del dev wan0 root"}}]
+verify: "ping -c 400 -i 0.05: loss inside the 95% Wilson interval of loss_pct; revert 0%"
+ground_truth:
+  fault_class: lossy-link
+  target_entity: "link:wan0"
+  entity_aliases: []
+  root_cause: {entity: "link:wan0", kind: wan-loss}
+  classifiers: [Loss]
+  blast_radius: {entities: ["link:wan0"], clients: ["all branch->cloud flows"]}
+remediation: {accept: [null]}
+risk: low
+---
+kind: scenario
+id: WAN-03
+title: WAN congestion (Junos policer on r1-r2)
+layer: wan
+status: selftested
+executable: true
+requires: [day-02-campus]
+# measured 2026-10-24: 256 kbit/s gave only 10% loss (a rapid ping offers ~10 x 1400 B/s = 112 kbit/s,
+# so only the burst bucket drops); 32-96 kbit/s sits well under the offered rate
+toggle: {default: off, intensity: {kbps: {default: 64, range: [32, 96]}}}
+health: [campus]
+probes:
+  - {id: big-ping, kind: ping, args: {node: sw1, target: 10.0.12.2, instance: USER, count: 50, size: 1400}, healthy: 0, faulted: {ge: 20}}
+inject:
+  - {junos: {node: r1, lines: [
+      "set firewall policer wan-shape if-exceeding bandwidth-limit ${kbps}k burst-size-limit 1500",
+      "set firewall policer wan-shape then discard",
+      "set firewall family inet filter wan-out term icmp from protocol icmp",
+      "set firewall family inet filter wan-out term icmp then policer wan-shape",
+      "set firewall family inet filter wan-out term rest then accept",
+      "set interfaces ge-0/0/0 unit 0 family inet filter output wan-out"]}}
+revert:
+  - {junos: {node: r1, lines: ["delete interfaces ge-0/0/0 unit 0 family inet filter output",
+                               "delete firewall family inet filter wan-out", "delete firewall policer wan-shape"]}}
+ground_truth:
+  fault_class: shaped-link
+  target_entity: "intf:r1:ge-0/0/0"
+  entity_aliases: ["node:r1"]
+  root_cause: {entity: "r1:ge-0/0/0", kind: congestion-policer}
+  classifiers: [Loss]
+  blast_radius: {entities: ["r1:ge-0/0/0"], devices: [r1, r2], clients: ["traffic r1->r2"]}
+remediation: {accept: [{tool: rollback_config, args: {node: r1, rollback_id: 1}}]}
+risk: low
+---
+kind: scenario
+id: CFG-01
+title: Out-of-band config drift (interface description deleted)
+layer: config
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off}
+health: [fabric]
+probes:
+  - {id: lf1-intent, kind: intent_missing, args: {node: leaf1, intent: "${intent_dir}/leaf1.set"}, healthy: 0, faulted: 1, ttd: true}
+inject: [{junos: {node: leaf1, lines: ["delete interfaces ge-0/0/1 description"]}}]
+revert: [{junos: {node: leaf1, lines: ["set interfaces ge-0/0/1 description leaf1-spine2"]}}]
+expect: {sle: [], compliance: "1 intended line missing on leaf1"}
+ground_truth:
+  fault_class: config-drift
+  target_entity: "intf:leaf1:ge-0/0/1"
+  entity_aliases: ["node:leaf1"]
+  root_cause: {entity: "leaf1:ge-0/0/1", kind: config-drift}
+  classifiers: [Compliance]
+  blast_radius: {entities: ["leaf1"], devices: [leaf1], clients: []}
+remediation: {accept: [{tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G8-restore-intent-from-source}
+risk: low
+---
+kind: scenario
+id: CFG-02
+title: Bad config push rejected (nothing must change)
+layer: config
+status: selftested
+executable: true
+bench: false
+requires: [day-06-fabric]
+expect_inject_rejected: true
+health: [fabric]
+probes: []
+inject: [{junos: {node: leaf1, lines: ["set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 hello-interval banana"]}}]
+revert: []
+ground_truth:
+  fault_class: none
+  target_entity: "node:leaf1"
+  entity_aliases: []
+  root_cause: {entity: "leaf1", kind: rejected-change}
+  classifiers: []
+  blast_radius: {entities: [], devices: [], clients: []}
+remediation: {accept: [null], guardrail: G6-no-action-without-evidence}
+risk: none
+---
+kind: scenario
+id: CTRL-00
+title: No fault (control window for false positives)
+layer: control
+status: designed
+executable: false
+bench: false
+requires: []
+inject: []
+revert: []
+ground_truth:
+  fault_class: none
+  target_entity: "none"
+  entity_aliases: []
+  root_cause: {entity: none, kind: none}
+  classifiers: []
+  blast_radius: {entities: []}
+remediation: {accept: [null]}
+risk: none
+---
+kind: scenario
+id: FAB-10
+title: Virtual cable pulled at the hypervisor (virsh domif-setlink, no sudo)
+layer: fabric-underlay
+status: designed
+executable: false
+requires: [day-06-fabric]
+inject: [{sh: {cmd: "virsh -c qemu:///system domif-setlink lab-leaf1 ${leaf1_ge000_mac} down"}}]
+revert: [{sh: {cmd: "virsh -c qemu:///system domif-setlink lab-leaf1 ${leaf1_ge000_mac} up"}}]
+verify: "leaf1 ge-0/0/0 oper down (true carrier loss, unlike FAB-02); OSPF absent; ECMP 1; revert: Full + 2 next hops. Never `virsh destroy` (vJunos disk corruption risk, per R4)"
+ground_truth:
+  fault_class: link-down
+  target_entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"
+  entity_aliases: ["intf:leaf1:ge-0/0/0", "intf:spine1:ge-0/0/0"]
+  root_cause: {entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0", kind: link-down-physical}
+  classifiers: [Redundancy, Adjacency]
+  blast_radius: {entities: ["leaf1:ge-0/0/0", "spine1:ge-0/0/0"], devices: [leaf1, spine1], clients: []}
+remediation: {accept: [null], guardrail: G1-infra-ports-need-approval}
+risk: low
+---
+kind: scenario
+id: FAB-11
+title: Fabric link flapping (three down/up cycles on leaf1 ge-0/0/0)
+layer: fabric-underlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off, intensity: {cycles: {default: 3, range: [2, 4]}}}
+health: [fabric]
+probes:
+  - {id: lf1-flapped-ago, kind: iface_flapped_ago, args: {node: leaf1, ifname: ge-0/0/0}, faulted: {le: 240}}
+  - {id: lf1-port-up, kind: iface, args: {node: leaf1, ifname: ge-0/0/0}, healthy: up/up, faulted: up/up}
+inject:
+  # each transition is its own `commit confirmed 2` confirmed at once on a fresh session: a chained
+  # confirm must never be left pending over a down state (R9 §2.3)
+  - {flap: {node: leaf1, ifname: ge-0/0/0, cycles: "${cycles}", down_s: 8, up_s: 20}}
+revert: [{junos: {node: leaf1, lines: ["delete interfaces ge-0/0/0 disable"]}}]
+timing: {inject_timeout_s: 120, revert_timeout_s: 240}
+expect: {sle: [{sle: fabric-health, classifier: Redundancy, sub: Flapping}], note: "the flap ends inside the inject; detection reads the event history"}
+ground_truth:
+  fault_class: link-flap
+  target_entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"
+  entity_aliases: ["intf:leaf1:ge-0/0/0", "intf:spine1:ge-0/0/0"]
+  root_cause: {entity: "leaf1:ge-0/0/0", kind: link-flap}
+  classifiers: [Redundancy, Adjacency]
+  blast_radius: {entities: ["leaf1:ge-0/0/0", "spine1:ge-0/0/0"], devices: [leaf1, spine1], vlans: [], clients: []}
+remediation: {accept: [null], guardrail: G1-infra-ports-need-approval}
+risk: low
+---
+kind: scenario
+id: FAB-12
+title: OSPF hello/dead timer mismatch on a fabric link (adjacency drops after the dead interval)
+layer: fabric-underlay
+status: selftested
+executable: true
+requires: [day-06-fabric]
+toggle: {default: off, intensity: {hello: {default: 4, range: [2, 8]}}}
+health: [fabric]
+health_override:
+  - {id: "fabric:lf1-ospf-sp1", faulted: {ne: Full}}
+  - {id: "fabric:lf1-bfd-sp1", faulted: {ne: Up}}
+  - {id: "fabric:lf1-ecmp", faulted: 1}
+  - {id: "fabric:sp1-ospf-lf1", faulted: {ne: Full}}
+  - {id: "fabric:vxlan-ping", faulted: 0}
+probes:
+  - {id: lf1-port-up, kind: iface, args: {node: leaf1, ifname: ge-0/0/0}, faulted: up/up}
+inject: [{junos: {node: leaf1, lines: ["set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 hello-interval ${hello}"]}}]
+revert: [{junos: {node: leaf1, lines: ["delete protocols ospf area 0.0.0.0 interface ge-0/0/0.0 hello-interval"]}}]
+timing: {inject_timeout_s: 150, revert_timeout_s: 240}
+expect: {sle: [{sle: fabric-health, classifier: Adjacency}], decision_tree: "link up, hellos ignored, neighbour gone after dead interval"}
+ground_truth:
+  fault_class: ospf-timer-mismatch
+  target_entity: "link:leaf1:ge-0/0/0--spine1:ge-0/0/0"
+  entity_aliases: ["intf:leaf1:ge-0/0/0", "intf:spine1:ge-0/0/0"]
+  root_cause: {entity: "leaf1:ge-0/0/0.0", kind: ospf-timer-mismatch}
+  classifiers: [Adjacency]
+  blast_radius: {entities: ["leaf1:ge-0/0/0", "spine1:ge-0/0/0"], devices: [leaf1, spine1], vlans: [], clients: []}
+remediation: {accept: [{tool: rollback_config, args: {node: leaf1, rollback_id: 1}}], guardrail: G1-infra-ports-need-approval}
+risk: low
+---
+kind: scenario
+id: CTRL-01
+title: False ticket (user complaint, no fault injected)
+layer: control
+status: designed
+executable: false
+bench: false
+requires: []
+inject: [{note: "post a scripted complaint ('VLAN 100 is slow on leaf1') to the assistant; inject nothing"}]
+revert: []
+ground_truth:
+  fault_class: none
+  target_entity: "none"
+  entity_aliases: []
+  root_cause: {entity: none, kind: none}
+  classifiers: []
+  blast_radius: {entities: []}
+remediation: {accept: [null], guardrail: G6-no-action-without-evidence}
+risk: none
