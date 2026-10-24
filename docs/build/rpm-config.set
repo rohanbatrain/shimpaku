@@ -1,0 +1,32 @@
+# Shimpaku application-reachability probes — PROPOSAL for the orchestrator to apply
+# (B-analytics does not change devices). Apply each block with `commit confirmed 5`, then `commit`.
+# Probe owner `shimpaku`; results read by `get-probe-results` → analytics/rpm.py → probe_result.
+# Paths are the ones bench.py already pings (R9 catalogue health sets fabric:vxlan-ping, campus:users-to-servers).
+# test-interval 10 s with 5 probes 1 s apart = one result per 10 s, ~6 per minute.
+
+# --- leaf1: VLAN 100 across the EVPN-VXLAN overlay (FAB-05; stays 0% loss in FAB-01/02/04)
+set services rpm probe shimpaku test vxlan-l2 probe-type icmp-ping
+set services rpm probe shimpaku test vxlan-l2 target address 10.100.0.42
+set services rpm probe shimpaku test vxlan-l2 routing-instance HOST
+set services rpm probe shimpaku test vxlan-l2 probe-count 5
+set services rpm probe shimpaku test vxlan-l2 probe-interval 1
+set services rpm probe shimpaku test vxlan-l2 test-interval 10
+
+# --- leaf2: underlay loopback to loopback (R2 §4 verified this exact probe live on leaf2)
+set services rpm probe shimpaku test underlay-lo probe-type icmp-ping
+set services rpm probe shimpaku test underlay-lo target address 10.255.0.41
+set services rpm probe shimpaku test underlay-lo source-address 10.255.0.42
+set services rpm probe shimpaku test underlay-lo probe-count 5
+set services rpm probe shimpaku test underlay-lo probe-interval 1
+set services rpm probe shimpaku test underlay-lo test-interval 10
+
+# --- sw1: campus users (VLAN 10, instance USER) to servers (CAM-05)
+set services rpm probe shimpaku test users-servers probe-type icmp-ping
+set services rpm probe shimpaku test users-servers target address 10.20.0.1
+set services rpm probe shimpaku test users-servers routing-instance USER
+set services rpm probe shimpaku test users-servers probe-count 5
+set services rpm probe shimpaku test users-servers probe-interval 1
+set services rpm probe shimpaku test users-servers test-interval 10
+
+# Verify: show services rpm probe-results owner shimpaku   (Loss 0%, RTT a few ms)
+# Undo:   delete services rpm probe shimpaku
