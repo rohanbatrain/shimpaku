@@ -18,17 +18,16 @@ import json
 import typer
 
 from shimpaku import devices
+from shimpaku.actions import fixture
 from shimpaku.config import settings
 from shimpaku.lock import device_lock
 
 app = typer.Typer(help="Missing-VLAN fault-lab fixture (see DEMO.md).", no_args_is_help=True)
 
-TRUNK_DEV, TRUNK_IF, CORR_DEV = "sw1", "ge-0/0/5", "leaf2"
-KEEP, DEMO = 998, 999
-
-
-def _name(vlan: int) -> str:
-    return f"shimpaku-demo-{vlan}"
+# One definition of the fixture, shared with the engine's tester gate (actions/fixture.py).
+TRUNK_DEV, TRUNK_IF, CORR_DEV = fixture.DEVICE, fixture.IFNAME, fixture.CORR_DEVICE
+KEEP, DEMO = fixture.KEEP_VLAN, fixture.VLAN
+_name = fixture.vlan_name
 
 
 def _apply(dev_name: str, lines: list[str], why: str) -> None:

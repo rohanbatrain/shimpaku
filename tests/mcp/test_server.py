@@ -195,3 +195,31 @@ async def test_raw_show_allowlist():
                 "show interfaces | save /tmp/x", "show version; request system halt", "show log messages",
                 "show interfaces\nconfigure", "SHOW VERSION", "show system users", "file show /etc/passwd"]:
         assert check_command(bad), bad
+
+
+# ---- tester gate on the MCP tool path (DEPLOY-DESIGN build step 2) -------------------------------
+
+TESTER_TOOL_CALLS = [
+    ("action_propose_bounce_port", {"device": "leaf2", "ifname": "ge-0/0/3", "reason": "x"}),
+    ("action_propose_disable_port", {"device": "leaf2", "ifname": "ge-0/0/3", "reason": "x"}),
+    ("action_propose_rerun_deploy", {"topology": "campus.toml", "reason": "x"}),
+    ("action_propose_rollback", {"device": "sw1", "reason": "x"}),
+    ("action_propose_add_vlan_to_trunk", {"device": "sw1", "ifname": "ge-0/0/5", "vlan": 998, "reason": "x"}),
+    ("action_propose_add_vlan_to_trunk", {"device": "sw1", "ifname": "ge-0/0/6", "vlan": 999, "reason": "x"}),
+    ("action_propose_add_vlan_to_trunk", {"device": "leaf2", "ifname": "ge-0/0/5", "vlan": 999, "reason": "x"}),
+]
+
+
+@pytest.mark.parametrize("tool,args", TESTER_TOOL_CALLS, ids=[f"{t}-{a.get('device')}-{a.get('vlan')}"
+                                                             for t, a in TESTER_TOOL_CALLS])
+async def test_tester_token_blocked_outside_fixture_over_mcp(env, monkeypatch, tool, args):
+    from shimpaku.mcp import server
+    srv, e, audit, box = env
+    monkeypatch.setattr(server, "caller_from_request", lambda ctx: engmod.Caller(
+        kind="mcp", name="tester-agent", token_id="tok_t", transport="http", role="tester", lease_id="L1"))
+    async with Client(srv) as c:
+        s = sc(await c.call_tool(tool, args))
+    assert s["status"] == "blocked" and s["policy"]["reasons"][0].startswith("T0 tester scope")
+    row = audit.query(tool=tool)[0]
+    assert row["status"] == "blocked" and row["actor"]["role"] == "tester" and row["actor"]["lease_id"] == "L1"
+    assert audit.verify()["ok"] and box.commits == []

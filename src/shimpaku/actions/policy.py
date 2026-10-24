@@ -53,6 +53,10 @@ DEFAULT_POLICY: dict[str, Any] = {
                           "leaf2": [f"ge-0/0/{i}" for i in range(2, 10)],
                           "sw1": ["ge-0/0/5"]},
     "write_scope_devices": [],               # devices where whole-device actions (rollback) may run
+    # Lab-wide actions with no single device (rerun_deploy): the topology files they may touch.
+    # Empty = refused (G0). They have no device to scope or lease, so they are also refused while
+    # anything else is in flight anywhere in the lab (G5).
+    "write_scope_topologies": [],
     # Ports that may be acted on without an incident (lab test ports; G6 otherwise needs evidence)
     "test_ports": {"spine2": ["ge-0/0/9"], "leaf2": [f"ge-0/0/{i}" for i in range(2, 10)], "sw1": ["ge-0/0/5"]},
     "protected_devices": [],                 # never written (e.g. a box under bench control)
@@ -186,6 +190,13 @@ def evaluate(kind: str, args: dict, reason: str, facts: Facts, policy: dict) -> 
                 block.append(f"G0 {dev} {ifn} is outside the write scope in lab://policy")
         elif kind == "rollback" and dev not in policy.get("write_scope_devices", []):
             block.append(f"G0 whole-device changes on {dev} are outside the write scope in lab://policy")
+    if spec is not None and "device" not in spec["args"] and not errs:
+        # Device-less (lab-wide) kinds used to skip the scope check entirely: fail closed unless
+        # the operator has listed the target in the policy.
+        topo = args.get("topology")
+        if topo not in policy.get("write_scope_topologies", []):
+            block.append(f"G0 {kind} target {clean_text(topo, 60)!r} is outside the write scope in "
+                         "lab://policy (write_scope_topologies)")
     if kind == "rollback" and args.get("rollback_id") not in (None, 1):
         block.append("G4 only `rollback 1` (the newest commit) is in the catalogue")
     if block and errs:
@@ -262,6 +273,13 @@ def evaluate(kind: str, args: dict, reason: str, facts: Facts, policy: dict) -> 
             block.append(f"G5 {dev} is leased by {clean_text(facts.lease_holder, 60)}")
         if facts.open_actions_device:
             block.append(f"G5 {dev} already has an action in flight")
+    elif spec is not None and "device" not in spec["args"]:
+        # No device to lease or check for a pending confirm: a lab-wide action runs only when
+        # nothing else is in flight anywhere (G5 scoped to the whole lab, fail closed).
+        checked.append("G5")
+        if facts.open_actions_total:
+            block.append(f"G5 {kind} is lab-wide; refused while {facts.open_actions_total} other "
+                         "action(s) are in flight")
     checked.append("blast")
     if facts.open_actions_total >= int(policy.get("max_open_actions", 3)):
         block.append("blast too many actions in flight across the lab")
