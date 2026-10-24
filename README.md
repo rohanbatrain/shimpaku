@@ -118,23 +118,44 @@ proves the harness itself works, repeatably, on the real lab.
 | A killed executor is rolled back by Junos | Measured 73–76 s to auto-rollback after `SIGKILL` mid-commit, twice, with the device left clean both times | `docs/build/mcp-actions.md` |
 | Telemetry keeps up | 7/7 nodes streamed 26 minutes with no gap over 60 s; a link-state fault landed in the event table in 1.35–1.91 s | `docs/build/telemetry.md` |
 | The "Missing VLAN" gap was found and closed | Shim's own live eval (not a human) found that one model substituted an unwarranted redeploy when this tool didn't exist; it was built, guardrailed (G3) and proven live: fault injected → proposed over MCP → held for human approval → approved → two real commits → VLAN restored on the device | this commit history, `act-20261024-1ca1ea` |
-| 251 tests pass, 2 correctly skipped (need live devices) | `pytest -q` on Mac and on the lab host | — |
-| Six real bugs were found only by running the whole thing, not by any unit test | DuckDB double-connection; a provider contract misread; a bare-import test collision; `sle_get_summary` silently ignoring its own `site` filter; the executor's own G1 re-check not knowing the new "trunk" role; a cross-builder schema collision on the `error` field | `docs/build/integration.md`, commit history |
+| 256 tests pass, 2 correctly skipped (they need live devices) | `pytest -q`; CI runs it on every push | `.github/workflows/ci.yml` |
+| Eight defects were found only by running it live, including one false "verified" from our own validation | Each has a fix and, where it could recur, a test that fails on the old code. The false verification is left unedited in the audit history and corrected in writing | [`docs/INCIDENTS.md`](docs/INCIDENTS.md) |
+| The audit trail holds | `GET /api/audit/verify` recomputes the hash chain over every row: `{"ok": true}` | `src/shimpaku/mcp/audit.py` |
 
 ## Run it
 
+On the lab host (Linux, Python 3.12, the vJunos lab reachable on its management network):
+
 ```bash
-ssh <lab-host> "cd ~/src/shimpaku && uv pip install -e .[dev,junos]"
-ssh <lab-host> "cd ~/src/shimpaku && bash deploy/systemd/install.sh"   # needs linger: ops/phase0-root.sh
-ssh -N -L 8780:127.0.0.1:8780 <lab-host> &   # then open http://127.0.0.1:8780
+git clone <this repo> ~/src/shimpaku && cd ~/src/shimpaku
+uv venv -p 3.12 .venv && uv pip install -p .venv -e ".[junos]"
+mkdir -p ~/.config/shimpaku && cp .env.example ~/.config/shimpaku/env && chmod 600 ~/.config/shimpaku/env   # fill in credentials
+(cd web && npm ci && npm run build)
+sudo bash ops/phase0-root.sh "$USER"     # once: linger, lab bridges, lock dir, sandbox user
+bash deploy/systemd/install.sh            # shimpakud as a user service
 ```
 
-Connect an external agent (reads `lab://topology`, proposes but never executes):
+From a workstation: `ssh -N -L 8780:127.0.0.1:8780 <lab-host>` and open `http://127.0.0.1:8780`.
+
+Connect an external agent. It can read and propose, never execute or approve:
 
 ```jsonc
 // Claude Code / OpenCode MCP config
 {"mcpServers": {"shimpaku": {"command": "ssh", "args": ["<lab-host>", "~/src/shimpaku/.venv/bin/shimpaku", "mcp-stdio"]}}}
 ```
+
+The live demo script is [`DEMO.md`](DEMO.md) (`shimpaku demo seed | break | status | propose`).
+
+## Documents
+
+| | |
+|---|---|
+| [`DEMO.md`](DEMO.md) | 10-minute live walkthrough |
+| [`SECURITY.md`](SECURITY.md) | threat model and controls |
+| [`docs/INCIDENTS.md`](docs/INCIDENTS.md) | defects found by running it, with fixes and tests |
+| [`docs/RESEARCH.md`](docs/RESEARCH.md) | what each cited research report (R1–R9, REVIEW) established |
+| [`CONTRACT.md`](CONTRACT.md) | interfaces between the components |
+| [`docs/build/`](docs/build/) | per-component build records with raw evidence |
 
 ## Design decisions (one line each)
 

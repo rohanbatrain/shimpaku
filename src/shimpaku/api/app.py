@@ -298,8 +298,15 @@ def create_app(
         return await call("action_get", action_id)
 
     @app.get("/api/audit")
-    async def audit(limit: int = 100, p: Principal = Depends(reader)):
-        return await call("audit_query", limit=max(1, min(limit, 1000)))
+    async def audit(limit: int = 100, tool: str | None = None, action_id: str | None = None,
+                    status: str | None = None, p: Principal = Depends(reader)):
+        return await call("audit_query", tool=tool, action_id=action_id, status=status,
+                          limit=max(1, min(limit, 1000)))
+
+    @app.get("/api/audit/verify")
+    async def audit_verify(p: Principal = Depends(reader)):
+        """Recompute the hash chain over every audit row; reports the first broken row, if any."""
+        return await call("audit_verify")
 
     @app.get("/api/topology")
     async def topology(device: str | None = None, p: Principal = Depends(reader)):

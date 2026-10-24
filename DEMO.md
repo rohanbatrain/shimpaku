@@ -1,131 +1,107 @@
 # Showing Shimpaku — a 10-minute walkthrough
 
 Use this when you're live (interview, screen share, recorded video). The README is the
-document to send beforehand or leave behind; this is the script for the room.
+document to send beforehand; this is the script for the room.
 
-## Before you start (2 minutes, do this off-camera)
-
-```bash
-ssh -N -L 8780:127.0.0.1:8780 <lab-host> &     # tunnel to the lab host
-open http://127.0.0.1:8780                 # the dashboard
-```
-
-Check the service is actually up, so you're not debugging live:
+## Before you start (off camera, 2 minutes)
 
 ```bash
-ssh <lab-host> 'systemctl --user is-active shimpakud.service'   # should print: active
+export SHIMPAKU_LAB_HOST=<lab-host>                     # the lab host's ssh name
+ssh -N -L 8780:127.0.0.1:8780 "$SHIMPAKU_LAB_HOST" &      # tunnel to the dashboard
+open http://127.0.0.1:8780
+ssh "$SHIMPAKU_LAB_HOST" 'systemctl --user is-active shimpakud'   # → active
 ```
 
-If it's not active: `ssh <lab-host> 'systemctl --user restart shimpakud.service'`, wait ~15s.
+Open a second terminal on the lab host for the live part, with the service's settings loaded:
 
-## The one-line pitch (say this first)
+```bash
+ssh "$SHIMPAKU_LAB_HOST"
+cd ~/src/shimpaku && set -a && . ~/.config/shimpaku/env && set +a
+alias shimpaku=.venv/bin/shimpaku
+shimpaku demo seed      # idempotent; makes sure the demo trunk exists
+shimpaku demo status    # → VLAN 999 on sw1 ge-0/0/5: present
+```
 
-> "This is a Mist-style assurance system I built for my own Junos home lab — not a mockup, the
-> real HPE Juniper Mist AI shape: service levels, blast-radius isolation, guardrailed actions,
-> an MCP server any agent can drive. Everything I'm about to show you is running against real
-> vJunos switches right now, not a recording."
+## The pitch (say this first)
+
+> "This is a Mist-style assurance system I built for my own Junos lab. Same shape as HPE
+> Juniper's Mist AI: service levels, blast-radius isolation, guardrailed actions, and an MCP
+> server any agent can drive. Everything you'll see runs against real vJunos switches."
 
 ## The walkthrough
 
-### 1. Service Levels (30s)
-Open the dashboard, land on **Service levels**. Point at:
-- the **n = …** next to every percentage — say: *"these are probe-minutes, not real users —
-  I say that everywhere, I don't borrow Mist's language for something I haven't built."*
-- the **Changes** timeline at the top — commits, faults and actions, so a viewer can correlate
-  a dip with what caused it.
+### 1. Service levels (30 s)
+Point at the **n = …** beside every percentage: *"These are probe-minutes from synthetic
+probes, not users. I don't borrow Mist's terms for things I haven't built."* Then the
+**Changes** timeline: commits, faults and actions on one axis.
 
-### 2. Break something, live (2 minutes — the centerpiece)
-
-In a second terminal:
+### 2. Break it and fix it, live (3 minutes — the centrepiece)
 
 ```bash
-ssh <lab-host>
-cd ~/src/shimpaku
-.venv/bin/python inject_fault.py        # removes VLAN 999 from sw1's trunk — a real Junos commit
+shimpaku demo break     # a real Junos commit: VLAN 999 removed from the sw1 trunk
+shimpaku demo status    # → MISSING
+shimpaku demo propose   # what an agent does over MCP → "status": "awaiting_approval"
 ```
 
-Say: *"That just ran a real `commit` on the switch. No mock."* Then propose the fix the way an
-agent would — over MCP, the same protocol Claude Code or OpenCode would use:
+Say: *"The agent proposed the fix. It cannot execute it — approval isn't even an MCP tool.
+Before it was allowed to propose, nine guardrails ran in Python: it's a trunk port, it's in
+scope, and VLAN 999 already exists on a second switch, so there's evidence it belongs."*
+
+Dashboard → **Actions** → the new action → **Approve**. Watch `running` → `validating`. Then:
 
 ```bash
-.venv/bin/python mcp_client.py action_propose_add_vlan_to_trunk \
-  '{"device":"sw1","ifname":"ge-0/0/5","vlan":999,"reason":"demo: VLAN missing from trunk"}'
+shimpaku demo status    # → present
 ```
 
-Point at the output: `"status": "awaiting_approval"`. Say: *"The agent can propose, it cannot
-execute. An LLM's 'yes' isn't a human's — that's enforced in code, not in the prompt."*
+Say: *"Two real commits: the first as `commit confirmed`, confirmed only after a fresh health
+check. If anything had died mid-change, Junos would have rolled it back by itself."*
 
-Switch to the dashboard's **Actions** tab — the proposal is sitting there. Click **Approve**.
-Watch it move: `running` → two real `commit confirmed` legs → `validating`. Flip back to
-**Service levels** or **Root cause** and point out the VLAN is back on the switch.
-
-> If you want to skip live risk, the same sequence is already proven and recorded in the
-> README's evidence table and `docs/build/mcp-actions.md` — you can walk through that instead
-> and say "I ran this live earlier today," which is also true.
+**Optional, strongest moment:** run `shimpaku demo break` again while it's validating. Within
+a minute the action turns **recurred**. *"It doesn't trust its own fix. It watches the symptom
+for the whole window, and when the symptom comes back it reopens the issue."*
 
 ### 3. Ask Shim (1 minute)
+`⌘K` / `Ctrl+K`: *"Why did sw1's trunk need a VLAN added back?"* Point at the tool trace under
+the answer. (Needs the LLM gateway key in `~/.config/shimpaku/env`. Without it, say so and show
+`docs/build/assistant.md`.)
 
-Press `⌘K` / `Ctrl+K`. Ask something concrete tied to what you just did:
-
-> "Why did sw1's trunk need a VLAN added back?"
-
-Point at the tool-call trace it shows under the answer — *"it's reading the same MCP tools,
-not guessing."* (Needs the LiteLLM key configured — see `~/.config/shimpaku/litellm.key` — if
-it's not set up, say so plainly and show the eval results in `docs/build/assistant.md` instead.)
-
-### 4. The audit log (30s)
-
-Dashboard → wherever `/api/audit` is surfaced (Actions → the action you just ran → its audit
-rows), or:
-
+### 4. Audit (30 s)
 ```bash
-curl -s http://127.0.0.1:8780/api/audit | python3 -m json.tool | head -20
+curl -s "127.0.0.1:8780/api/audit?action_id=<the action id>" | python3 -m json.tool | head -30
+curl -s 127.0.0.1:8780/api/audit/verify          # → {"ok": true, "rows": N}
 ```
+*"Every tool call is a hash-chained row: who called what, the policy decision, the commit it
+produced. The verifier recomputes the chain; editing any row breaks it, and that's tested."*
 
-Say: *"Every tool call is hash-chained — if someone edits a row after the fact, the chain
-breaks and it's detectable. I tested that: it catches an edited row."*
+### 5. Benchmark (1 minute)
+Dashboard → **Benchmark**. *"Sixteen fault scenarios, five repeats each, 80 of 80 trials. Each
+fault is verified by an independent probe, never by the system grading itself, and ground
+truth sits in a store the system can't read."*
 
-### 5. The benchmark (1 minute)
+### 6. Honesty (1 minute — this lands well)
+Open `docs/INCIDENTS.md`. *"These are eight defects I found by running it. Number eight: my own
+system once said 'verified' when the fault was back. I didn't edit the record. I fixed the
+validation, added a test that fails on the old code, and wrote it up."*
 
-Dashboard → **Benchmark**, or:
+### 7. Close (30 s)
+> "HPE's own Mist MCP server exists, and it's read-only by design. The interesting part is the
+> write path: proposal, guardrails, human approval, lock, `commit confirmed`, validation. And
+> the README lists what I deliberately didn't build, and why."
 
-```bash
-curl -s http://127.0.0.1:8780/api/bench/results | python3 -m json.tool | head -30
-```
+## If something goes wrong
 
-Say: *"This is the part most AI-networking demos skip. Sixteen fault scenarios, five repeats
-each, eighty of eighty trials passed — and every trial is independently verified, not scored
-by the agent grading its own homework. Ground truth lives in a database the system under test
-can never open."*
+| Problem | Do this |
+|---|---|
+| Dashboard won't load | `ssh "$SHIMPAKU_LAB_HOST" 'systemctl --user restart shimpakud'`, wait 15 s |
+| `demo propose` says `blocked` with "already has an action in flight" | That's guardrail G5 (one action per device). Show it, then approve or wait out the existing one |
+| `demo break` says "already broken" | Skip to `demo propose` |
+| No LLM key | Skip step 3 and show the eval results in `docs/build/assistant.md` |
 
-### 6. Close (30s)
+## Questions you'll likely get
 
-> "What makes this different from HPE's own Mist MCP server — which exists, I checked — is
-> that theirs is read-only by design; writes go through our own layer, with the guardrails,
-> the lock, and the validation window. And the honest half of this project is the README's
-> table of what I did *not* build and why — Wi-Fi capacity SLEs, an LSTM, anything that would
-> need hardware or data I don't have."
-
-## If something breaks mid-demo
-
-- **Service down**: `ssh <lab-host> 'systemctl --user restart shimpakud.service'`, wait 15s, reload.
-- **The VLAN fault won't re-inject** (already faulted): check first —
-  `ssh <lab-host> 'source /tmp/jx.sh; j $SW1 "show vlans" | grep -A1 shimpaku-demo-999'`. If the
-  interface list is already empty, skip straight to the propose step.
-- **Dashboard shows stale "running" on the demo action**: it auto-validates for 30 minutes;
-  that's expected, not broken — say so.
-- **No LiteLLM key configured**: skip step 3, say "the gateway isn't wired in for this
-  session" and show `docs/build/assistant.md`'s eval numbers instead — they're real, just not
-  live.
-
-## Likely questions, short answers
-
-- **"Is this connected to real Mist?"** No — Juniper's terms forbid benchmarking Mist or
-  copying its UI from an account, so nothing here ever touched one.
-- **"Why not Kafka / an LSTM / Kubernetes?"** Seven devices don't need a message bus; a simple
-  rate test beat an LSTM on simulated data with fewer false alarms — both are in the README's
-  honesty table with the reasoning.
-- **"What stops the agent from doing something dangerous?"** Nine guardrails run as plain
-  Python over live facts before any device is touched — not a prompt instruction. Show
-  `docs/build/mcp-actions.md`'s red-team table: 0 unsafe actions executed across a dozen
-  attack cases.
+- **"Is this connected to Mist?"** No. Juniper's cloud terms forbid benchmarking Mist or copying
+  its UI from an account, so nothing here touched one.
+- **"Why no Kafka or LSTM?"** Seven devices don't need a bus, and on simulated data a rate test
+  beat an LSTM with fewer false alarms. Both are in the README's "not built" table.
+- **"What stops the agent doing damage?"** Code, not prompts. `SECURITY.md` has the threat
+  model; `docs/build/mcp-actions.md` has the red team: 0 unsafe actions executed.
