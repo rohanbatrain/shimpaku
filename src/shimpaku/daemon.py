@@ -21,7 +21,7 @@ from shimpaku.analytics.loop import run_analytics_loop
 from shimpaku.api.app import create_app
 from shimpaku.collector import Collector
 from shimpaku.config import settings
-from shimpaku.mcp.server import build_server, http_app, set_token_verifier
+from shimpaku.mcp.server import McpHttpGate, build_server, http_app, set_token_verifier
 
 log = logging.getLogger("shimpaku.daemon")
 
@@ -73,9 +73,9 @@ async def async_main() -> None:
     rest_app = create_app(service, store, settings.sqlite_path)
     leases = rest_app.state.leases
     # bearer tokens on /mcp verify against the AuthStore (expiry, revocation) and, for a
-    # tester's token, its lease being active
+    # tester's token, its lease being active; 401/403/429 are answered before the MCP app
     set_token_verifier(leases.verify_token)
-    dispatcher = CombinedASGI(mcp_app, rest_app)
+    dispatcher = CombinedASGI(McpHttpGate(mcp_app, leases.verify_token, rest_app.state.limiter), rest_app)
 
     from shimpaku.actions.engine import engine
 

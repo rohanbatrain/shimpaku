@@ -444,3 +444,100 @@ def http_app(server: MCPServer | None = None):
                                     allowed_origins=[f"http://{h}" for h in hosts])
     return server.streamable_http_app(streamable_http_path="/mcp", transport_security=sec,
                                       host=settings.bind)
+
+
+# ------------------------------------------------------------------ HTTP auth gate for /mcp
+_WRITE_TOOLS = {t for t, tier in TIERS.items() if tier in ("T1", "T2")} | {"action_cancel"}
+MAX_MCP_BODY = 1 << 20
+
+
+class McpHttpGate:
+    """ASGI wrapper in front of the Streamable HTTP app: authentication failures are HTTP, not
+    JSON-RPC.
+
+    MCP 2025-06-18, basic/authorization, "Access Token Usage" → "Token Handling": the client
+    sends ``Authorization: Bearer`` on every request and "Invalid or expired tokens MUST receive
+    a HTTP 401 response"; "Error Handling": 401 when authorization is required or the token is
+    invalid, 403 for insufficient scopes; "Authorization Server Location": a 401 carries
+    ``WWW-Authenticate``. We do not publish RFC 9728 metadata (static bearer tokens only), so the
+    header is a plain ``Bearer`` challenge (RFC 6750 §3 error codes).
+
+    Also here, because they need the JSON-RPC method: scope (a ``read`` token cannot call a
+    propose/cancel tool → 403) and the ``mcp`` rate limit on ``tools/call`` (429, Retry-After).
+    """
+
+    def __init__(self, app, verifier: TokenVerifier | None, limiter=None, auth_mode: str | None = None):
+        self.app = app
+        self.verifier = verifier
+        self.limiter = limiter
+        self._mode = auth_mode
+
+    @property
+    def mode(self) -> str:
+        return (self._mode or settings.auth_mode).lower()
+
+    @staticmethod
+    async def _reply(send, status: int, detail: str, headers: dict[str, str] | None = None) -> None:
+        body = json.dumps({"detail": detail}).encode()
+        hs = [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]
+        hs += [(k.lower().encode(), v.encode()) for k, v in (headers or {}).items()]
+        await send({"type": "http.response.start", "status": status, "headers": hs})
+        await send({"type": "http.response.body", "body": body})
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
+        auth = headers.get("authorization", "")
+        peer = (scope.get("client") or (None,))[0]
+        rec: dict | None = None
+        if auth.lower().startswith("bearer "):
+            rec = self.verifier(auth[7:].strip()) if self.verifier else None
+            if not rec:
+                return await self._reply(send, 401, "invalid, expired or revoked token",
+                                         {"WWW-Authenticate": 'Bearer error="invalid_token"'})
+        elif not (self.mode == "off" and _is_loopback(peer)):
+            return await self._reply(send, 401, "authorization required", {"WWW-Authenticate": "Bearer"})
+
+        if scope.get("method") != "POST":
+            return await self.app(scope, receive, send)
+        chunks, size = [], 0
+        while True:
+            msg = await receive()
+            if msg["type"] == "http.disconnect":
+                return
+            chunks.append(msg.get("body", b""))
+            size += len(chunks[-1])
+            if size > MAX_MCP_BODY:
+                return await self._reply(send, 413, "request too large")
+            if not msg.get("more_body"):
+                break
+        body = b"".join(chunks)
+        try:
+            parsed = json.loads(body) if body else None
+        except ValueError:
+            parsed = None  # the SDK answers malformed JSON-RPC itself
+        msgs = parsed if isinstance(parsed, list) else [parsed]
+        calls = [m.get("params", {}).get("name") for m in msgs
+                 if isinstance(m, dict) and m.get("method") == "tools/call" and isinstance(m.get("params"), dict)]
+        if calls and rec is not None and "propose" not in (rec.get("scopes") or []) \
+                and any(c in _WRITE_TOOLS for c in calls):
+            return await self._reply(send, 403, "token scope read cannot propose or cancel",
+                                     {"WWW-Authenticate": 'Bearer error="insufficient_scope", scope="propose"'})
+        if calls and self.limiter is not None:
+            key = f"mcp-token:{rec['id']}" if rec else f"mcp-peer:{peer}"
+            for _ in calls:
+                wait = self.limiter.check("mcp", key)
+                if wait is not None:
+                    return await self._reply(send, 429, f"rate limit (mcp); retry in {wait} s",
+                                             {"Retry-After": str(wait)})
+        sent = False
+
+        async def replay():
+            nonlocal sent
+            if not sent:
+                sent = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return await receive()
+
+        return await self.app(scope, replay, send)
