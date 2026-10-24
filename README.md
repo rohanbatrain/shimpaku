@@ -17,7 +17,7 @@ bonsai juniper; no HPE/Juniper/Mist/Marvis trademark is used anywhere in this pr
 ## 30-second tour
 
 ```bash
-ssh -N -L 8780:127.0.0.1:8780 sitar   # the lab host, reached over the operator's NetBird network
+ssh -N -L 8780:127.0.0.1:8780 <lab-host>   # the lab host (any host that can reach the lab)
 open http://127.0.0.1:8780             # the dashboard: Service levels → Root cause → Actions
 ```
 
@@ -124,16 +124,16 @@ proves the harness itself works, repeatably, on the real lab.
 ## Run it
 
 ```bash
-ssh sitar "cd ~/src/shimpaku && uv pip install -e .[dev,junos]"
-ssh sitar "cd ~/src/shimpaku && bash deploy/systemd/install.sh"   # needs linger: ops/phase0-root.sh
-ssh -N -L 8780:127.0.0.1:8780 sitar &   # then open http://127.0.0.1:8780
+ssh <lab-host> "cd ~/src/shimpaku && uv pip install -e .[dev,junos]"
+ssh <lab-host> "cd ~/src/shimpaku && bash deploy/systemd/install.sh"   # needs linger: ops/phase0-root.sh
+ssh -N -L 8780:127.0.0.1:8780 <lab-host> &   # then open http://127.0.0.1:8780
 ```
 
 Connect an external agent (reads `lab://topology`, proposes but never executes):
 
 ```jsonc
 // Claude Code / OpenCode MCP config
-{"mcpServers": {"shimpaku": {"command": "ssh", "args": ["sitar", "~/src/shimpaku/.venv/bin/shimpaku", "mcp-stdio"]}}}
+{"mcpServers": {"shimpaku": {"command": "ssh", "args": ["<lab-host>", "~/src/shimpaku/.venv/bin/shimpaku", "mcp-stdio"]}}}
 ```
 
 ## Design decisions (one line each)

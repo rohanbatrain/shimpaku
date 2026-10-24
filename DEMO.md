@@ -6,17 +6,17 @@ document to send beforehand or leave behind; this is the script for the room.
 ## Before you start (2 minutes, do this off-camera)
 
 ```bash
-ssh -N -L 8780:127.0.0.1:8780 sitar &     # tunnel to the lab host
+ssh -N -L 8780:127.0.0.1:8780 <lab-host> &     # tunnel to the lab host
 open http://127.0.0.1:8780                 # the dashboard
 ```
 
 Check the service is actually up, so you're not debugging live:
 
 ```bash
-ssh sitar 'systemctl --user is-active shimpakud.service'   # should print: active
+ssh <lab-host> 'systemctl --user is-active shimpakud.service'   # should print: active
 ```
 
-If it's not active: `ssh sitar 'systemctl --user restart shimpakud.service'`, wait ~15s.
+If it's not active: `ssh <lab-host> 'systemctl --user restart shimpakud.service'`, wait ~15s.
 
 ## The one-line pitch (say this first)
 
@@ -39,7 +39,7 @@ Open the dashboard, land on **Service levels**. Point at:
 In a second terminal:
 
 ```bash
-ssh sitar
+ssh <lab-host>
 cd ~/src/shimpaku
 .venv/bin/python inject_fault.py        # removes VLAN 999 from sw1's trunk — a real Junos commit
 ```
@@ -108,9 +108,9 @@ can never open."*
 
 ## If something breaks mid-demo
 
-- **Service down**: `ssh sitar 'systemctl --user restart shimpakud.service'`, wait 15s, reload.
+- **Service down**: `ssh <lab-host> 'systemctl --user restart shimpakud.service'`, wait 15s, reload.
 - **The VLAN fault won't re-inject** (already faulted): check first —
-  `ssh sitar 'source /tmp/jx.sh; j $SW1 "show vlans" | grep -A1 shimpaku-demo-999'`. If the
+  `ssh <lab-host> 'source /tmp/jx.sh; j $SW1 "show vlans" | grep -A1 shimpaku-demo-999'`. If the
   interface list is already empty, skip straight to the propose step.
 - **Dashboard shows stale "running" on the demo action**: it auto-validates for 30 minutes;
   that's expected, not broken — say so.
