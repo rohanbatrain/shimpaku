@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import inspect
+import json
 import logging
 import re
 import time
@@ -184,6 +185,24 @@ async def audit_verify() -> dict:
     if _audit is None:
         return {"available": False, "reason": "audit log not initialised"}
     return await asyncio.to_thread(_audit.verify)
+
+
+async def audit_chain(after: int | None = None, before: int | None = None, limit: int = 20) -> dict:
+    """Raw audit rows (as stored, so their hashes recompute) with after < seq < before, newest
+    first. For the chain visualiser; callers must not pass rows on without reducing them."""
+    if _audit is None:
+        return {"available": False, "reason": "audit log not initialised"}
+
+    def q() -> dict:
+        db = _audit.state
+        with db._lock:
+            con = db.connect()._con
+            rows = [dict(r) for r in con.execute(
+                "SELECT * FROM audit WHERE seq > ? AND seq < ? ORDER BY seq DESC LIMIT ?",
+                (after or 0, before or 2**62, max(1, min(int(limit), 200))))]
+            total = con.execute("SELECT count(*) FROM audit").fetchone()[0]
+        return {"rows": rows, "total": total}
+    return await asyncio.to_thread(q)
 
 
 async def bench_results() -> dict:
@@ -414,6 +433,17 @@ def set_mcp_server(server) -> None:
     _mcp_server = server
 
 
+def _args_summary(args: Any) -> str:
+    """A tool call's arguments for the reasoning trace: redacted, scrubbed of addresses, short."""
+    from shimpaku.mcp.audit import redact
+
+    if not isinstance(args, dict) or not args:
+        return ""
+    s = ", ".join(f"{k}={v if isinstance(v, (str, int, float, bool)) or v is None else json.dumps(v, default=str)}"
+                  for k, v in redact(args).items())
+    return scrub_hosts(s)[:140]
+
+
 async def assistant_ask(question: str, principal: str, context: dict | None = None, *,
                         llm_key: str | None = None, role: str | None = None,
                         lease_id: str | None = None):
@@ -436,6 +466,7 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
     token = mcp_mod._caller.set(caller)
     factory = (lambda name: LLM(name, key=llm_key)) if llm_key else None
     started: dict[str, float] = {}
+    arg_s: dict[str, str] = {}
     streamed = False
     try:
         bot = Assistant(_mcp_server, llm_factory=factory)
@@ -445,10 +476,12 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
                 yield {"type": "meta", "model": ev.get("model", "?")}
             elif t == "tool_call":
                 started[ev["id"]] = _t.perf_counter()
+                arg_s[ev["id"]] = _args_summary(ev.get("args"))
             elif t == "tool_result":
                 ms = int((_t.perf_counter() - started.pop(ev["id"], _t.perf_counter())) * 1000)
                 yield {"type": "tool", "name": ev.get("name"), "call": ev.get("name"), "ms": ms,
-                       "ok": bool(ev.get("ok"))}
+                       "ok": bool(ev.get("ok")), "args": arg_s.pop(ev["id"], ""),
+                       "ids": [str(x)[:60] for x in (ev.get("ids") or [])][:8]}
             elif t == "token":
                 streamed = True
                 yield ev

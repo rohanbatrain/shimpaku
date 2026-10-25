@@ -311,7 +311,8 @@ def _actions() -> list[dict]:
     a39 = {"id": "39", "kind": "rerun_deploy", "tier": "T1", "title": "Re-run deploy for r2 after timeout", "device": "r2",
            "site": "campus", "status": "fixed_by_operator", "mode": "driver-assist", "proposed_by": "assistant",
            "approved_by": "admin", "created_at": _ago(1500), "incident_id": None}
-    return [_action42(), _action41(), a40, a39]
+    from shimpaku.api.demo_explain import extra_actions
+    return [_action42(), _action41(), a40, a39, *extra_actions()]
 
 
 _cancelled: set[str] = set()
@@ -542,3 +543,6 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
         yield {"type": "token", "text": word + " "}
     yield {"type": "done"}
 
+
+
+from shimpaku.api.demo_explain import audit_chain, audit_verify  # noqa: E402,F401,F811  (explain views)
