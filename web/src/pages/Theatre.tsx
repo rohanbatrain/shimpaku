@@ -88,7 +88,7 @@ function useReplay(run: Run | undefined, auto: boolean) {
       const fast = gap > 12;
       setFf(fast);
       cur += fast ? dt * (gap / 4) : dt;
-      if (cur >= end) { setT(end); setFf(false); timer.current = null; return; }
+      if (cur >= end) { setT(null); setFf(false); timer.current = null; return; }
       setT(cur);
       timer.current = requestAnimationFrame(step);
     };
