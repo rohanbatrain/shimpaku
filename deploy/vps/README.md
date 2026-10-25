@@ -13,6 +13,8 @@ visitor ─► Cloudflare (free, proxied) ─► VPS Caddy ─┬─► <domain>
 | `GET /api/*` | live daemon | replay (read-only snapshot) |
 | `POST`/`PUT`/`PATCH`/`DELETE /api/*` | live daemon | `503 {"detail":"the lab is offline; the dashboard is showing a recorded replay"}` |
 | `/mcp` | live daemon (401 without a token) | `503` JSON; never the replay |
+| `GET /api/virga/*` (catalogue, state, trials, the `stream` SSE), `GET /api/public/health` | live daemon, anonymous | replay (Virga reads as "disabled"; health reports the lab as replay) |
+| `POST /api/virga/*` (inject, revert, recover) | live daemon; operator session only, limited per client IP (zone `virga`) | `503` JSON; never the replay |
 
 ## Failover
 
@@ -94,6 +96,7 @@ every limit keys on and what Caddy sends upstream as the single `X-Forwarded-For
 | `actions_write` | `POST /api/actions*` | 20 / min |
 | `assistant` | `/api/assistant*` | 10 / min |
 | `mcp` | `/mcp*` | 60 / min |
+| `virga` | `POST /api/virga/*` | 10 / 10 min |
 | `api` | all `/api/*` | 300 / min |
 
 Over the limit: `429` with `Retry-After`. The daemon's own per-principal limits
@@ -111,6 +114,7 @@ SHIMPAKU_BIND=<lab netbird ip>          # reachable on the NetBird interface onl
 SHIMPAKU_AUTH_MODE=local                # sign-in required; the code default stays `off`
 SHIMPAKU_PUBLIC_URL=https://<label>-app.<parent>   # base for invite links
 SHIMPAKU_PUBLIC_VIEW=1                  # anonymous visitors read live, read-only; they request sessions
+SHIMPAKU_VIRGA_LIVE=1                   # the operator may inject real faults from the dashboard (Fault lab); unset = off
 SHIMPAKU_TRUSTED_PROXIES=<edge netbird ip>
 FORWARDED_ALLOW_IPS=<edge netbird ip>   # what uvicorn in shimpakud actually reads today (see below)
 ```
@@ -170,8 +174,9 @@ Free plan, proxied. The free plan has no partial (CNAME) setup, so the nameserve
 
 ## Monitoring
 
-`uptime-kuma` runs in the compose project, bound to `127.0.0.1:3001` on the VPS. Its admin UI is
-reached with `ssh -L 3001:127.0.0.1:3001 <vps>` over NetBird and is not published: it is an
+`uptime-kuma` runs in the compose project on the host network (port 3001). Its admin UI answers on the
+VPS's NetBird address (`http://<vps netbird ip>:3001`; the host firewall accepts the tunnel interface and
+drops everything else on 3001), or through `ssh -L 3001:127.0.0.1:3001 <vps>`, and is not published: it is an
 admin app with its own login, and keeping it off the internet costs nothing. Kuma on the VPS
 cannot report the VPS itself being down; pair it with an external free checker (e.g. UptimeRobot).
 
@@ -218,7 +223,7 @@ credentials. `deploy.sh` sets it for the replay container; **set the same variab
 daemon** (its environment file) or the live answer will carry no CORS header and the landing will
 show the fallback while the lab is up.
 
-Monitors to create (20–60 s interval):
+Monitors to create (20–60 s interval; `scripts/kuma_setup.mjs` creates the Website and Live lab ones, see below):
 
 | Monitor | Type | Target | Expect |
 |---|---|---|---|
@@ -228,7 +233,55 @@ Monitors to create (20–60 s interval):
 | Replay | HTTP(s) | `http://replay:8780/api/whoami` | 200 |
 | Lab over NetBird | HTTP(s) | `http://<lab netbird ip>:8780/api/whoami` | 200 (needs the container to reach NetBird, as for Caddy) |
 | Status page itself | HTTP(s) | `https://<label>-status.<parent>/status/shimpaku` | 200 |
+| Campus network | HTTP(s) – keyword, 20 s, no retries | `https://<label>-app.<parent>/api/public/health` | body contains `"campus":"healthy"` |
+| Fabric network | HTTP(s) – keyword, 20 s, no retries | the same URL | body contains `"fabric":"healthy"` |
+| No fault drill running | HTTP(s) – keyword, 20 s, no retries | the same URL | body contains `"drill":"idle"` |
 | TLS expiry | HTTP(s) with certificate expiry notification | `https://<label>-app.<parent>/` | alert at 14 days (the Cloudflare edge certificate; check the origin's with `curl --resolve` from the VPS) |
+
+### Virga live: the "Live lab" group (red on purpose during a fault drill)
+
+With `SHIMPAKU_VIRGA_LIVE=1` on the lab (`ops/golive/run.sh lab-config` sets it), the operator can inject a
+catalogued fault into the real devices from the dashboard's Fault lab (`docs/build/virga-live.md`). Three
+keyword monitors on the daemon's anonymous `GET /api/public/health` make that visible on the public status
+page, in a group named "Live lab":
+
+| Monitor | Keyword | Red when |
+|---|---|---|
+| Campus network | `"campus":"healthy"` | the campus site's latest SLE minute is below goal, a device read fails, or the lab is offline |
+| Fabric network | `"fabric":"healthy"` | the same for the EVPN fabric |
+| No fault drill running | `"drill":"idle"` | a Virga trial is running (injected, held, reverting) |
+
+They check every 20 s with no retries, so an injected fault turns them red within about a minute (the
+check, the endpoint's 10 s cache, then the SLE minute catching up) and green again after the revert is
+verified. Two things to know:
+
+- **No notifications are attached** (`notificationIDList` is empty). Keep it that way: each drill is a
+  deliberate outage of this group and would page you. Its uptime percentage will show those drills.
+- **The keyword is a plain substring of the body.** The daemon's JSON is compact (FastAPI's default:
+  `{"campus":"healthy","fabric":"healthy","drill":"idle","lab":"live"}`). As far as Kuma's source goes it also stringifies a body it
+  parsed as JSON (compactly) before matching, so spacing should not matter either way (confirm on the first run: change
+  nothing, just read the monitors' state); an HTML error page or a `503`
+  never matches, which is the red you want when the lab is down. If a future change makes the backend
+  emit other whitespace *and* Kuma does not normalise, the monitors go red at once, never silently green.
+  A replay (lab down) must report `campus` and `fabric` as `offline`; if it ever says `healthy`, the
+  monitors would stay green while the lab is off, so check `GET /api/public/health` while the lab is stopped.
+
+Create or update the group and monitors with the script (idempotent: it creates what is missing, brings
+an existing monitor to these settings with Kuma's own edit call, and sends nothing when nothing differs):
+
+```bash
+ops/golive/run.sh kuma     # from the Mac, on NetBird: KUMA_CREDS file (user, then password), KUMA_URL optional
+# or by hand, with the admin account in the environment (never on the command line):
+cd scripts && npm ci --omit=dev
+KUMA_URL=http://<vps netbird ip>:3001 KUMA_USER=... KUMA_PASS=... \
+  node kuma_setup.mjs --app https://<label>-app.<parent> https://<domain>/ https://<label>-app.<parent>/ https://<label>-status.<parent>/status/shimpaku
+```
+
+It makes two monitor groups, "Website" (the HTTP monitors named after their URLs) and "Live lab" (the three
+keyword monitors), and publishes the status page `shimpaku` with those two groups; its description says that
+the Live lab goes red during a live drill, on purpose. Without `--app` the Live lab group is left alone.
+Kuma's admin UI is on the VPS's NetBird address (`network_mode: host`, firewall: tunnel interface only), so
+the script needs no SSH tunnel but the Mac must be on NetBird.
 
 ## First deploy
 

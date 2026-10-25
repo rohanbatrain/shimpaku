@@ -88,6 +88,48 @@ validation, added a test that fails on the old code, and wrote it up."*
 > write path: proposal, guardrails, human approval, lock, `commit confirmed`, validation. And
 > the README lists what I deliberately didn't build, and why."
 
+## A live fault drill (Virga live, 5 minutes)
+
+The strongest version of "break it": a real fault from the benchmark's catalogue, injected from the dashboard,
+visible on every surface, reverted and proved. Needs `SHIMPAKU_VIRGA_LIVE=1` on the lab (`docs/GO-LIVE.md`),
+the operator's password and authenticator, and the public status page open on a second screen or tab. The
+dashboard's Fault lab is read-only for everyone else, so you can show it to the room before you sign in.
+
+**Before (off camera):** open the status page and the landing page in their own tabs; both should be green
+and the strip should not say "fault drill". Check the lab is quiet: Overview shows 7 of 7 devices, no open
+incident, and the Fault lab says it is idle (not "needs recovery": press **Recover** if it does).
+
+1. **Sign in** as the operator (side menu, password, then the 6-digit code). Say: *"Anyone can watch this page;
+   only my session, with a second factor, can inject. A token or an agent cannot."*
+2. **Open Fault lab.** Point at the catalogue: each fault was injected and reverted by the self-test on these
+   devices (80/80); latent ones are labelled "no user impact". Pick **FAB-01** (a fabric link fault on leaf1).
+   Leave the hold at 180 s. Say: *"It goes in as `commit confirmed`. If my daemon died now, the device would
+   roll itself back."*
+3. **Inject.** The phase timeline runs preflight, inject, verify injected (an independent probe, not the
+   system under test), then hold. Point at the countdown and the runner's log.
+4. **Show it landing**, while the hold runs (about 3 minutes):
+   - **Topology:** the leaf1 node and its link carry the "fault injected" mark and turn red as telemetry and
+     BFD notice.
+   - **Theatre:** the "Fault injected" stage fills in, then the probe dip and the incident, each with its time.
+   - **The status page:** within a minute "No fault drill running" and the Fabric network monitor turn red.
+     Say: *"That is a public page. It is red because of a fault I put there, on purpose."* The landing page's
+     strip says "Fault drill running: FAB-01 — hold".
+5. **Revert.** Press **Revert now** (or let the hold run out). Phases: revert, verify reverted, done. The
+   verdict reads pass, with the time to effect and the time to restore.
+6. **Show verified.** The Fault lab's history row says what was proved: the fault verified, the revert
+   verified including a line-for-line comparison against the pre-inject config. The status page returns to
+   green within a minute.
+7. **The audit row.** Audit (or Admin → Audit): the `virga_inject` and `virga_revert` rows, with scenario,
+   nodes, outcome and role, then verify the chain. Say: *"Same audit rule as every other write: hash-chained,
+   and my own actions are in it."*
+8. **Sign out.**
+
+If something is off: **Fault lab says needs recovery** after a daemon restart mid-trial, so press **Recover**
+(or `virga recover` on the lab host) and wait for green before presenting. **Inject answers "busy" or
+"lease held"**: a trial, a CLI run or a tester's lease holds the lab; wait or end it. **The status page does not
+go red**: check the page's "Live lab" group exists (`ops/golive/run.sh kuma`); the monitors check every 20 s. **Never
+leave a drill running when you finish**: press **Revert now** and wait for verified.
+
 ## Presenter mode and the Junos console
 
 Signed in as the operator, press **Presenter mode** in the top bar: the dashboard switches to the

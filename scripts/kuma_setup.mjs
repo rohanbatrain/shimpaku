@@ -18,8 +18,8 @@
 // Credentials come from the environment (never argv), and nothing secret is printed.
 //
 // The keyword is a plain substring of the response body. The daemon's JSON is compact (FastAPI's
-// default: {"campus":"healthy",...}), and Kuma re-serialises a body it parsed as JSON compactly before
-// matching, so spacing in the backend's output does not matter; a non-JSON body (an HTML error page
+// default: {"campus":"healthy",...}), so the keywords match as written. As far as Kuma's source goes it also
+// stringifies a body it parsed as JSON (compactly) before matching, so spacing should not matter; a non-JSON body (an HTML error page
 // from the edge) never contains the keyword, which is the red you want.
 import { io } from "socket.io-client";
 
