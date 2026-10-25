@@ -3,10 +3,11 @@
 // creates what is missing and brings what exists to the desired settings (only when they differ).
 //
 //   KUMA_URL=http://127.0.0.1:3001 KUMA_USER=... KUMA_PASS=... \
-//     node kuma_setup.mjs [--app <app-url>] <url> [<url> ...]
+//     node kuma_setup.mjs [--app <app-url>] [--group <name>] <url> [<url> ...] [--group <name> <url> ...]
 //
 //   <url> ...     the website monitors (HTTP, status 2xx): landing page, dashboard, status page.
-//                 They go in the group "Website" on the status page.
+//   --group <name>  the status-page group for the URLs after it (one per domain, e.g. "Example (host)").
+//                 URLs before any --group go in the group "Website". A "Website" group left empty is removed.
 //   --app <url>   the dashboard's base URL (or KUMA_APP_URL). Adds the group "Live lab": three keyword
 //                 monitors on <url>/api/public/health (docs/build/virga-live.md §2) that turn red while
 //                 a Virga fault drill is running, and green again after the revert:
@@ -27,13 +28,15 @@ const URL = process.env.KUMA_URL || "http://127.0.0.1:3001";
 const USER = process.env.KUMA_USER, PASS = process.env.KUMA_PASS;
 const SLUG = process.env.KUMA_SLUG || "shimpaku";
 
-const targets = [];
-let appUrl = process.env.KUMA_APP_URL || "";
+const GROUP_WEBSITE = "Website", GROUP_LIVE = "Live lab";
+const targets = [];   // { group, url }
+let appUrl = process.env.KUMA_APP_URL || "", current = GROUP_WEBSITE;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   if (argv[i] === "--app") appUrl = argv[++i] || "";
   else if (argv[i].startsWith("--app=")) appUrl = argv[i].slice(6);
-  else targets.push(argv[i]);
+  else if (argv[i] === "--group") current = argv[++i] || GROUP_WEBSITE;
+  else targets.push({ group: current, url: argv[i] });
 }
 appUrl = appUrl.replace(/\/+$/, "");
 if (!USER || !PASS || targets.length === 0) {
@@ -41,7 +44,6 @@ if (!USER || !PASS || targets.length === 0) {
   process.exit(2);
 }
 
-const GROUP_WEBSITE = "Website", GROUP_LIVE = "Live lab";
 const LIVE = [
   { name: "Campus network", keyword: '"campus":"healthy"' },
   { name: "Fabric network", keyword: '"fabric":"healthy"' },
@@ -55,6 +57,9 @@ const call = (ev, ...args) => new Promise((res, rej) => {
 });
 let monitors = {};
 s.on("monitorList", (m) => { monitors = m || {}; });
+// Kuma 2 also sends incremental changes after an add or edit
+s.on("updateMonitorIntoList", (m) => { Object.assign(monitors, m || {}); });
+s.on("deleteMonitorFromList", (id) => { delete monitors[id]; });
 const fail = (m) => { console.error("FAILED:", m); s.close(); process.exit(1); };
 
 // What a new monitor of each kind starts from (the fields Kuma 2's `add` expects).
@@ -108,14 +113,26 @@ s.on("connect", async () => {
       return r.monitorID;
     };
 
-    // Website: the HTTP monitors, named by their host.
-    const websiteId = await group(GROUP_WEBSITE);
-    const website = [];
-    for (const url of targets) {
-      const name = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
-      website.push(await ensure({ name, parent: websiteId }, base({ type: "http", url })));
+    // Website groups (one per --group, in order): the HTTP monitors, named by their host.
+    const groups = [];
+    for (const g of [...new Set(targets.map((t) => t.group))]) {
+      const gid = await group(g);
+      const ids = [];
+      for (const { url } of targets.filter((t) => t.group === g)) {
+        const name = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+        ids.push(await ensure({ name, parent: gid }, base({ type: "http", url })));
+      }
+      groups.push({ name: g, monitorList: ids.map((id) => ({ id })) });
     }
-    const groups = [{ name: GROUP_WEBSITE, monitorList: website.map((id) => ({ id })) }];
+    // the default group from an earlier run, now that its monitors moved to per-domain groups
+    const old = Object.values(monitors).find((m) => m.name === GROUP_WEBSITE && m.type === "group");
+    if (old && !groups.some((g) => g.name === GROUP_WEBSITE)) {
+      await new Promise((r) => setTimeout(r, 1500)); // monitorList refreshes after the edits
+      if (!Object.values(monitors).some((m) => m.parent === old.id)) {
+        const r = await call("deleteMonitor", old.id);
+        console.log(r?.ok ? `group removed: ${GROUP_WEBSITE} (empty)` : `group ${GROUP_WEBSITE} left: ${r?.msg}`);
+      }
+    }
 
     // Live lab: keyword monitors on the daemon's anonymous health endpoint, via the public edge.
     if (appUrl) {

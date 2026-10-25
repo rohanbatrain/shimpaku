@@ -143,7 +143,11 @@ step_kuma() {
   local d slug="${KUMA_SLUG:-shimpaku}" sites=()
   # bare host URLs: the monitor names (the URL without scheme) match the ones already in Kuma; the status
   # host's / redirects to /status/$slug, which the monitor follows
-  for d in $DOMAINS; do sites+=("https://$d" "https://$(sib "$d" app)" "https://$(sib "$d" status)"); done
+  # one status-page group per domain, named from DOMAIN_LABELS ("A (host)|B (host)", same order as DOMAINS)
+  local labels=() i=0; IFS='|' read -r -a labels <<< "${DOMAIN_LABELS:-}"
+  for d in $DOMAINS; do
+    sites+=(--group "${labels[$i]:-$d}" "https://$d" "https://$(sib "$d" app)" "https://$(sib "$d" status)"); i=$((i+1))
+  done
   log "kuma: $url, website monitors for: $DOMAINS; Live lab on https://$(sib "${DOMAINS%% *}" app)"
   # the credentials live only in this one process's environment (never argv, never echoed)
   KUMA_URL="$url" KUMA_USER="$u" KUMA_PASS="$p" KUMA_SLUG="$slug" \
