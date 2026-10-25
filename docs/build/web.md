@@ -13,7 +13,7 @@ Date 2026-10-24. Builder B-web. Binding: `CONTRACT.md` (REST routes, auth flag, 
 | `src/shimpaku/api/__main__.py` | `SHIMPAKU_DEMO=1 python -m shimpaku.api` — API alone, for UI work |
 | `tests/api/test_api.py` | 26 tests: auth off/local, cookie flags http vs https, CSRF (token, Origin, Sec-Fetch-Site), token scopes, tokens never approve/reject/manage tokens, rate limit, service error mapping, assistant stream |
 | `web/` | React 19 + Vite 8 + TypeScript + Grommet 2.58 (own theme, no `grommet-theme-hpe`) + react-router 7 + Recharts 3; Inter and JetBrains Mono from `@fontsource` (self-hosted, bundled) |
-| `docs/screens/` | headless-Chrome screenshots of the **live lab**, 1600×1000 @2x, taken 2026-10-24 |
+| `docs/screens/` | headless-Chrome screenshots of the **live lab**, taken 2026-10-25: `desktop/` (23 files, 1600×1000 @2x) and `mobile/` (24 files, 390×844 @2x, full page cut at 2600 CSS px; `00-navigation-drawer` and `17-junos-console` are viewport shots) |
 
 ## Routes
 
