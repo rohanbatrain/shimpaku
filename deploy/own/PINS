@@ -1,0 +1,19 @@
+# What "Deploy your own" installs, pinned (docs/build/deploy-your-own.md D9). KEY=VALUE, read by
+# install.sh and remote/deploy.sh; nothing else in the installer names a version.
+#
+# Shimpaku daemon + Virga, cloned on the host at this commit. Bump it (and re-test) when main moves;
+# preflight FAILs while the commit is not yet on GitHub.
+SHIMPAKU_REPO=https://github.com/rohanbatrain/shimpaku.git
+SHIMPAKU_COMMIT=e3ccd272e2e5be55b202883c7e3cf15e18e0207d
+# The lab toolchain (ops/lab-*.sh, lab-gen.py, topologies, day-07 fabric generator + deploy.py).
+# Public, but its README grants no licence yet: it is cloned on the visitor's host, never copied here.
+LAB_REPO=https://github.com/rohanbatrain/juniper-7-day-sprint.git
+LAB_COMMIT=3e1cf694208942cce36b0c12f2efb3c65db96d1d
+# gnmic (the collector's gNMI client), the version the telemetry fixtures were recorded with.
+GNMIC_VERSION=0.49.1
+GNMIC_SHA256=6acb96462f7f211904b1eda5ad419e13306307344e26fe98284f8ffb52d6a02a
+# uv builds Shimpaku's venv with its own Python 3.12 (pyproject: requires-python >= 3.12).
+UV_VERSION=0.12.7
+UV_SHA256=788f18abea7c5f55d6216e4f5613fd89d4d59b631efeec117b2b07fe72f1da21
+# The vJunos release the lab and these configs were tested with (images are the visitor's own, D5).
+VJUNOS_TESTED=26.2R1.7

@@ -9,7 +9,8 @@ system except the manifest file it is pointed at.
                        < facts                     preflight verdict; exit 0 pass, 1 warn, 2 fail
     ownlib.py plan --profile full                  the resource lines of the plan
     ownlib.py topologies --profile full            topology stems, one per line
-    ownlib.py nodes --profile full                 "<node> <mgmt ip> <topology>" lines
+    ownlib.py nodes --profile full                 "<node> <mgmt ip> <topology> <kind>" lines
+    ownlib.py bridges --profile P | --topology T   the lab bridges, one per line
     ownlib.py manifest-add P KIND NAME [k=v ...]   record one created thing (idempotent, atomic)
     ownlib.py manifest-has P KIND NAME             exit 0 when recorded
     ownlib.py manifest-list P [--reverse]          "KIND<TAB>NAME<TAB>{json extra}" lines
@@ -540,7 +541,8 @@ def main(argv):
             print("%s %s %s %s" % (n, mgmt, topo, kind))
         return 0
     if cmd == "bridges":
-        print("\n".join(bridges(_opt(rest, "--profile", "full"))))
+        t = _opt(rest, "--topology")
+        print("\n".join(TOPOLOGIES[t]["bridges"] if t else bridges(_opt(rest, "--profile", "full"))))
         return 0
     if cmd == "manifest-add":
         path, kind, name = rest[0], rest[1], rest[2]
