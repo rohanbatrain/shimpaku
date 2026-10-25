@@ -33,7 +33,7 @@ def fresh_facts(**over):
         "mem_available_kib": str(60 * 1024 * 1024), "threads": "32",
         "disk_path": "/home", "disk_free_kib": str(500 * 1024 * 1024), "data_dir": "/home/lab", "data_dir_exists": "no",
         "virsh_access": "yes", "lab_domains": "", "lab_domains_running": "", "other_vms_running": "0", "lab_networks": "",
-        "lab_links": "", "nft_readable": "yes", "nft_tables": "inet filter", "routes": "192.168.1.0/24",
+        "lab_links": "", "nft_readable": "yes", "nft_tables": "inet filter", "routes": "198.51.100.0/24",
         "port_8780": "no", "hv_stacks": "", "pkg_mgr": "apt", "missing_tools": "", "python3_version": "3.11.2",
         "ntp_sync": "yes", "github": "yes", "pypi": "yes", "operator": "shimpaku", "operator_exists": "no",
         "operator_group_exists": "no", "pins_published": "yes",
@@ -93,7 +93,7 @@ def test_overlap():
     assert ownlib.overlaps(["10.99.0.0/24"], mg) == [("10.99.0.0/24", "10.99.0.0/24")]
     assert ownlib.overlaps(["10.0.0.0/8"], mg)                      # a wide VPN route covers it
     assert ownlib.overlaps(["10.99.0.128/25"], mg)
-    assert not ownlib.overlaps(["10.98.0.0/16", "192.168.1.0/24", "192.168.1.1", "default", "", "fe80::/64", "junk"], mg)
+    assert not ownlib.overlaps(["10.98.0.0/16", "198.51.100.0/24", "198.51.100.1", "default", "", "fe80::/64", "junk"], mg)
     assert ownlib.overlaps(["10.0.5.0/24"], ownlib.DEVICE_SUBNETS) == [("10.0.5.0/24", "10.0.0.0/16")]
 
 
