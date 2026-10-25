@@ -146,7 +146,7 @@ step_kuma() {
   # one status-page group per domain, named from DOMAIN_LABELS ("A (host)|B (host)", same order as DOMAINS)
   local labels=() i=0; IFS='|' read -r -a labels <<< "${DOMAIN_LABELS:-}"
   for d in $DOMAINS; do
-    sites+=(--group "${labels[$i]:-$d}" --status-host "$(sib "$d" status)" "https://$d" "https://$(sib "$d" app)" "https://$(sib "$d" status)"); i=$((i+1))
+    sites+=(--group "${labels[$i]:-$d}" --status-host "$(sib "$d" status)" "https://$d" "https://$(sib "$d" app)" "https://$(sib "$d" status)" "https://$d/install.sh"); i=$((i+1))
   done
   log "kuma: $url, website monitors for: $DOMAINS; Live lab on https://$(sib "${DOMAINS%% *}" app)"
   # the credentials live only in this one process's environment (never argv, never echoed)
