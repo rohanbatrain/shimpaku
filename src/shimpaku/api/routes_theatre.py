@@ -6,7 +6,8 @@ stages: fault injected → probe dip → incident → proposed → guardrails �
 confirmed leg → fresh-session health check → confirm commit → validation window → verified or
 recurred.
 
-Honesty: every stage time is a stored timestamp: the ``demo_break`` audit row, the SLE minute,
+Honesty: every stage time is a stored timestamp: the ``demo_break`` audit row (or a Virga drill's
+``virga_inject`` row that changed a device, docs/build/virga-live.md D8), the SLE minute,
 the incident's ``opened_at``, the action's ``created`` / timeline / commit records and its
 validation window. A stage that has no record is ``pending`` (not yet) or ``skipped`` (it did not
 happen, e.g. no incident opened), never estimated. Nothing is simulated here; demo mode gets its
@@ -82,11 +83,16 @@ def _note(tl: list, prefix: str) -> dict | None:
     return next((t for t in tl if str(t.get("note") or "").startswith(prefix)), None)
 
 
+BREAK_TOOLS = ("demo_break", "virga_inject")
+
+
 def break_rows(audit: dict) -> list[dict]:
-    """``demo_break`` audit rows that changed the device, newest first: ``{t, by_role, by_kind}``."""
+    """``demo_break`` and ``virga_inject`` audit rows that changed a device, newest first:
+    ``{t, by_role, by_kind}`` plus, for a Virga drill, ``virga: {scenario, nodes}``."""
     out = []
     for r in (audit or {}).get("rows") or []:
-        if not isinstance(r, dict) or (r.get("tool") or r.get("method")) != "demo_break":
+        tool = (r.get("tool") or r.get("method")) if isinstance(r, dict) else None
+        if tool not in BREAK_TOOLS:
             continue
         status = r.get("status") or r.get("result_status")
         if status != "changed":
@@ -95,7 +101,12 @@ def break_rows(audit: dict) -> list[dict]:
         if t is None:
             continue
         actor = r.get("actor") if isinstance(r.get("actor"), dict) else {}
-        out.append({"t": t, "by_role": actor.get("role"), "by_kind": actor.get("kind")})
+        b = {"t": t, "by_role": actor.get("role"), "by_kind": actor.get("kind")}
+        if tool == "virga_inject":
+            args = r.get("args") if isinstance(r.get("args"), dict) else {}
+            b["virga"] = {"scenario": _scrub(args.get("scenario") or "?", 16),
+                          "nodes": [_scrub(n, 32) for n in args.get("nodes") or [] if isinstance(n, str)][:8]}
+        out.append(b)
     return sorted(out, key=lambda b: -b["t"])
 
 
@@ -160,7 +171,11 @@ def build_run(a: dict | None, breaks: list[dict], prev_created: float | None, *,
 
     start = brk["t"] if brk else created
     end_t = _first(tl, status) if status in ENDED else None
-    if brk:
+    if brk and brk.get("virga"):
+        v = brk["virga"]
+        done("break", brk["t"], f"Virga fault drill {v['scenario']} on {', '.join(v['nodes']) or 'the lab'} "
+                                f"(injected by {brk.get('by_role') or 'someone'})")
+    elif brk:
         who = brk.get("by_role") or "someone"
         done("break", brk["t"], f"VLAN 999 removed from sw1 ge-0/0/5 (demo break by {who}"
                                 f"{' over ' + brk['by_kind'] if brk.get('by_kind') else ''})")
@@ -300,7 +315,9 @@ def router(call: Callable[..., Awaitable[Any]], reader: Callable[..., Any]) -> A
 
     async def build(action_id: str | None, visitor: bool) -> dict:
         acts = await fixture_actions()
-        audit = await soft("audit_query", tool="demo_break", limit=200) or {}
+        audits = await asyncio.gather(*(soft("audit_query", tool=t, limit=200) for t in BREAK_TOOLS))
+        audit = {"rows": [r for a in audits for r in (a or {}).get("rows") or []],
+                 **({"demo": True} if any((a or {}).get("demo") for a in audits) else {})}
         breaks = break_rows(audit)
         a = None
         if action_id:

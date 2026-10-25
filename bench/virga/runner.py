@@ -1,7 +1,11 @@
-"""One trial: preflight -> inject -> verify_injected -> [agent window] -> revert -> verify_reverted.
+"""One trial: preflight -> inject -> verify_injected -> [agent window | hold] -> revert -> verify_reverted.
 
 Self-test (no agent window) proves that each catalogued fault actually happens and actually goes away.
 Bench mode adds the agent window, decoys, the B0b capture and remediation verification.
+Demo mode (the daemon's live fault lab, `shimpaku.virga_live`) is self-test plus a hold: the verified
+fault stays in until `Context.revert_now` is set or `hold_s` runs out, then the normal revert. Every
+demo inject is `commit confirmed` with a TTL of at least ceil(hold_s / 60) + 3 minutes (D5), so a
+daemon that dies mid-hold leaves devices that roll themselves back.
 
 Inject modes (REVIEW A1):
   confirmed  each inject commit is `commit confirmed <ttl>` (dead man's switch). Self-test and run A.
@@ -15,10 +19,13 @@ from __future__ import annotations
 
 import contextlib
 import difflib
+import math
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Callable
 
 from virga import RUN_SCHEMA
 from virga.adapters import Adapter
@@ -48,13 +55,40 @@ class Context:
     lab: Lab
     cat: Catalogue
     journal: Journal
-    mode: str = "selftest"            # selftest | bench
+    mode: str = "selftest"            # selftest | bench | demo
     inject_mode: str = "confirmed"    # confirmed | plain
     adapter: Adapter = field(default_factory=Adapter)
     decoys: DecoyGen | None = None
     b0b: bool = False
     b0b_delay_s: float = 60.0
     incidents_b0b: list = field(default_factory=list)
+    # demo mode: the hold, the operator's "revert now", and a progress callback. on_event gets a dict
+    # at every phase start/end ({"type": "phase", "name", "status", "detail", ...}), every log line
+    # ({"type": "log", "msg"}) and the verdict ({"type": "done"}); it must not raise (errors are dropped)
+    hold_s: float = 180.0
+    revert_now: threading.Event = field(default_factory=threading.Event)
+    on_event: Callable[[dict], None] | None = None
+
+
+def demo_ttl_min(hold_s: float) -> int:
+    """D5: the inject's commit-confirmed TTL outlives the hold by at least three minutes."""
+    return math.ceil(hold_s / 60) + 3
+
+
+def emit(ctx: Context, **ev) -> None:
+    if ctx.on_event is None:
+        return
+    with contextlib.suppress(Exception):
+        ctx.on_event({"t": time.time(), **ev})
+
+
+def say(ctx: Context, msg: str) -> None:
+    log(msg)
+    emit(ctx, type="log", msg=msg.strip())
+
+
+def mark(ctx: Context, name: str, status: str, detail: str = "", **extra) -> None:
+    emit(ctx, type="phase", name=name, status=status, detail=detail, **extra)
 
 
 def config_diff(before: list[str], after: list[str]) -> list[str]:
@@ -71,7 +105,10 @@ def run_steps(ctx: Context, steps: list[dict], phase: str, ttl_min: int, auto_wa
             j = st["junos"]
             if phase == "inject":
                 plain = ctx.inject_mode == "plain" and "ttl_min" not in j
-                out.append(lab.commit(j["node"], j["lines"], None if plain else int(j.get("ttl_min", ttl_min))))
+                ttl = int(j.get("ttl_min", ttl_min))
+                if ctx.mode == "demo":  # D5: confirmed, and never shorter than the hold needs
+                    plain, ttl = False, max(ttl, ttl_min)
+                out.append(lab.commit(j["node"], j["lines"], None if plain else ttl))
             else:
                 out.append(lab.commit(j["node"], j["lines"], REVERT_CONFIRM_MIN, confirm_after=True))
         elif "flap" in st:
@@ -184,27 +221,58 @@ def agent_window(ctx: Context, sc: dict, key: str, t_ref: float, hold_s: float, 
             "decoys": decoy_log, "applied_decoys": applied, "window_s": round(time.time() - t_ref, 1)}
 
 
+def hold_window(ctx: Context, fault_probes: list[dict], healthy_probes: list[dict], poll_s: float) -> dict:
+    """Demo mode: the verified fault stays in until the operator sets `ctx.revert_now` or `hold_s`
+    runs out. The fault probes are sampled every `poll_s` to record whether the fault is still there;
+    if it went away and the healthy probes agree, something else fixed it (`t_fix_verified`)."""
+    t0 = time.time()
+    t_end = t0 + ctx.hold_s
+    samples, present, last, t_fix, ended = 0, 0, None, None, "timeout"
+    while True:
+        left = t_end - time.time()
+        if left <= 0:
+            break
+        if ctx.revert_now.wait(min(poll_s, left)):
+            ended = "operator"
+            break
+        last, _ = sample(ctx.lab, fault_probes, "faulted")
+        samples += 1
+        present += last
+        if not last and t_fix is None and healthy_probes and sample(ctx.lab, healthy_probes, "healthy")[0]:
+            t_fix = time.time()
+            say(ctx, f"    hold: the fault is gone and the healthy probes agree after {t_fix - t0:.0f} s")
+    return {"hold_s": ctx.hold_s, "ended_by": ended, "elapsed_s": round(time.time() - t0, 1), "samples": samples,
+            "fault_present_samples": present, "fault_present_at_end": last, "t_fix_verified": t_fix}
+
+
 def execute(ctx: Context, sc: dict, intensity: dict | None = None, hold_s: float | None = None,
             trial_id: str | None = None) -> dict:
     lab, cat = ctx.lab, ctx.cat
+    demo = ctx.mode == "demo"
     key = trial_id or f"{sc['id']}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')}-{uuid.uuid4().hex[:4]}"
     env = scenario_env(cat.lab, sc, intensity)
     probes = expand_probes(cat.lab, sc, env)
     inject, revert = subst(sc["inject"], env), subst(sc["revert"], env)
     tm = timing(cat.lab, sc)
+    if demo:
+        tm["inject_ttl_min"] = max(int(tm["inject_ttl_min"]), demo_ttl_min(ctx.hold_s))
     nodes = touched_nodes(inject) + [n for n in touched_nodes(revert) if n not in touched_nodes(inject)]
     write_nodes = [n for n in nodes if any(n == s.get(k, {}).get("node") for s in inject + revert
                                            for k in ("junos", "junos_op", "flap"))]
     has_auto = any("auto" in s for s in revert)
-    inject_mode = "confirmed" if has_auto else ctx.inject_mode
+    inject_mode = "confirmed" if has_auto or demo else ctx.inject_mode
     rec = {"schema": RUN_SCHEMA, "trial_id": key, "mode": ctx.mode, "inject_mode": inject_mode,
            "scenario": sc["id"], "title": sc["title"], "layer": sc["layer"], "intensity": intensity_of(sc, env),
            "nodes_touched": nodes, "t_start": iso(), "host_load_1m": host_load(), "phases": {},
            "catalogue_sha256": cat.sha256, "holdout": sc["id"] in cat.holdout_ids,
            "ground_truth": sc["ground_truth"], "expect_inject_rejected": bool(sc.get("expect_inject_rejected"))}
-    log(f"=== {sc['id']} {sc['title']}  trial {key}  ({inject_mode})")
+    if demo:
+        rec["hold_s"] = ctx.hold_s
+    later = ["inject", "verify_injected"] + (["hold"] if demo else []) + ["revert", "verify_reverted"]
+    say(ctx, f"=== {sc['id']} {sc['title']}  trial {key}  ({inject_mode})")
 
     # 1 preflight: healthy baseline, nothing pending on a touched node
+    mark(ctx, "preflight", "running")
     pend = {n: lab.pending(n) for n in nodes}
     pre = poll(lab, probes, "healthy", tm["preflight_timeout_s"], tm["poll_s"], 1)
     pre["pending_commits"] = pend
@@ -212,16 +280,22 @@ def execute(ctx: Context, sc: dict, intensity: dict | None = None, hold_s: float
     if not pre["ok"] or any(pend.values()):
         rec["verdict"] = "blocked: baseline not healthy" if not pre["ok"] else "blocked: commit pending"
         rec["t_end"] = iso()
-        log(f"    {rec['verdict']}: " + "; ".join(f"{r['probe']}={r['value']}" for r in pre["values"] if r["ok"] is False))
+        say(ctx, f"    {rec['verdict']}: " + "; ".join(f"{r['probe']}={r['value']}" for r in pre["values"] if r["ok"] is False))
+        mark(ctx, "preflight", "failed", rec["verdict"][len("blocked: "):])
+        for name in later:
+            mark(ctx, name, "skipped", "nothing injected: the baseline check failed")
+        emit(ctx, type="done", verdict=rec["verdict"])
         return rec
+    mark(ctx, "preflight", "ok", f"baseline healthy: {len(probes)} probes in {pre['elapsed_s']} s")
 
     hold = contextlib.ExitStack()
     saved_mode = ctx.inject_mode
     ctx.inject_mode = inject_mode
     try:
+        mark(ctx, "inject", "running")
         hold.enter_context(lab.leased(write_nodes, check_pending=True))
         snapshot = {n: lab.config_lines(n) for n in nodes}
-        log(f"    preflight ok ({pre['elapsed_s']} s); lease {write_nodes}; snapshot "
+        say(ctx, f"    preflight ok ({pre['elapsed_s']} s); lease {write_nodes}; snapshot "
             + ", ".join(f"{n}={len(v)} lines" for n, v in snapshot.items()))
 
         # 2 inject -- journaled BEFORE the first commit
@@ -238,17 +312,24 @@ def execute(ctx: Context, sc: dict, intensity: dict | None = None, hold_s: float
             ctx.journal.update(key, t_ref=iso(t_ref))
             if sc.get("expect_inject_rejected"):
                 raise RuntimeError("inject was expected to be rejected but committed")
-            log(f"    injected: {len(commits)} commit(s), "
+            say(ctx, f"    injected: {len(commits)} commit(s), "
                 + ", ".join(f"{s['node']} {s.get('commit_s', '-')} s" for s in commits))
+            mark(ctx, "inject", "ok", f"{len(commits)} commit(s) on {', '.join(dict.fromkeys(s['node'] for s in commits))}"
+                 + (f", commit confirmed {tm['inject_ttl_min']} min" if inject_mode == "confirmed" and commits else ""),
+                 changed=bool(commits), t_ref=t_ref)
         except Exception as e:
             rejected = bool(sc.get("expect_inject_rejected")) and "expected to be rejected" not in str(e)
             rec["phases"]["inject"] = {"ok": rejected, "rejected": rejected,
                                        "error": f"{type(e).__name__}: {str(e)[:400]}"}
-            log(f"    inject {'rejected as expected' if rejected else 'FAILED'}: {type(e).__name__}: {str(e)[:160]}")
+            say(ctx, f"    inject {'rejected as expected' if rejected else 'FAILED'}: {type(e).__name__}: {str(e)[:160]}")
+            mark(ctx, "inject", "ok" if rejected else "failed",
+                 "the device refused the change, as expected" if rejected else f"failed: {type(e).__name__}",
+                 changed=False, rejected=rejected, error=type(e).__name__)
 
         # 3 verify injected
         fault_probes = [p for p in probes if "faulted" in p]
         if rec["phases"]["inject"]["ok"] and not rec["phases"]["inject"].get("rejected"):
+            mark(ctx, "verify_injected", "running")
             fast = [p for p in fault_probes if p.get("ttd")]
             vi: dict = {}
             if fast:
@@ -261,23 +342,51 @@ def execute(ctx: Context, sc: dict, intensity: dict | None = None, hold_s: float
                 vi["time_to_effect_s"] = round(full["t_first_ok"] - t_ref, 2)
             vi["observed"] = sample(lab, [p for p in probes if "faulted" not in p and not p.get("guard")], None)[1]
             rec["phases"]["verify_injected"] = vi
-            log(f"    verify_injected {'OK' if vi['ok'] else 'FAILED'}  time_to_effect={vi.get('time_to_effect_s')} s; "
+            say(ctx, f"    verify_injected {'OK' if vi['ok'] else 'FAILED'}  time_to_effect={vi.get('time_to_effect_s')} s; "
                 + "; ".join(f"{r['probe']}={r['value']}" for r in full["values"]))
+            mark(ctx, "verify_injected", "ok" if vi["ok"] else "failed",
+                 f"fault confirmed by {len(fault_probes)} probe(s), time to effect {vi.get('time_to_effect_s')} s"
+                 if vi["ok"] else "the fault did not show on its probes in time; reverting",
+                 time_to_effect_s=vi.get("time_to_effect_s"))
             if ctx.mode == "bench" and vi["ok"]:
                 if inject_mode == "plain":
                     hold.close()  # run B: the system under test may write; the pending check protects run A
                 rec["phases"]["agent"] = agent_window(ctx, sc, key, t_ref, hold_s or tm["detect_budget_s"], probes,
                                                       nodes, [p for p in fault_probes if "healthy" in p] or
                                                       [p for p in probes if p.get("guard")])
+            if demo:
+                if vi["ok"]:
+                    mark(ctx, "hold", "running", f"fault held for up to {ctx.hold_s:.0f} s",
+                         hold_until=time.time() + ctx.hold_s)
+                    h = hold_window(ctx, fault_probes, [p for p in fault_probes if "healthy" in p] or
+                                    [p for p in probes if p.get("guard")], tm["poll_s"])
+                    rec["phases"]["hold"] = h
+                    say(ctx, f"    hold ended by {h['ended_by']} after {h['elapsed_s']} s; fault present in "
+                        f"{h['fault_present_samples']}/{h['samples']} samples")
+                    mark(ctx, "hold", "ok", f"ended by {'the operator' if h['ended_by'] == 'operator' else 'the timer'} "
+                         f"after {h['elapsed_s']:.0f} s; fault present in {h['fault_present_samples']} of "
+                         f"{h['samples']} samples", ended_by=h["ended_by"])
+                else:
+                    mark(ctx, "hold", "skipped", "the fault was not verified; reverting now")
         elif rec["phases"]["inject"].get("rejected"):
             # nothing must have changed: an unchanged config is the "faulted" evidence
+            mark(ctx, "verify_injected", "running")
             after = {n: lab.config_lines(n) for n in nodes}
             same = all(not config_diff(snapshot[n], after[n]) for n in nodes)
             rec["phases"]["verify_injected"] = {"ok": same, "config_unchanged": same, "time_to_effect_s": None}
-            log(f"    verify_injected {'OK' if same else 'FAILED'}  config unchanged after rejection: {same}")
+            say(ctx, f"    verify_injected {'OK' if same else 'FAILED'}  config unchanged after rejection: {same}")
+            mark(ctx, "verify_injected", "ok" if same else "failed",
+                 "configuration unchanged after the rejection" if same else "configuration changed after the rejection")
+            if demo:
+                mark(ctx, "hold", "skipped", "the change was rejected: nothing to hold")
+        else:
+            mark(ctx, "verify_injected", "skipped", "the inject failed")
+            if demo:
+                mark(ctx, "hold", "skipped", "the inject failed")
 
         # 4 revert (always) and 5 verify reverted
         try:
+            mark(ctx, "revert", "running")
             if inject_mode == "plain" and ctx.mode == "bench":
                 rec["phases"]["pre_revert_pending"] = wait_no_pending(lab, nodes, 600)
             hold.enter_context(lab.leased(write_nodes, check_pending=False))
@@ -287,6 +396,9 @@ def execute(ctx: Context, sc: dict, intensity: dict | None = None, hold_s: float
                 if rec["phases"]["inject"].get("steps") or not rec["phases"]["inject"]["ok"] else []
             t_rev = max([s.get("t_commit", 0) for s in rsteps], default=0) or time.time()
             rec["phases"]["revert"] = {"ok": True, "steps": rsteps, "decoys_reverted": dsteps}
+            mark(ctx, "revert", "ok", f"{sum(1 for s in rsteps if s.get('changed'))} commit(s)"
+                 + (", waiting for the device's own rollback" if auto_wait else ""))
+            mark(ctx, "verify_reverted", "running")
             budget = tm["revert_timeout_s"] + (60 * tm["inject_ttl_min"] + 120 if auto_wait else 0)
             if auto_wait:
                 budget = tm["revert_timeout_s"] + 60 * max(
@@ -301,16 +413,27 @@ def execute(ctx: Context, sc: dict, intensity: dict | None = None, hold_s: float
             vr["config_lines_compared"] = {n: len(snapshot[n]) for n in nodes}
             vr["pending_commits"] = {n: lab.pending(n) for n in nodes}
             rec["phases"]["verify_reverted"] = vr
-            log(f"    verify_reverted {'OK' if vr['ok'] else 'FAILED'}  time_to_restore={vr.get('time_to_restore_s')} s; "
+            say(ctx, f"    verify_reverted {'OK' if vr['ok'] else 'FAILED'}  time_to_restore={vr.get('time_to_restore_s')} s; "
                 f"config_restored={vr['config_restored']} ({sum(vr['config_lines_compared'].values())} lines) "
                 f"pending={vr['pending_commits']}")
             if vr["config_diff"]:
-                log(f"    RESIDUE: {vr['config_diff']}")
-            if vr["ok"] and vr["config_restored"] and not any(vr["pending_commits"].values()):
+                log(f"    RESIDUE: {vr['config_diff']}")  # config lines: printed, never sent to on_event
+                emit(ctx, type="log", msg=f"    RESIDUE on {', '.join(vr['config_diff'])}: the journal keeps {key}")
+            clean = vr["ok"] and vr["config_restored"] and not any(vr["pending_commits"].values())
+            mark(ctx, "verify_reverted", "ok" if clean else "failed",
+                 f"healthy again in {vr.get('time_to_restore_s')} s; configuration identical to the snapshot "
+                 f"({sum(vr['config_lines_compared'].values())} lines)" if clean else
+                 "not proven clean: " + ", ".join(w for w, bad in (
+                     ("probes not healthy", not vr["ok"]), ("config differs", not vr["config_restored"]),
+                     ("commit pending", any(vr["pending_commits"].values()))) if bad),
+                 time_to_restore_s=vr.get("time_to_restore_s"))
+            if clean:
                 ctx.journal.remove(key)
         except Exception as e:
             rec["phases"]["revert"] = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:400]}"}
-            log(f"    REVERT FAILED: {e} -- the journal keeps {key}; run `virga recover`")
+            say(ctx, f"    REVERT FAILED: {e} -- the journal keeps {key}; run `virga recover`")
+            mark(ctx, "revert", "failed", f"failed: {type(e).__name__}; the journal keeps the trial for recovery")
+            mark(ctx, "verify_reverted", "skipped", "the revert failed")
     finally:
         hold.close()
         ctx.inject_mode = saved_mode
@@ -321,7 +444,8 @@ def execute(ctx: Context, sc: dict, intensity: dict | None = None, hold_s: float
                                 and ph.get("revert", {}).get("ok") and vr.get("ok") and vr.get("config_restored")
                                 and not any(vr.get("pending_commits", {}).values())) else "fail"
     rec["t_end"] = iso()
-    log(f"    verdict {rec['verdict'].upper()}")
+    say(ctx, f"    verdict {rec['verdict'].upper()}")
+    emit(ctx, type="done", verdict=rec["verdict"])
     return rec
 
 

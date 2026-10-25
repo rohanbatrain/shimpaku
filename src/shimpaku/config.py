@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     # >= 97 C for 60 s; never stops VMs). Off by default.
     host_sample_s: float = 15.0
     thermal_guard: bool = False
+    # Virga live (docs/build/virga-live.md D7): the operator may inject catalogued faults into the real
+    # devices from the dashboard. Off unless SHIMPAKU_VIRGA_LIVE=1 on the lab; the replay never injects.
+    virga_live: bool = False
     rate_limits: str = "write=30/300,demo=6/30,ask=10/60,mcp=60/600,redeem=10/60,read=120/1200,request=3/20,erase=10/100"
 
     def require_device_password(self) -> str:

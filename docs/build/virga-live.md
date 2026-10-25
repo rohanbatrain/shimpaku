@@ -82,3 +82,39 @@ unambiguous. "degraded" = the site's latest SLE minute is below its goal, or a d
 
 Scored benchmark runs from the dashboard (`plan → run → score` stays a CLI job), non-Junos scenarios,
 multiple concurrent trials, tester access to injection.
+
+## 5. Built (backend, 2026-10-25)
+
+| File | What |
+|---|---|
+| `bench/virga/runner.py` | `Context.mode = "demo"`: `hold_s`, `revert_now` (a `threading.Event`), `on_event` (phase start/end, every log line, the verdict). Hold after `verify_injected` OK, sampling the fault probes every `poll_s` (`t_fix_verified` when something else fixed it). D5: every demo inject is `commit confirmed`, TTL `max(catalogue, ceil(hold_s/60)+3)`, also written to the journal so `virga recover` waits long enough. Self-test and bench paths unchanged. |
+| `src/shimpaku/virga_live.py` | The manager (D1, D6, D9): one trial at a time in a worker thread, holder `virga:live:<role>`, the CLI's journal (`$VIRGA_STORE/journal.json`), private full records in `$VIRGA_STORE/live/live-YYYYMMDD.jsonl`, public summaries in `$VIRGA_PUBLISH/virga-live.json`, the catalogue view, `ReplayVirga`. |
+| `src/shimpaku/api/routes_virga.py` | The §2 routes, mounted in `app.py` with one line. |
+| `src/shimpaku/api/demo_virga.py` | The canned simulated trial (`simulated: true`, about 60 s, hold capped at 35 s). |
+| `src/shimpaku/api/routes_public.py` | `drill` block on `/api/public/summary` (never from its 20 s cache); `/api/public/health`. |
+| `src/shimpaku/api/routes_theatre.py` | `break_rows` accepts `virga_inject` rows with status `changed`. |
+| `src/shimpaku/snapshot_cli.py`, `api/replay` | The snapshot records `/api/virga/trials` and `/api/virga/catalogue`; the replay serves them with `enabled: false`. |
+| `src/shimpaku/config.py`, `daemon.py` | `SHIMPAKU_VIRGA_LIVE` (D7); the daemon loads the catalogue at start when it is on. |
+| `deploy/vps/Caddyfile` | Zone `virga`: 10 POSTs / 10 min per client IP on `/api/virga/*` (D10). |
+| `pyproject.toml` | Console script `virga = "virga.cli:main"`. |
+
+Details the contract left open, as built:
+
+- `phases` lists the six working phases; `done` appears only as the trial's `phase` once it has ended.
+  A trial blocked at preflight has `verdict: "fail"`, preflight `failed`, the rest `skipped`.
+- A finished trial stays in `state.trial` for 10 minutes, then `trial` is `null`; `recent` keeps it.
+- `est_s` is the trial length **without** the hold (self-test medians when published).
+- `impact` is `latent` for FAB-03 and CFG-02 (a scenario `impact:` field would override); CTRL-00 and
+  held-out scenarios are never listed. `hold_s` outside 30–600 s is 422.
+- `needs_recovery` is true whenever the journal holds an entry and no trial is running (ours, or a
+  crashed CLI's). `409` codes: `busy`, `needs_recovery`, `lease_held` (another holder on a node).
+- Rate: `virga` counts every inject attempt, 6/h per principal and 12/h overall; in
+  `SHIMPAKU_RATE_LIMITS`, `virga=a/b` is read **per hour**. Revert and recover spend `write`.
+- Audit: refusals are written by the route (`refused:<code>`); an accepted inject's row is written
+  when its inject phase ends, status `changed`, `no_change`, `rejected`, `blocked` or `error:<type>`.
+- `POST /api/virga/recover` waits at most 60 s for a pending `commit confirmed` (the edge gives a
+  write 100 s); a node still pending is left to roll itself back and the answer is `ok: false`:
+  press *Recover* again after the TTL.
+- `/api/public/health` uses stored reads only: `degraded` = the newest SLE minute below goal (100 %
+  when none is set) or a device of the site with no stored health sample in 10 min; `offline` = every
+  device of the site failing, or neither SLE nor device health readable.

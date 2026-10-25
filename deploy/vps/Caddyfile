@@ -154,6 +154,18 @@
 			window 1m
 		}
 	}
+	# Virga live (docs/build/virga-live.md D10): fault injection into the real devices
+	@virga_write {
+		method POST
+		path /api/virga/*
+	}
+	rate_limit @virga_write {
+		zone virga {
+			key {client_ip}
+			events 10
+			window 10m
+		}
+	}
 	@assistant path /api/assistant /api/assistant/*
 	rate_limit @assistant {
 		zone assistant {
