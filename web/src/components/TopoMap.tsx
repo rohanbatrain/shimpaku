@@ -22,11 +22,11 @@ export const STATE_LABEL: Record<LinkState, string> = { up: "Up", degraded: "Deg
 export const STATE_TONE: Record<LinkState, "ok" | "warn" | "crit" | "neutral"> = { up: "ok", degraded: "warn", down: "crit", unknown: "neutral" };
 
 // hand-tuned positions (viewBox 1040 × 400): campus left, fabric (2-spine / 2-leaf Clos) right
-const POS_WIDE: Record<string, [number, number]> = {
+export const POS_WIDE: Record<string, [number, number]> = {
   r1: [130, 120], r2: [340, 120], sw1: [130, 300],
   spine1: [640, 120], spine2: [900, 120], leaf1: [640, 300], leaf2: [900, 300],
 };
-const SITES_WIDE = [
+export const SITES_WIDE = [
   { id: "campus", label: "Campus", sub: "day-02 · r1 r2 sw1", x: 16, w: 470 },
   { id: "fabric", label: "Fabric", sub: "day-06 · 2-spine / 2-leaf Clos", x: 512, w: 512 },
 ];
@@ -109,10 +109,11 @@ function Flow({ from, to, bps, util, side }: { from: [number, number]; to: [numb
 /** `focus`: highlight these nodes / link ids and dim the rest (blast radius on the root-cause page). */
 export type TopoFocus = { nodes: string[]; links: string[] } | null;
 
-export default function TopoMap({ data, selected, onSelect, compact = false, traffic, onLink, selectedLink, focus = null }: { data: Topo; focus?: TopoFocus; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean; traffic?: TrafficLink[] | null; onLink?: (id: string) => void; selectedLink?: string | null }) {
+export default function TopoMap({ data, selected, onSelect, compact = false, traffic, onLink, selectedLink, focus = null, layout, maxHeight }: { data: Topo; layout?: "wide" | "tall"; maxHeight?: number; focus?: TopoFocus; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean; traffic?: TrafficLink[] | null; onLink?: (id: string) => void; selectedLink?: string | null }) {
   const fcls = (on: boolean) => (focus ? (on ? " focus" : " dim") : "");
   const tmap = new Map((traffic ?? []).map((t) => [t.id, t]));
-  const tall = useTall();
+  const phone = useTall();
+  const tall = layout ? layout === "tall" : phone;
   const POS = tall ? POS_TALL : POS_WIDE;
   const SITES = (tall ? SITES_TALL : SITES_WIDE) as { id: string; label: string; sub: string; x: number; w: number; y?: number }[];
   const nodes = data.nodes.filter((n) => POS[n.name]);
@@ -124,7 +125,7 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect?.(n); }
   };
   return (
-    <svg className={`topo${compact ? " compact" : ""}${tall ? " tall" : ""}`} viewBox={tall ? "0 0 544 784" : "0 0 1040 400"} role="group" aria-label="Lab topology: campus and fabric">
+    <svg className={`topo${compact ? " compact" : ""}${tall ? " tall" : ""}`} viewBox={tall ? "0 0 544 784" : "0 0 1040 400"} style={maxHeight ? { maxHeight } : undefined} role="group" aria-label="Lab topology: campus and fabric">
       <defs>
         <filter id="tshadow" x="-30%" y="-30%" width="160%" height="160%">
           <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#0E1A16" floodOpacity=".14" />

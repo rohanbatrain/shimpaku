@@ -140,3 +140,4 @@
   .pd-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hv-stats dd { font-size: 15px; }
 }
+.twin-iso.topo3d { max-height: 68vh; }

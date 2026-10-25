@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import TopBar from "../components/TopBar";
 import TopoMap, { Legend, LinkTable, type Topo } from "../components/TopoMap";
@@ -64,7 +65,30 @@ function ActionsBar({ by }: { by: Record<string, number> }) {
 
 const FEED_KIND: Record<string, string> = { incident: "Incident", action: "Action", commit: "Commit" };
 
+/** When the live feed runs much taller than the side-by-side map, the map stacks its sites and
+ *  grows into the height beside the feed; otherwise it keeps the wide layout. */
+function useFeedFit() {
+  const map = useRef<HTMLDivElement>(null);
+  const feed = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState<{ tall: boolean; h?: number }>({ tall: false });
+  useEffect(() => {
+    const m = map.current, f = feed.current;
+    if (!m || !f || typeof ResizeObserver === "undefined") return;
+    const check = () => {
+      const side = window.matchMedia("(min-width: 1101px)").matches;  // below this the grid is one column
+      const wideH = (m.clientWidth * 400) / 1040 + 110;
+      const room = f.offsetHeight - 110;
+      setFit(side && room > wideH + 120 ? { tall: true, h: Math.round(room) } : { tall: false });
+    };
+    const ro = new ResizeObserver(check);
+    ro.observe(f); ro.observe(m);
+    return () => ro.disconnect();
+  }, []);
+  return { map, feed, fit };
+}
+
 export default function Overview() {
+  const { map: mapRef, feed: feedRef, fit } = useFeedFit();
   const ov = usePoll<Ov>("/api/viz/overview");
   const topo = usePoll<Topo>("/api/viz/topology");
   const nav = useNavigate();
@@ -122,7 +146,7 @@ export default function Overview() {
         </Load>
         <EventTicker />
         <div className="ov-grid">
-          <div className="card">
+          <div className="card" ref={mapRef}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
               <h2 style={{ margin: 0 }}>Topology</h2>
               <span style={{ flex: 1 }} />
@@ -132,7 +156,7 @@ export default function Overview() {
               {(d) => (
                 <>
                   {t != null && <div className="small" style={{ color: "#8a5a00", marginBottom: 4 }}>As of {time(t)} · stored state</div>}
-                  <TopoMap data={t == null ? d : applyAsOf(d, past)} compact onSelect={(n) => nav(`/topology?n=${n}${t != null ? `&t=${Math.floor(t)}` : ""}`)}
+                  <TopoMap data={t == null ? d : applyAsOf(d, past)} compact layout={fit.tall ? "tall" : undefined} maxHeight={fit.h} onSelect={(n) => nav(`/topology?n=${n}${t != null ? `&t=${Math.floor(t)}` : ""}`)}
                     traffic={t == null ? (traffic?.available === false ? null : traffic?.links) : past?.traffic?.links} />
                   <Legend />
                   <div className="sr-only"><LinkTable data={d} /></div>
@@ -140,7 +164,7 @@ export default function Overview() {
               )}
             </Load>
           </div>
-          <div className="card">
+          <div className="card" ref={feedRef}>
             <h2>Live feed</h2>
             <Load q={ov} rows={6}>
               {(o) => o.feed.length === 0 ? <span className="small weak">Nothing recorded yet.</span> : (

@@ -1,13 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Close } from "grommet-icons";
 import TopBar from "../components/TopBar";
 import TopoMap, { Legend, LinkTable, STATE_LABEL, STATE_TONE, type Topo, type TNode } from "../components/TopoMap";
 import { usePoll } from "../components/poll";
-import { Load, Pill, StatusPill } from "../components/ui";
+import { Load, Pill, Seg, StatusPill } from "../components/ui";
 import { ago, time } from "../format";
 import Scrubber, { useTimeParam } from "../components/Scrubber";
 import { fmtBps, useAsOf, useTraffic, type AsOf, type TrafficLink } from "../live";
+
+const Topo3D = lazy(() => import("../components/Topo3D"));
+
+/** The 3D view is optional: if it fails to load or draw, the 2D map shows instead. */
+class Fallback extends Component<{ to: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() { return this.state.failed ? this.props.to : this.props.children; }
+}
 
 const n0 = (v: number | null | undefined, unit = "") => (v == null ? "—" : `${Math.round(v * 10) / 10}${unit}`);
 
@@ -134,6 +143,12 @@ export default function Topology() {
   const q = usePoll<Topo>("/api/viz/topology");
   const [sp, setSp] = useSearchParams();
   const sel = sp.get("n");
+  const view = sp.get("view") === "3d" ? "3d" : "2d";
+  const setView = (v: "2d" | "3d") => {
+    const next = new URLSearchParams(sp);
+    if (v === "3d") next.set("view", "3d"); else next.delete("view");
+    setSp(next, { replace: true });
+  };
   const [t, setT] = useTimeParam();
   const live = useTraffic(t == null);
   const asOf = useAsOf(t);
@@ -149,6 +164,7 @@ export default function Topology() {
     <>
       <TopBar title="Topology" crumbs="Both sites, intended links with live state">
         <Freshness t={q.data?.generated_at} />
+        <Seg label="Map view" value={view} options={[{ value: "2d", label: "2D" }, { value: "3d", label: "3D" }]} onChange={setView} />
       </TopBar>
       <div className="content">
         <div className="card"><Scrubber t={t} onChange={setT} label="Topology time travel" /></div>
@@ -162,8 +178,13 @@ export default function Topology() {
               <>
                 <div className={`topo-wrap${node ? " has-panel" : ""}`}>
                   <div className="card topo-card">
-                    <TopoMap data={d} selected={sel} onSelect={(n) => select(n === sel ? null : n)}
-                      traffic={traffic} onLink={(id) => setSelLink(id === selLink ? null : id)} selectedLink={selLink} />
+                    {(() => {
+                      const flat = <TopoMap data={d} selected={sel} onSelect={(n) => select(n === sel ? null : n)}
+                        traffic={traffic} onLink={(id) => setSelLink(id === selLink ? null : id)} selectedLink={selLink} />;
+                      return view === "3d"
+                        ? <Fallback to={flat}><Suspense fallback={flat}><Topo3D data={d} selected={sel} onSelect={(n) => select(n === sel ? null : n)} /></Suspense></Fallback>
+                        : flat;
+                    })()}
                     <Legend />
                     <TrafficLegend live={t == null} speedReason={t == null ? live?.speed_reason : "not collected"} at={trafficAt} />
                     {t == null && live?.available === false && <div className="small weak">Traffic not available: {live.reason}</div>}
