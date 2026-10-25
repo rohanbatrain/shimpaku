@@ -31,11 +31,11 @@ from typing import Any, Callable
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sse_starlette.sse import EventSourceResponse
 
 from shimpaku import virga_live as vl
 from shimpaku.api.auth import Principal
 from shimpaku.api.ratelimit import RateLimiter
+from shimpaku.api.streams import CountedStream
 
 VIRGA_RATE = (6, 12)   # injects per principal / globally, per hour
 STREAM_TICK_S = 1.0
@@ -50,20 +50,6 @@ AUDIT_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]*")
 def audit_id(v: str, n: int) -> str:
     v = v[:n]
     return v if AUDIT_ID.fullmatch(v) else ("" if not v else "<not an id>")
-
-
-class CountedStream(EventSourceResponse):
-    """An SSE response that gives its slot back however it ends (also when it never started)."""
-
-    def __init__(self, *a: Any, release: Callable[[], None], **kw: Any):
-        super().__init__(*a, **kw)
-        self._release = release
-
-    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
-        try:
-            await super().__call__(scope, receive, send)
-        finally:
-            self._release()
 
 
 class TrialBody(BaseModel):

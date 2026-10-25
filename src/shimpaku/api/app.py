@@ -39,7 +39,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import AwareDatetime, BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
-from shimpaku.api import view
+from shimpaku.api import streams, view
 from shimpaku.api import lease as lease_mod
 from shimpaku.api import requests as req_mod
 from shimpaku.api.auth import ADMIN_USER, OFF_MODE_USER, SCOPES, AuthStore, Principal, load_admin_hash, verify_password
@@ -984,7 +984,7 @@ def create_app(
                         yield {"event": event, "data": blob}
                 await asyncio.sleep(tick)
 
-        return EventSourceResponse(gen(), ping=15)
+        return streams.capped(request, principal_or_none(request), gen(), ping=15)
 
     @app.get("/api/stream/sle")
     async def stream_sle(request: Request, site: str = "campus", window: int = 60, p: Principal = Depends(reader)):
