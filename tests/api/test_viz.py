@@ -266,3 +266,47 @@ def test_guest_roles_through_the_router(role):
         r = c.get(path)
         assert r.status_code == 200 and not _ips(r.text), (role, path)
         assert "config_inherited" not in r.text and "vlan members" not in r.text
+
+
+def test_a_provider_waiting_for_the_store_lock_never_stalls_the_event_loop(monkeypatch):
+    """The analytics pass holds the shared store's lock for seconds; a provider read waiting for it
+    must wait in a worker thread, not on the loop (it stalled the edge's health check, 2026-10-26)."""
+    import asyncio
+    import threading
+    import time as _t
+
+    class Store:
+        def __init__(self):
+            self.con = duckdb.connect(":memory:")
+            self.con.execute((Path(__file__).resolve().parents[2] / "src/shimpaku/store/schema.sql").read_text())
+            self._lock = threading.Lock()
+
+    st = Store()
+    saved = dict(service._providers)
+    from shimpaku import providers
+    providers.register_all(st)
+    try:
+        async def main():
+            ticks = 0
+
+            async def heartbeat():
+                nonlocal ticks
+                while True:
+                    ticks += 1
+                    await asyncio.sleep(0.02)
+
+            hb = asyncio.create_task(heartbeat())
+            st._lock.acquire()                      # "the analytics pass" holds the lock
+            threading.Timer(0.5, st._lock.release).start()
+            t0 = _t.monotonic()
+            out = await service.incident_list()
+            took = _t.monotonic() - t0
+            hb.cancel()
+            return out, took, ticks
+
+        out, took, ticks = asyncio.run(main())
+        assert "incidents" in out and took >= 0.45
+        assert ticks >= 10  # the loop kept running while the read waited (0 ticks on the old code)
+    finally:
+        service._providers.clear()
+        service._providers.update(saved)
