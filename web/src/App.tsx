@@ -1,6 +1,6 @@
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -34,6 +34,7 @@ const Guardrails = lazy(() => import("./pages/Guardrails"));
 const Audit = lazy(() => import("./pages/Audit"));
 const AssistantTrace = lazy(() => import("./pages/AssistantTrace"));
 const Theatre = lazy(() => import("./pages/Theatre"));
+const Hardware = lazy(() => import("./pages/Hardware"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -47,7 +48,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/hardware", "Hardware"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -111,6 +112,9 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
       </NavLink>
       <NavLink to="/topology">
         <Cluster {...ic} /> Topology
+      </NavLink>
+      <NavLink to="/hardware">
+        <Servers {...ic} /> Hardware
       </NavLink>
       <NavLink to="/events">
         <EventsIcon {...ic} /> Events
@@ -289,6 +293,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/topology" element={<Topology />} />
+            <Route path="/hardware" element={<Hardware />} />
             <Route path="/events" element={<Events />} />
             <Route path="/devices/:name" element={<Device />} />
             <Route path="/login" element={<Navigate to="/sle" replace />} />

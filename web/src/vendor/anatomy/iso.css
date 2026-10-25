@@ -1,0 +1,31 @@
+/* Vendored from anatomy (https://github.com/wheresryan22/anatomy), the shading rules of
+   kit/iso.css at commit 1482e8469b, light theme only. MIT licence, see ./LICENSE:
+   Copyright (c) 2026 Ryan. Scoped under .iso so they never touch the rest of the app. */
+.iso {
+  --anatomy-paper: #fbfbfa; --anatomy-face: #ffffff; --anatomy-top: #ffffff;
+  --anatomy-shade-0: #dcdcd9; --anatomy-shade-1: #e5e5e2; --anatomy-shade-2: #ededea; --anatomy-shade-3: #f4f4f1;
+  --anatomy-lit-top: #ffffff; --anatomy-lit-shade: #eeeeeb;
+  --anatomy-hi: #26262a; --anatomy-mid: #8a8a8f; --anatomy-lo: #b4b4b8; --anatomy-faint: #d4d4d6; --anatomy-lit: #000000;
+  --anatomy-halo: #8a8a80; --anatomy-halo-opacity: .32;
+  --anatomy-weight: .6px;
+  --anatomy-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+.iso-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.iso-svg path, .iso-svg circle, .iso-svg rect { vector-effect: non-scaling-stroke; }
+.iso-fill { fill: var(--anatomy-paper); stroke: none; }
+.iso-solid[data-lit] > .iso-fill { fill: var(--anatomy-face); }
+.iso-shade, .iso-top { stroke: none; }
+.iso-shade[data-shade="0"] { fill: var(--anatomy-shade-0); }
+.iso-shade[data-shade="1"] { fill: var(--anatomy-shade-1); }
+.iso-shade[data-shade="2"] { fill: var(--anatomy-shade-2); }
+.iso-shade[data-shade="3"] { fill: var(--anatomy-shade-3); }
+.iso-top { fill: var(--anatomy-top); }
+.iso-solid[data-lit] > .iso-top { fill: var(--anatomy-lit-top); }
+.iso-solid[data-lit] > .iso-shade { fill: var(--anatomy-lit-shade); }
+.iso-halo { fill: var(--anatomy-halo); stroke: none; filter: blur(9px); opacity: var(--anatomy-halo-opacity); transform: translateY(3px); }
+.iso-line { fill: none; stroke: var(--anatomy-lo); stroke-width: var(--anatomy-weight); stroke-linecap: round; stroke-linejoin: round; }
+.iso-line[data-tone="hi"] { stroke: var(--anatomy-hi); }
+.iso-line[data-tone="mid"] { stroke: var(--anatomy-mid); }
+.iso-line[data-tone="lo"] { stroke: var(--anatomy-lo); }
+.iso-line[data-tone="faint"] { stroke: var(--anatomy-faint); }
+.iso-face-text { fill: var(--anatomy-mid); font-family: var(--anatomy-mono); letter-spacing: .04em; }
