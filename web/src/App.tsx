@@ -5,10 +5,12 @@ import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
 import "./requests.css";
+import { Notification as EventsIcon } from "grommet-icons";
 const AssistantPanel = lazy(() => import("./components/AssistantPanel"));
 const ServiceLevels = lazy(() => import("./pages/ServiceLevels"));
 const Overview = lazy(() => import("./pages/Overview"));
 const Topology = lazy(() => import("./pages/Topology"));
+const Events = lazy(() => import("./pages/Events"));
 const Device = lazy(() => import("./pages/Device"));
 const RootCause = lazy(() => import("./pages/RootCause"));
 const RootCauseIndex = lazy(() => import("./pages/RootCause").then((m) => ({ default: m.RootCauseIndex })));
@@ -100,6 +102,9 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
       </NavLink>
       <NavLink to="/topology">
         <Cluster {...ic} /> Topology
+      </NavLink>
+      <NavLink to="/events">
+        <EventsIcon {...ic} /> Events
       </NavLink>
       <NavLink to="/sle">
         <Dashboard {...ic} /> Service levels
@@ -248,6 +253,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/topology" element={<Topology />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/devices/:name" element={<Device />} />
             <Route path="/login" element={<Navigate to="/sle" replace />} />
             <Route path="/start" element={<Navigate to="/actions" replace />} />
