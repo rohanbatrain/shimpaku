@@ -138,6 +138,24 @@ async def test_gateway_retry_then_success_and_key_scrubbed():
 
 
 @pytest.mark.asyncio
+async def test_text_form_tool_call_becomes_a_real_call_and_is_not_streamed():
+    # Nemotron writes the call into content, split across chunks, instead of delta.tool_calls
+    parts = ["Checking. <tool", "_call> <function=inventory_list> <parameter=site> campus ",
+             "</parameter> </function> </tool_call>"]
+    body = b"".join(b"data: " + json.dumps({"choices": [{"index": 0, "delta": {"content": p}}]}).encode() + b"\n\n"
+                    for p in parts) + b"data: [DONE]\n\n"
+    with respx.mock() as r:
+        r.post("http://127.0.0.1:4000/v1/chat/completions").mock(
+            return_value=httpx.Response(200, content=body, headers={"content-type": "text/event-stream"}))
+        evs = [e async for e in LLM("m", key=KEY).stream([{"role": "user", "content": "hi"}])]
+    shown = "".join(v for k, v in evs if k == "token")
+    turn = evs[-1][1]
+    assert "<" not in shown and shown == "Checking. "
+    assert [(c["name"], json.loads(c["arguments"])) for c in turn.tool_calls] == [("inventory_list", {"site": "campus"})]
+    assert turn.content == "Checking." and turn.tool_calls[0]["id"] == "call_0"
+
+
+@pytest.mark.asyncio
 async def test_gateway_down_yields_error_event_not_exception():
     lab, a = make("S07")
     with respx.mock() as r:
