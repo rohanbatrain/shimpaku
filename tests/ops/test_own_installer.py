@@ -310,3 +310,29 @@ def test_install_has_no_bash4_only_constructs():
         text = (OWN / name).read_text()
         for bad in ("declare -A", "mapfile", "readarray", "${@,,}", ",,}", "^^}", "&>>", "|&", "coproc"):
             assert bad not in text, (name, bad)
+
+
+# ---- hostile values: nothing a flag carries may become an ssh option or a second command -----------------
+
+@pytest.mark.parametrize("flag,value", [
+    ("--bind", "127.0.0.1;touch /tmp/pwned"), ("--bind", "$(id)"), ("--user", "-oProxyCommand=id"),
+    ("--user", "root;id"), ("--ssh-alias", "-oProxyCommand=id"), ("--operator", "-ou0"),
+    ("--switch-image", "/tmp/a\nb"), ("--host", "-oProxyCommand=id"),
+])
+def test_install_refuses_hostile_values(flag, value):
+    p = subprocess.run(["bash", str(OWN / "install.sh"), "--dry-run", flag, value], capture_output=True, text=True,
+                       env={**os.environ, "LC_ALL": "C"})
+    assert p.returncode == 64, (flag, value, p.stdout[-300:], p.stderr[-300:])
+    assert "pwned" not in p.stdout and "ProxyCommand" not in p.stdout
+
+
+@pytest.mark.parametrize("args", [
+    ["--bind", "127.0.0.1;id"], ["--operator", "a b"], ["--operator", "-ou0"], ["--profile", "full;id"],
+    ["--data-dir", "/home/../etc"], ["--data-dir", "rel"], ["--upload", "switch=../../etc/shadow:1"],
+    ["--upload", "switch=vJunos-switch-1.qcow2;id:1"], ["--router-image", "/x\nid"],
+])
+def test_remote_deploy_checks_its_own_arguments(args):
+    """deploy.sh runs as root and builds command strings from these: it refuses bad ones itself."""
+    p = subprocess.run(["bash", str(OWN / "remote" / "deploy.sh"), "--stage", "rest", "--dry-run", *args],
+                       capture_output=True, text=True, env={**os.environ, "LC_ALL": "C"})
+    assert p.returncode == 64, (args, p.stdout[-300:], p.stderr[-300:])

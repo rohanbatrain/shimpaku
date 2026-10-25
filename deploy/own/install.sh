@@ -70,13 +70,19 @@ while [ "$#" -gt 0 ]; do
 done
 PROFILE=${PROFILE:-full}
 case $PROFILE in full|fabric|campus) ;; *) usage_die "--profile is full, fabric or campus" ;; esac
-case $OP in *[!a-z0-9_-]*|"") usage_die "--operator: lower-case letters, digits, - and _ only" ;; esac
+case $OP in *[!a-z0-9_-]*|-*|"") usage_die "--operator: lower-case letters, digits, - and _ only" ;; esac
 case $PORT in *[!0-9]*|"") usage_die "--port is a number" ;; esac
 [ -n "$HOST" ] && [ -n "$ALIAS" ] && usage_die "--host and --ssh-alias are alternatives"
 { [ -n "$HOST" ] || [ -n "$ALIAS" ]; } && [ "$LOCAL" = 1 ] && usage_die "--local deploys to this machine: no --host"
 if [ -n "$HOST" ]; then
   case $HOST in *[!A-Za-z0-9.:_-]*|-*) usage_die "--host: an IP address or host name" ;; esac
 fi
+# Every value below ends up in an ssh argument or a command string run on the host: a leading '-'
+# would be read by ssh as an option (-oProxyCommand=...), a ';' or newline as a second command.
+case $SSH_USER in *[!A-Za-z0-9._-]*|-*|"") usage_die "--user: a user name (letters, digits, . _ -)" ;; esac
+case $ALIAS in *[!A-Za-z0-9.:_-]*|-*) usage_die "--ssh-alias: a Host name from your ssh config" ;; esac
+case $BIND in localhost) ;; *[!0-9A-Fa-f.:]*|"") usage_die "--bind: an IP address (127.0.0.1, 0.0.0.0, ::1, ...)" ;; esac
+case $IMG_ROUTER$IMG_SWITCH$KEY in *[[:cntrl:]]*) usage_die "an image or key path contains a control character" ;; esac
 
 # ---- the terminal (stdin may be this script, piped from curl) --------------------------------------
 have_tty() { (exec </dev/tty) 2>/dev/null; }
@@ -479,7 +485,7 @@ confirm "$LABEL"
 ship_bundle
 run_stage base
 [ "$ROOT_KEY_ADDED" = 1 ] || [ "$LOCAL" = 1 ] || [ -n "$ALIAS" ] || [ "$KEY_GIVEN" = 1 ] || \
-  sh_on_target "python3 $STATE/bundle/remote/ownlib.py manifest-add $STATE/manifest.json key $(printf '%q' "$(awk '{print $2}' "$KEY.pub" | cut -c1-24)") file=$KEY.pub" || true
+  sh_on_target "python3 $STATE/bundle/remote/ownlib.py manifest-add $STATE/manifest.json key $(printf '%q' "$(awk '{print $2}' "$KEY.pub" | cut -c1-24)") $(printf '%q' "file=$KEY.pub")" || true
 upload_images
 run_stage rest ${UPLOAD_ARGS[@]+"${UPLOAD_ARGS[@]}"}
 

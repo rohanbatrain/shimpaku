@@ -51,6 +51,17 @@ while (($#)); do
   shift
 done
 [[ $STAGE == base || $STAGE == rest ]] || { echo "deploy.sh: --stage base|rest" >&2; exit 64; }
+# This runs as root and puts these values into command strings (as_op, the env file): check them here
+# too, whatever install.sh did.
+bad() { echo "deploy.sh: $1" >&2; exit 64; }
+[[ $PROFILE == full || $PROFILE == fabric || $PROFILE == campus ]] || bad "--profile full|fabric|campus"
+[[ $OP =~ ^[a-z0-9_][a-z0-9_-]*$ ]] || bad "--operator: lower-case letters, digits, - and _"
+[[ $BIND == localhost || $BIND =~ ^[0-9A-Fa-f.:]+$ ]] || bad "--bind: an IP address"
+[[ $DATA =~ ^/[A-Za-z0-9._/-]+$ && $DATA != *..* ]] || bad "--data-dir: an absolute path"
+[[ $IMG_ROUTER$IMG_SWITCH != *[[:cntrl:]]* ]] || bad "an image path contains a control character"
+for _u in ${UPLOADS[@]+"${UPLOADS[@]}"}; do
+  [[ $_u =~ ^(router|switch)=vJunos-(router|switch)-[A-Za-z0-9.-]+\.qcow2:[0-9]+$ ]] || bad "--upload KIND=vJunos-KIND-VERSION.qcow2:BYTES"
+done
 ((DRY)) && RBUNDLE=$STATE/bundle
 if ((!DRY)) && [[ $(id -u) != 0 ]]; then echo "deploy.sh: run as root" >&2; exit 1; fi
 
