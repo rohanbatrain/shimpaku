@@ -48,6 +48,9 @@ open http://127.0.0.1:8780             # the dashboard: Service levels → Root 
 
 Captured from the running system against the real vJunos lab: the numbers below are what the lab showed at capture time, not demo data.
 
+[![Hardware: seven Junos devices on one hypervisor](docs/screens/desktop/24-hardware-digital-twin.png)](docs/screens/desktop/24-hardware-digital-twin.png)
+**Hardware.** Seven vJunos guests on one libvirt/KVM host, each drawn with its live CPU, memory and Junos 26.2R1.7, and the real-world equivalent of each model as Juniper documents it (EX9214-class switch, MX Series router), with the caveats: lab use only, up to 100 Mbps, software forwarding.
+
 | | |
 |---|---|
 | [![Overview](docs/screens/desktop/01-overview.png)](docs/screens/desktop/01-overview.png)<br>**Overview.** 7 of 7 devices reachable, 6 of 6 links up, audit chain verified over 94 rows, and 6 actions today (4 blocked by guardrails, 2 verified). | [![Live topology](docs/screens/desktop/02-topology-live-traffic.png)](docs/screens/desktop/02-topology-live-traffic.png)<br>**Live topology.** Both sites with each link coloured by LLDP, OSPF and BFD state, and in/out rates from gNMI counters drawn on the links. |
