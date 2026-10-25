@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     llm_models: str = "triage=nvidia-nemotron-lightning,diagnose=nvidia-nemotron-ultra,escalate=nvidia-nemotron-ultra"
 
     # ---- guest testers (docs/DEPLOY-DESIGN.md build steps 4-5) ----
+    repo_url: str = "https://github.com/rohanbatrain/shimpaku"  # named by Shim and the about facts
     public_url: str | None = None          # fixed base for invite links; never taken from a Host header
     invite_ttl_hours: float = 72.0         # time to redeem an invite
     lease_minutes: float = 30.0            # one tester lease

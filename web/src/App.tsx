@@ -213,7 +213,10 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
         {who.mode === "local" && op && <button className="sign-out" onClick={onSignOut}>Sign out</button>}
         {who.role === "visitor" && <button onClick={() => location.assign("/login")}>Operator sign in</button>}
       </div>
-      <div className="foot">{DISCLAIMER}</div>
+      <div className="foot">
+        Built by Aryan &amp; Rohan · <a href="https://github.com/rohanbatrain/shimpaku" target="_blank" rel="noreferrer">GitHub</a>
+        <br />{DISCLAIMER}
+      </div>
     </nav>
   );
 }

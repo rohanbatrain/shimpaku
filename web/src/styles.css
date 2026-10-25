@@ -384,3 +384,4 @@ a.vg-tile { display: flex; flex-direction: column; gap: 4px; color: var(--t); }
 a.vg-tile:hover { text-decoration: none; border-color: var(--line2); box-shadow: 0 2px 8px rgba(14, 26, 22, .06); }
 a.vg-tile.live { border-color: #e2b84f; }
 .vg-tile-b { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.nav .foot a { color: #c9d8d1; text-decoration: underline; text-underline-offset: 2px; }

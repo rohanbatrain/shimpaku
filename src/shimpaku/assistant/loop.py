@@ -151,7 +151,8 @@ class Assistant:
                 if self.allow_tools is not None:  # guide mode: the model is not even offered the rest
                     tools = [t for t in tools if t["function"]["name"] in self.allow_tools]
                 known = {t["function"]["name"] for t in tools}
-                system = self.system or prompts.SYSTEM
+                from shimpaku import about
+                system = f"{self.system or prompts.SYSTEM}\n\n{about.facts()}"
                 if self.kb:
                     try:
                         from shimpaku import kb
