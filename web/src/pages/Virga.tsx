@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { api, ApiError, useApi } from "../api";
 import TopBar from "../components/TopBar";
-import { Loading, Pill } from "../components/ui";
+import { Loading, Pill, Seg } from "../components/ui";
 import { ago } from "../format";
 import { useSession } from "../session";
 import {
@@ -147,15 +147,18 @@ function Card({ s, live, blocked, operator, hold, confirm, setConfirm, setHold, 
     <li className={`vg-card${live ? " is-live" : ""}${!s.demo_ok ? " off" : ""}`}>
       <div className="vg-card-h">
         <span className="mono vg-id">{s.id}</span>
+        <span className="vg-layer-chip">{s.layer}</span>
+        <span style={{ flex: 1 }} />
         {s.impact === "latent" ? <Pill tone="info">No user impact</Pill> : <Pill tone="warn">User impact</Pill>}
       </div>
       <b className="vg-title">{s.title}</b>
-      <dl className="vg-meta">
-        <dt>Devices</dt><dd>{(s.nodes ?? []).map((n) => <span key={n} className="vg-node mono">{n}</span>)}</dd>
-        <dt>Self-test</dt><dd>{st.runs ? `${st.passes}/${st.runs} self-tests${st.last_at ? ` · ${ago(st.last_at)}` : ""}` : "not self-tested"}</dd>
-        <dt>Takes</dt><dd>{estimate(s.est_s)} plus the hold</dd>
-      </dl>
-      {!s.demo_ok && <div className="small vg-why"><b>Not offered live:</b> {s.why_not ?? "no reason given"}</div>}
+      {s.demo_ok ? (
+        <dl className="vg-meta">
+          {(s.nodes ?? []).length > 0 && <><dt>Devices</dt><dd>{s.nodes.map((n) => <span key={n} className="vg-node mono">{n}</span>)}</dd></>}
+          <dt>Self-test</dt><dd>{st.runs ? <span className={st.passes === st.runs ? "tone-ok" : "tone-warn"}>{st.passes}/{st.runs} clean{st.last_at ? <span className="weak"> · {ago(st.last_at)}</span> : null}</span> : "not self-tested"}</dd>
+          <dt>Takes</dt><dd>{estimate(s.est_s)} + the hold</dd>
+        </dl>
+      ) : <div className="small vg-why">Not runnable here: {s.why_not ?? "no reason given"}</div>}
       {operator && s.demo_ok && !confirm && (
         <button type="button" className="btn primary vg-inject" disabled={!!blocked} title={blocked ?? undefined} onClick={() => setConfirm(true)}>Inject…</button>
       )}
@@ -209,6 +212,10 @@ export default function Virga() {
   const [confirm, setConfirm] = useState<string | null>(null);
   const [hold, setHold] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [show, setShow] = useState<"live" | "all">("live");
+  const [site, setSite] = useState<string>("all");
+  const [imp, setImp] = useState<"all" | "user" | "latent">("all");
+  const [q, setQ] = useState("");
   const [rec, setRec] = useState<{ busy: boolean; msg: string | null }>({ busy: false, msg: null });
   const liveRef = useRef<HTMLDivElement>(null);
   const scrollTo = useRef<string | null>(null);
@@ -254,13 +261,17 @@ export default function Virga() {
     const known = new Set(SITES.map((s) => s.id));
     const sites = [...SITES, ...[...new Set((c?.scenarios ?? []).map((s) => s.site))].filter((s) => !known.has(s)).map((s) => ({ id: s, label: s }))];
     for (const st of sites) {
-      const mine = (c?.scenarios ?? []).filter((s) => s.site === st.id);
+      const needle = q.trim().toLowerCase();
+      const mine = (c?.scenarios ?? []).filter((s) => s.site === st.id && (site === "all" || s.site === site) && (show === "all" || s.demo_ok)
+        && (imp === "all" || s.impact === imp)
+        && (!needle || `${s.id} ${s.title} ${s.layer} ${(s.nodes ?? []).join(" ")}`.toLowerCase().includes(needle)));
       if (!mine.length) continue;
-      const layers = [...new Set(mine.map((s) => s.layer))].sort();
-      out.push({ site: st.id, label: st.label, layers: layers.map((layer) => ({ layer, items: mine.filter((s) => s.layer === layer) })) });
+      // runnable faults first, then by layer
+      mine.sort((a, b) => Number(b.demo_ok) - Number(a.demo_ok) || a.layer.localeCompare(b.layer) || a.id.localeCompare(b.id));
+      out.push({ site: st.id, label: st.label, layers: [{ layer: "", items: mine }] });
     }
     return out;
-  }, [c]);
+  }, [c, show, site, imp, q]);
 
   const unavailable = conn === "off" && !state && (cat.error as ApiError | undefined)?.status === 404;
 
@@ -268,14 +279,6 @@ export default function Virga() {
     <>
       <TopBar title={<span className="vg-title"><VirgaMark size={22} /> Virga</span>} crumbs="Fault lab · inject a real fault, watch the lab detect it, then revert" />
       <div className="content vg-page">
-        <div className="vg-brand">
-          <VirgaMark size={34} />
-          <div>
-            <b>Virga</b> <span className="weak">· the fault injector</span>
-            <p>Virga breaks the lab on purpose, from a catalogue of realistic faults, then scores whether Shimpaku noticed, explained and fixed it.
-              Like the rain it is named after, every fault it drops is meant to vanish: each drill ends by reverting the fault and checking the revert took.</p>
-          </div>
-        </div>
         {unavailable && <div className="notice info"><b>The fault lab is not available on this server.</b> It is a feature of the live lab host.</div>}
         {!unavailable && conn === "connecting" && !state && <Loading label="Connecting to the fault lab" rows={2} />}
         {simulated && (
@@ -294,52 +297,79 @@ export default function Virga() {
         )}
         {rec.msg && <div className="notice info" role="status">{rec.msg}</div>}
         {err && <ErrNotice e={err} onClose={() => setErr(null)} />}
-        {!operator && !who.replay && enabled && (
-          <div className="notice info vg-ro" role="note">
-            <span>You are watching read-only. Injecting a fault changes real devices, so it is limited to the operator's own session.</span>
-            <Link className="btn primary" to="/login">Sign in as operator to inject</Link>
+        <section className="vg-hero" aria-label="About Virga">
+          <div className="vg-hero-t">
+            <VirgaMark size={36} />
+            <div>
+              <b>Virga</b> <span className="weak">· the fault injector</span>
+              <p>Virga breaks the lab on purpose with realistic faults, then checks whether Shimpaku noticed, explained and fixed them.
+                Like the rain it is named after, every fault is meant to vanish: each drill ends by reverting it and checking the revert took.</p>
+              <ol className="vg-how" aria-label="How a drill runs">
+                {FLOW.map((n, i) => <li key={n}><span>{i + 1}</span>{PHASE_LABEL[n]}</li>)}
+              </ol>
+            </div>
           </div>
-        )}
+          <dl className="vg-stats">
+            <div><dt>In the catalogue</dt><dd>{c ? c.scenarios.length : "—"}</dd></div>
+            <div><dt>Runnable live<Info k="vg_live" /></dt><dd>{c ? c.scenarios.filter((x) => x.demo_ok).length : "—"}</dd></div>
+            <div><dt>Recent drills</dt><dd>{state ? state.recent.length : "—"}</dd></div>
+            <div><dt>Last drill</dt><dd>{state?.recent[0] ? <>{state.recent[0].verdict === "pass" ? <span className="tone-ok">Pass</span> : state.recent[0].verdict === "fail" ? <span className="tone-crit">Fail</span> : "—"} <small>{ago(state.recent[0].t_start)}</small></> : "none yet"}</dd></div>
+          </dl>
+        </section>
 
         <div ref={liveRef} className="vg-anchor">
           {trial
             ? <Live t={trial} simulated={simulated} operator={operator} onError={setErr} reload={reload} />
-            : state && enabled && <div className="card vg-idle"><b>No drill running.</b> <span className="weak">{operator ? "Pick a fault below and press Inject." : "When the operator injects a fault it appears here, step by step."}</span></div>}
+            : state && enabled && (
+              <div className="card vg-idle">
+                <span className="vg-idle-dot" aria-hidden />
+                <div><b>No drill running.</b> <span className="weak">{operator ? "Pick a runnable fault below and press Inject." : "When the operator injects a fault it appears here, step by step, live."}</span></div>
+                {!operator && !who.replay && <Link className="btn" to="/login">Operator sign-in</Link>}
+              </div>
+            )}
         </div>
 
+        {state && state.recent.length > 0 && (
+          <section className="card flush" aria-labelledby="vg-hist-h">
+            <div className="card-h"><h2 id="vg-hist-h">Recent drills</h2><span className="small weak">last {state.recent.length} {state.recent.length === 1 ? "drill" : "drills"}</span></div>
+            <History rows={state.recent} />
+          </section>
+        )}
+
         {!unavailable && <section aria-labelledby="vg-cat-h">
-          <h2 id="vg-cat-h">Catalogue<Info k="virga" /></h2>
+          <div className="vg-cat-h">
+            <h2 id="vg-cat-h">Fault catalogue<Info k="virga" /></h2>
+            {c && (
+              <div className="vg-tools" role="group" aria-label="Filter the catalogue">
+                <Seg label="Which faults" value={show} onChange={setShow}
+                  options={[{ value: "live", label: `Runnable live (${c.scenarios.filter((x) => x.demo_ok).length})` }, { value: "all", label: `All (${c.scenarios.length})` }]} />
+                <Seg label="Site" value={site} onChange={setSite} options={[{ value: "all", label: "Both sites" }, ...SITES.map((x) => ({ value: x.id, label: x.label }))]} />
+                <Seg label="Impact" value={imp} onChange={setImp} options={[{ value: "all", label: "Any impact" }, { value: "user", label: "User impact" }, { value: "latent", label: "Latent" }]} />
+                <Info k="vg_impact" />
+                <input className="vg-search" type="search" placeholder="Search faults or devices…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search the catalogue" />
+              </div>
+            )}
+          </div>
           {cat.loading && !c && <Loading rows={3} />}
           {cat.error && !c && !unavailable && <div className="notice crit" role="alert">Could not load the catalogue: {cat.error.message}</div>}
-          {c && groups.length === 0 && <div className="small weak">The catalogue offers no scenarios.</div>}
+          {c && groups.length === 0 && <div className="card small weak">No fault matches these filters. <button type="button" className="linkish" onClick={() => { setShow("all"); setSite("all"); setImp("all"); setQ(""); }}>Show everything</button></div>}
           {groups.map((g) => (
             <div key={g.site} className="vg-site">
-              <h3 className="vg-site-h">{g.label}</h3>
-              <div className="vg-layers">
+              <h3 className="vg-site-h">{g.label} <span className="weak small">· {g.layers.reduce((n, l) => n + l.items.length, 0)}</span></h3>
+              <ul className="vg-grid">
               {g.layers.map((l) => (
-                <div key={l.layer} className="vg-layer">
-                  <div className="k vg-layer-h">{l.layer}</div>
-                  <ul className="vg-grid">
-                    {l.items.map((s) => (
+                    l.items.map((s) => (
                       <Card key={s.id} s={s} live={live && trial?.scenario === s.id} blocked={blocked} operator={operator}
                         hold={holdS} max={maxS} setHold={setHold}
                         confirm={confirm === s.id} setConfirm={(on) => setConfirm(on ? s.id : null)}
                         submitting={submitting} onGo={() => void inject(s)} />
-                    ))}
-                  </ul>
-                </div>
+                    ))
               ))}
-              </div>
+              </ul>
             </div>
           ))}
         </section>}
 
-        {state && (
-          <section className="card flush" aria-labelledby="vg-hist-h">
-            <div className="card-h"><h2 id="vg-hist-h">History</h2><span className="small weak">last {state.recent.length} {state.recent.length === 1 ? "drill" : "drills"}</span></div>
-            <History rows={state.recent} />
-          </section>
-        )}
       </div>
     </>
   );
