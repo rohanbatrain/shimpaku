@@ -59,7 +59,7 @@ def test_demo_hold_ends_early_on_revert_now_and_inject_is_confirmed_for_the_hold
     inj = lab.commits[0]
     # D5: the timer covers the time to show the fault (inject_timeout_s is 1 s in this test catalogue) plus the hold, + 3 min
     assert inj["confirm_min"] == demo_ttl_min(600, 1) == 14 and not inj["confirm_after"]
-    assert seen_ttl["journal"] == 13                                       # `virga recover` waits long enough
+    assert seen_ttl["journal"] == 14                                       # `virga recover` waits long enough
     assert lab.cfg["leaf1"] == BASE and ctx.journal.entries() == {}
     phases = [(e["name"], e["status"]) for e in events if e["type"] == "phase"]
     assert phases == [("preflight", "running"), ("preflight", "ok"), ("inject", "running"), ("inject", "ok"),
