@@ -26,6 +26,8 @@ const SessionRequests = lazy(() => import("./pages/SessionRequests"));
 const Console = lazy(() => import("./pages/Console"));
 const OpsHost = lazy(() => import("./pages/OpsHost"));
 const OpsGateway = lazy(() => import("./pages/OpsGateway"));
+const Probes = lazy(() => import("./pages/Probes"));
+const Architecture = lazy(() => import("./pages/Architecture"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -39,7 +41,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -126,6 +128,9 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
       <div className="sect">Evaluate</div>
       <NavLink to="/benchmark">
         <BenchIcon {...ic} /> Benchmark
+      </NavLink>
+      <NavLink to="/architecture">
+        <Tree {...ic} /> Architecture
       </NavLink>
       {op && (
         <>
@@ -271,6 +276,8 @@ export default function App() {
             <Route path="/actions" element={<Actions />} />
             <Route path="/actions/:id" element={<ActionDetail />} />
             <Route path="/benchmark" element={<Benchmark />} />
+            <Route path="/probes" element={<Probes />} />
+            <Route path="/architecture" element={<Architecture />} />
             <Route path="/agents" element={<Agents />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin/requests" element={<SessionRequests />} />

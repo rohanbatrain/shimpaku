@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { useApi } from "../api";
 import TopBar from "../components/TopBar";
 import { SleChart } from "../components/LazyCharts";
+import ProbeHeatmapCard from "../components/ProbeHeatmap";
 import { Empty, Load, Seg, ToneIcon } from "../components/ui";
 import { pct100, sleTone, time } from "../format";
 
@@ -121,6 +122,7 @@ export default function ServiceLevels() {
                 </div>
                 {sles.length === 0 ? <Empty title="No service levels for this site yet">The collector has not reported a full minute.</Empty> : sles.map((x) => <SleRow key={x.id + x.domain} s={x} />)}
               </div>
+              <ProbeHeatmapCard site={site} window={win} />
             </>
           )}
         </Load>
