@@ -12,35 +12,57 @@ function csrf(): string {
   return m ? decodeURIComponent(m[1]) : "";
 }
 
+// GET responses kept for the session: a page opened again, or prefetched, draws at once from the
+// last copy and refreshes in the background. Any write, sign-in or sign-out empties it.
+const cache = new Map<string, unknown>();
+const inflight = new Map<string, Promise<unknown>>();
+export const cached = <T,>(path: string | null) => (path ? (cache.get(path) as T | undefined) : undefined);
+
+/** Warm the cache for paths a page will ask for. Failures are ignored (a visitor's 403 stays quiet). */
+export function prefetch(paths: string[]) {
+  for (const p of paths) {
+    if (cache.has(p) || inflight.has(p)) continue;
+    const f = fetch(p, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json().then((d) => { cache.set(p, d); }) : undefined))
+      .catch(() => undefined)
+      .finally(() => inflight.delete(p));
+    inflight.set(p, f);
+  }
+}
+
 export async function api<T = any>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const { json, ...rest } = init;
   const method = (rest.method ?? (json !== undefined ? "POST" : "GET")).toUpperCase();
   const headers: Record<string, string> = { Accept: "application/json", ...(rest.headers as Record<string, string>) };
   if (json !== undefined) headers["Content-Type"] = "application/json";
-  if (method !== "GET") headers["X-CSRF-Token"] = csrf();
+  if (method !== "GET") { headers["X-CSRF-Token"] = csrf(); cache.clear(); }
   const r = await fetch(path, { ...rest, method, headers, credentials: "same-origin", body: json !== undefined ? JSON.stringify(json) : rest.body });
   if (!r.ok) {
     let msg = r.statusText;
     try {
       msg = (await r.json()).detail ?? msg;
     } catch {}
+    if (r.status === 401) cache.clear();
     if (r.status === 401 && !location.pathname.startsWith("/login")) window.dispatchEvent(new Event("shimpaku:unauth"));
     throw new ApiError(r.status, typeof msg === "string" ? msg : JSON.stringify(msg));
   }
-  return r.json();
+  const data = await r.json();
+  if (method === "GET") cache.set(path, data);
+  return data;
 }
 
 export type Loadable<T> = { data?: T; error?: ApiError | Error; loading: boolean; reload: () => void };
 
 /** GET a resource; optionally keep it fresh from an SSE stream that pushes the same shape. */
 export function useApi<T = any>(path: string | null, stream?: { url: string; event: string }): Loadable<T> {
-  const [state, setState] = useState<{ data?: T; error?: Error; loading: boolean }>({ loading: !!path });
+  const [state, setState] = useState<{ data?: T; error?: Error; loading: boolean }>(() => ({ data: cached<T>(path), loading: !!path }));
   const [n, setN] = useState(0);
   const reload = useCallback(() => setN((x) => x + 1), []);
   useEffect(() => {
     if (!path) return;
     let live = true;
-    setState((s) => ({ ...s, loading: true, error: undefined }));
+    // as before, the last data stays on screen while loading; a cached copy of this path is fresher
+    setState((s) => ({ ...s, data: cached<T>(path) ?? s.data, loading: true, error: undefined }));
     api<T>(path)
       .then((data) => live && setState({ data, loading: false }))
       .catch((error) => live && setState({ error, loading: false }));

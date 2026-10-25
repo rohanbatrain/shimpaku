@@ -1,4 +1,5 @@
 import AccessBanner from "./components/AccessBanner";
+import { warmUp } from "./prefetch";
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
 import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers } from "grommet-icons";
@@ -228,6 +229,8 @@ export default function App() {
     api<Who>("/api/whoami").then(setWho).catch(() => setWho(null));
   }, []);
   useEffect(refresh, [refresh]);
+  // once the session is known, fetch every page's code and first data in the background
+  useEffect(() => { if (who) warmUp(); }, [who]);
   useEffect(() => {
     const h = () => refresh();
     window.addEventListener("shimpaku:unauth", h);
