@@ -4,7 +4,7 @@ import { useSession } from "../session";
 import { DemoBadge, ReplayBadge } from "./ui";
 
 // these titles repeat the mobile app bar, so they are visually hidden there (kept for screen readers)
-const SECTIONS = new Set(["Overview", "Topology", "Service levels", "Root cause", "Actions", "Benchmark", "Connected agents", "Settings"]);
+const SECTIONS = new Set(["Overview", "Topology", "Service levels", "Root cause", "Actions", "Benchmark", "Connected agents", "Settings", "Lab host", "LLM gateway"]);
 
 export default function TopBar({ title, crumbs, children }: { title: ReactNode; crumbs?: ReactNode; children?: ReactNode }) {
   const { who, openAssistant } = useSession();

@@ -1,6 +1,6 @@
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Monitor, Cloud } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -23,6 +23,8 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Request = lazy(() => import("./pages/Request"));
 const RequestStatus = lazy(() => import("./pages/RequestStatus"));
 const SessionRequests = lazy(() => import("./pages/SessionRequests"));
+const OpsHost = lazy(() => import("./pages/OpsHost"));
+const OpsGateway = lazy(() => import("./pages/OpsGateway"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -36,7 +38,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -127,6 +129,12 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
           </NavLink>
           <NavLink to="/settings">
             <SettingsOption {...ic} /> Settings
+          </NavLink>
+          <NavLink to="/ops/host">
+            <Monitor {...ic} /> Lab host
+          </NavLink>
+          <NavLink to="/ops/gateway">
+            <Cloud {...ic} /> LLM gateway
           </NavLink>
           {who.mode === "local" && (
             <NavLink to="/admin/requests">
@@ -260,6 +268,8 @@ export default function App() {
             <Route path="/agents" element={<Agents />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin/requests" element={<SessionRequests />} />
+            <Route path="/ops/host" element={<OpsHost />} />
+            <Route path="/ops/gateway" element={<OpsGateway />} />
             <Route path="*" element={<div className="content"><h1>Not found</h1><p className="weak">No page at {loc.pathname}.</p></div>} />
           </Routes>
           </Suspense>
