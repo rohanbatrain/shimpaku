@@ -288,7 +288,7 @@ def test_deploy_dry_run_records_before_it_creates():
     assert first(r"manifest \+= domain lab-leaf2") < first(r"lab\.sh up lab/topologies/day-06")
     assert first(r"manifest \+= nft-table inet lab_iso") < first(r"lab-net-up\.sh")
     assert first(r"lab\.sh up lab/topologies/day-02") < first(r"apply_sets\.py .*--assert-campus")
-    assert first(r"gen_fabric\.py") < first(r"deploy\.py lab/topologies/day-06")
+    assert re.search(r"gen_fabric\.py lab/topologies/day-06-datacenter\.toml && \S+ day-07/automation/deploy\.py", out)
     assert first(r"manifest \+= user-unit shimpakud") < first(r"deploy/systemd/install\.sh")
     assert "virga --have day-06-fabric selftest --only FAB-01" in out
     assert "admin@123" not in out                  # env values are never printed, only their keys
