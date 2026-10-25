@@ -58,7 +58,7 @@ def gateway() -> dict:
     tot = {k: sum(m[k] for m in models) for k in ("requests", "errors", "tokens")}
     tot.update(spend_usd=round(sum(m["spend_usd"] for m in models), 4), p50_ms=4200, p95_ms=19800,
                error_pct=round(100 * tot["errors"] / tot["requests"], 1))
-    return {"demo": True, "connected": True, "cached": False, "fetched_at": now, "window_h": 24, "errors": [],
+    return {"demo": True, "connected": True, "cached": False, "fetched_at": now, "window_h": 24, "errors": [], "base": "https://llm.example.net",
             "health": {"alive": True, "ready": True, "db": "connected", "version": "1.79.3"},
             "totals": tot, "models": models, "keys": keys,
             "sampled": {"rows": 1000, "total": 1407, "capped": True},
