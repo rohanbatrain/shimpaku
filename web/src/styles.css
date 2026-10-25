@@ -11,6 +11,8 @@ html, body, #root { height: 100%; }
 body { margin: 0; background: var(--back); color: var(--t); font: 14px/1.45 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01", "tnum"; }
 a { color: var(--p-ink); text-decoration: none; }
 a:hover { text-decoration: underline; }
+/* a link inside running or muted text is told apart by more than colour (WCAG 1.4.1) */
+:where(.crumbs, .weak, .small, .own-note, .tone-crit, .notice, p, li) a:not(.btn, .kpi, .vg-tile, .tile) { text-decoration: underline; text-underline-offset: 2px; }
 h1 { font-size: 20px; line-height: 28px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
 h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--tw); margin: 0 0 10px; font-weight: 600; }
 .mono { font-family: var(--mono); font-size: 12.5px; }
@@ -197,7 +199,9 @@ ul.chg-list li { display: flex; gap: 6px; align-items: center; }
   .topbar h1 { font-size: 18px; line-height: 24px; }
   .topbar .spacer { display: none; }
   .topbar h1.dup { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .topbar:has(h1.dup) > div:first-child:not(:has(.crumbs)) { display: none; }
+  /* the app bar already shows the page title: keep the h1 for assistive tech, hide the rest of the block */
+  .topbar:has(h1.dup) > div:first-child:not(:has(.crumbs)) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .topbar:has(h1.dup) > div:first-child:not(:has(.crumbs)) .info-i { display: none; }
   .topbar-ctl { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
   .topbar-ask { display: none; }
   .badge-demo, .badge-mode { font-size: 11px; padding: 1px 7px; }
