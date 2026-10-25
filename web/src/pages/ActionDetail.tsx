@@ -108,7 +108,7 @@ export default function ActionDetail() {
                       <>
                         <div className="small weak" style={{ marginBottom: 6 }}>Config diff not recorded by the executor. Commits on the device:</div>
                         {a.commits?.length ? (
-                          <ul className="tl">
+                          <ul className="tl commits">
                             {a.commits.map((c, i) => (
                               <li key={i}>
                                 <span className="mono weak">{time(c.ts)}</span>
