@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link as LinkIcon } from "grommet-icons";
+import { Link } from "react-router";
 import { api } from "../api";
 import { Busy } from "./ui";
 
@@ -18,17 +19,27 @@ export default function QuickLink() {
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const copyBtn = useRef<HTMLButtonElement>(null);
   // the link follows the domain the operator is on (both serve the same lab)
   const link = inv ? `${location.origin}/start?i=${encodeURIComponent(inv.token)}` : "";
 
   useEffect(() => {
     if (!open) return;
     const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen(false); toggle.current?.focus(); } };
     document.addEventListener("mousedown", away);
     document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
   }, [open]);
+
+  // a non-modal dialog: focus moves in when it opens (the note field, then Copy once the link exists)
+  // and back to the toggle on Escape; tabbing out of it closes it
+  useEffect(() => {
+    if (!open) return;
+    if (inv) copyBtn.current?.focus();
+    else (box.current?.querySelector("#ql-note") as HTMLElement | null)?.focus();
+  }, [open, inv]);
 
   const copy = async (text: string) => {
     try { await navigator.clipboard.writeText(text); setCopied(true); } catch { setCopied(false); }
@@ -47,8 +58,8 @@ export default function QuickLink() {
   const reset = () => { setInv(null); setNote(""); setCopied(false); setErr(null); };
 
   return (
-    <div className="quicklink" ref={box}>
-      <button type="button" className="btn present-toggle" aria-expanded={open} onClick={() => { setOpen(!open); if (!open) reset(); }}
+    <div className="quicklink" ref={box} onBlur={(e) => { if (open && e.relatedTarget && !box.current?.contains(e.relatedTarget as Node)) setOpen(false); }}>
+      <button ref={toggle} type="button" className="btn present-toggle" aria-expanded={open} aria-haspopup="dialog" onClick={() => { setOpen(!open); if (!open) reset(); }}
         title="A one-click link that drops someone into a live session">
         <LinkIcon size="13px" color="#00785C" aria-hidden /> Quick link
       </button>
@@ -77,9 +88,9 @@ export default function QuickLink() {
             <div>
               <b>{copied ? "Link copied" : "Link ready"}</b>
               <input className="quicklink-url" readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Invite link" />
-              <p className="small weak" style={{ margin: "6px 0 10px" }}>Works once, until {at(inv.expires)}. Revoke it with <code>shimpaku admin invite revoke {inv.id}</code>.</p>
+              <p className="small weak" style={{ margin: "6px 0 10px" }}>Works once, until {at(inv.expires)}. Withdraw it any time under <b>Open invites</b> on <Link to="/admin/requests" onClick={() => setOpen(false)}>Session requests</Link>.</p>
               <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" className="btn primary" onClick={() => copy(link)}>{copied ? "Copied" : "Copy"}</button>
+                <button ref={copyBtn} type="button" className="btn primary" onClick={() => copy(link)}>{copied ? "Copied" : "Copy"}</button>
                 {typeof navigator.share === "function" && (
                   <button type="button" className="btn" onClick={() => navigator.share({ title: "Shimpaku live lab", text: "A live session on my network lab:", url: link }).catch(() => {})}>Share</button>
                 )}
