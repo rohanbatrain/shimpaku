@@ -377,3 +377,22 @@ def test_bootstrap_reuses_only_a_full_commit(tmp_path):
         p = subprocess.run(["bash", str(OWN / "get.sh")], capture_output=True, text=True, env={**env, "SHIMPAKU_REF": "deadbeef"})
         assert p.returncode == 0, p.stderr
     assert "already in" not in p.stdout and "downloading" in p.stdout
+
+
+def test_root_never_touches_a_file_in_the_operators_image_dir():
+    """/home/lab/images is the operator user's (2770): a symlink planted there would turn a root cp, cat >,
+    mv, chown or chmod into a write or chown of any file. Those steps run as the operator user."""
+    env = {**os.environ, "LC_ALL": "C"}
+    out = subprocess.run(["bash", str(OWN / "remote" / "deploy.sh"), "--stage", "base", "--dry-run",
+                          "--router-image", "/root/vJunos-router-26.2R1.7.qcow2", "--switch-image", "/srv/vJunos-switch-26.2R1.7.qcow2"],
+                         capture_output=True, text=True, check=True, env=env).stdout
+    out += subprocess.run(["bash", str(OWN / "remote" / "deploy.sh"), "--stage", "rest", "--dry-run",
+                           "--upload", "switch=vJunos-switch-26.2R1.7.qcow2:0"],
+                          capture_output=True, text=True, check=True, env=env).stdout
+    touching = [ln for ln in out.splitlines() if ln.startswith("+ ") and "/home/lab/images/" in ln
+                and not ln.startswith("+ manifest")]
+    assert len(touching) == 3 and all(ln.startswith("+ [as shimpaku] ") for ln in touching), touching
+    install = (OWN / "install.sh").read_text()
+    assert "sh -c 'cat > $dst.part'" not in install and 'cp "$p" "$dst.part"' not in install
+    assert install.count("runuser -u") >= 2
+

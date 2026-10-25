@@ -237,6 +237,19 @@ data_dir() {
   run env LAB_OWNER="$OP" LAB_GROUP="$QGROUP" LAB_DATA="$DATA" bash "$LABREPO/ops/lab-host-setup.sh"
 }
 
+# $DATA/images belongs to the operator user (lab-host-setup.sh: 2770, the QEMU group), a user that runs
+# network-facing services. Root never opens, moves, chowns or chmods a file in it: a symlink planted there
+# would turn that into a write or a chown of any file on the host. Root only reads the source; the
+# operator user writes, sets the mode and group, and renames.
+# shellcheck disable=SC2016  # $1 $2 are the operator's sh -c arguments
+IMG_PUT='umask 027; cat > "$1.part" && chgrp "$2" "$1.part" && chmod 0640 "$1.part" && mv -f "$1.part" "$1"'
+# shellcheck disable=SC2016
+IMG_DONE='chgrp "$2" "$1.part" && chmod 0640 "$1.part" && mv -f "$1.part" "$1"'
+img_as_op() {  # script dst [< data]
+  printf '+ [as %s] %s  (dst %s)\n' "$OP" "$1" "$2"
+  ((DRY)) || runuser -u "$OP" -- sh -c "$1" _ "$2" "$QGROUP"
+}
+
 host_images() {
   say "7. images already on the host"
   local kind src dst
@@ -247,10 +260,7 @@ host_images() {
     if [[ $src == "$dst" ]]; then echo "   $dst (in place)"; continue; fi
     if ! ((DRY)) && [[ -f $dst && $(stat -c %s "$src") == "$(stat -c %s "$dst")" ]]; then echo "   $dst present"; continue; fi
     rec image "$dst"
-    run cp --sparse=always "$src" "$dst.part"
-    run mv "$dst.part" "$dst"
-    run chown "$OP:$QGROUP" "$dst"
-    run chmod 0640 "$dst"
+    if ((DRY)); then img_as_op "$IMG_PUT" "$dst"; else img_as_op "$IMG_PUT" "$dst" < "$src"; fi
   done
 }
 
@@ -264,9 +274,7 @@ finish_uploads() {
     if ! ((DRY)) && [[ $(stat -c %s "$dst.part" 2>/dev/null) != "$size" ]]; then
       echo "upload of the $kind image is incomplete ($dst.part); re-run to resume" >&2; exit 3
     fi
-    run mv "$dst.part" "$dst"
-    run chown "$OP:$QGROUP" "$dst"
-    run chmod 0640 "$dst"
+    img_as_op "$IMG_DONE" "$dst"
   done
 }
 

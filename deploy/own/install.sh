@@ -373,10 +373,12 @@ upload_images() {
     if [ "$have" = "$size" ]; then note "$name already on the host"; continue; fi
     say "copying $(basename "$p") ($((size / 1048576)) MiB) to $dst"
     sh_on_target "python3 $STATE/bundle/remote/ownlib.py manifest-add $STATE/manifest.json image $dst"
+    # written by the operator user, who owns the image dir: root never writes through what is there
     if [ "$LOCAL" = 1 ]; then
-      cp "$p" "$dst.part"
+      # shellcheck disable=SC2016  # $1 is sh -c's argument
+      runuser -u "$OP" -- sh -c 'umask 027; cat > "$1"' _ "$dst.part" < "$p" || die "image copy failed; re-run to retry"
     else
-      "${SSH[@]}" "${SUDO}sh -c 'cat > $dst.part'" < "$p" || die "image copy failed; re-run to retry"
+      "${SSH[@]}" "${SUDO}runuser -u $OP -- sh -c 'umask 027; cat > $dst.part'" < "$p" || die "image copy failed; re-run to retry"
     fi
   done
   return 0
@@ -421,7 +423,7 @@ if [ "$DRY" = 1 ]; then
   echo "+ tar PINS remote configs | ssh root@$T 'unpack into $STATE/bundle'"
   echo "+ ssh root@$T bash $STATE/bundle/remote/deploy.sh --stage base:"
   bash "$HERE/remote/deploy.sh" --stage base "${base[@]}" | sed 's/^/    /'
-  echo "+ ssh root@$T 'cat > $DATA/images/<name>.part' < <your image file>   (each image given as a local file; skipped when already there)"
+  echo "+ ssh root@$T 'runuser -u $OP -- sh -c \"cat > $DATA/images/<name>.part\"' < <your image file>   (each image given as a local file; skipped when already there)"
   echo "+ ssh root@$T bash $STATE/bundle/remote/deploy.sh --stage rest:"
   bash "$HERE/remote/deploy.sh" --stage rest "${rest[@]}" | sed 's/^/    /'
   echo "+ ssh root@$T 'cat $STATE/operator-password; rm it'   (printed once to your terminal, never to the log)"
