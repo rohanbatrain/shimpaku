@@ -28,13 +28,16 @@ need() { local v; for v in "$@"; do [[ -n "${!v:-}" && "${!v}" != *"<"* ]] || { 
 ok() { printf '  \033[32mok\033[0m   %s\n' "$*"; }
 no() { printf '  \033[31mno\033[0m   %s\n' "$*"; MISSING=$((MISSING + 1)); }
 
-lab_env_set() {  # KEY VALUE … on the lab host's ~/.config/shimpaku/env, replacing or appending
-  local args=() k
-  while (($#)); do args+=("$1=$2"); shift 2; done
-  ssh "$LAB_HOST" 'f=~/.config/shimpaku/env; mkdir -p "$(dirname "$f")"; touch "$f"; chmod 600 "$f"
-    for kv in "$@"; do k=${kv%%=*}
-      if grep -q "^$k=" "$f"; then sed -i "s|^$k=.*|$kv|" "$f"; else echo "$kv" >> "$f"; fi
-    done' _ "${args[@]}"
+lab_env_set() {  # KEY VALUE … into the lab host's ~/.config/shimpaku/env, replacing or appending
+  # Lines go over stdin to an explicit bash (the remote login shell may be zsh; values never sit
+  # on a command line).
+  local out=""
+  while (($#)); do out+="$1=$2"$'\n'; shift 2; done
+  printf '%s' "$out" | ssh "$LAB_HOST" bash -c "'
+    f=~/.config/shimpaku/env; mkdir -p \"\$(dirname \"\$f\")\"; touch \"\$f\"; chmod 600 \"\$f\"
+    while IFS= read -r kv; do [ -z \"\$kv\" ] && continue; k=\${kv%%=*}
+      grep -v \"^\$k=\" \"\$f\" > \"\$f.tmp\" || true; printf \"%s\\n\" \"\$kv\" >> \"\$f.tmp\"; mv \"\$f.tmp\" \"\$f\"; chmod 600 \"\$f\"
+    done'"
 }
 
 step_check() {
