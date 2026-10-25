@@ -44,6 +44,14 @@ done
 echo "== landing page"
 cp -R "$HERE/site/." "$HERE/site-built/"   # images and any other static files
 sed -e "s#__REPO__#$REPO#g" "$HERE/site/index.html" > "$HERE/site-built/index.html"
+# the one-liner (`curl -fsSL https://<landing>/install.sh | bash`): deploy/own/get.sh, pinned to the commit the
+# public repository's main has right now, so it downloads exactly what is published
+if [[ -f deploy/own/get.sh ]]; then
+  PIN=$(git ls-remote "$REPO" refs/heads/main | cut -f1)
+  [[ "$PIN" =~ ^[0-9a-f]{40}$ ]] || { echo "cannot read the public repository's main commit from $REPO" >&2; exit 1; }
+  sed -e "s#__SHIMPAKU_PIN__#$PIN#g" deploy/own/get.sh > "$HERE/site-built/install.sh"
+  echo "install.sh pinned to $PIN"
+fi
 
 echo "== ship"
 ssh "$VPS" 'mkdir -p ~/shimpaku'
