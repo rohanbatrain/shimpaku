@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     # per-principal/global requests per minute: category=per_principal/global
     # read (anonymous visitors, per address) and request (session requests, per address) were added
     # with public view; categories missing from an override keep these defaults.
+    # lab host health (shimpaku.hostmon): sample period, and the thermal guard (warn + event at
+    # >= 97 C for 60 s; never stops VMs). Off by default.
+    host_sample_s: float = 15.0
+    thermal_guard: bool = False
     rate_limits: str = "write=30/300,demo=6/30,ask=10/60,mcp=60/600,redeem=10/60,read=120/1200,request=3/20,erase=10/100"
 
     def require_device_password(self) -> str:
