@@ -68,6 +68,10 @@ def collect(get) -> dict:
         snap["probes"] = {s: {str(w): get("/api/probes/heatmap", site=s, window=w) for w in WINDOWS} for s in SITES}
     except Exception:  # noqa: BLE001
         pass
+    try:  # Virga live history and catalogue (allow-listed payloads); the replay shows them, never injects
+        snap["virga"] = {"trials": get("/api/virga/trials"), "catalogue": get("/api/virga/catalogue")}
+    except Exception:  # noqa: BLE001
+        pass
     return snap
 
 
