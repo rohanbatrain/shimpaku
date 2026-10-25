@@ -367,3 +367,18 @@ ul.tl.commits li > * { min-width: 0; overflow-wrap: anywhere; }
   .access-banner .access-actions { margin-left: 0; width: 100%; }
   .access-banner .access-actions .btn { flex: 1; justify-content: center; min-height: 44px; }
 }
+
+/* Virga live: drill banner (every page) and the Overview tile */
+.drill-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 16px; padding: 12px 16px; border-radius: 8px;
+  background: var(--warn-bg); border: 1px solid #e2b84f; color: #4a3400; font-size: 14px; }
+.drill-banner .drill-msg { flex: 1 1 280px; min-width: 0; overflow-wrap: anywhere; }
+.drill-banner .drill-links { white-space: normal; }
+.drill-banner a { color: #5c3d00; font-weight: 600; text-decoration: underline; }
+.drill-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #d99a06; animation: drillpulse 1.6s ease-in-out infinite; }
+@keyframes drillpulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .drill-dot { animation: none; } }
+@media (max-width: 600px) { .drill-banner { padding: 12px 16px; } .drill-banner a { display: inline-block; min-height: 32px; line-height: 32px; } }
+a.vg-tile { display: flex; flex-direction: column; gap: 4px; color: var(--t); }
+a.vg-tile:hover { text-decoration: none; border-color: var(--line2); box-shadow: 0 2px 8px rgba(14, 26, 22, .06); }
+a.vg-tile.live { border-color: #e2b84f; }
+.vg-tile-b { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }

@@ -58,7 +58,7 @@ const PARTS: Part[] = [
     what: ["Bring their own model; connect over stdio-over-ssh or HTTP with a bearer token.", "Same tools, same guardrails, same audit as the dashboard."],
     files: ["src/shimpaku/mcp/serve.py", "src/shimpaku/mcp/proxy.py", "src/shimpaku/api/auth.py"], evidence: [{ label: "Integration notes", path: "docs/build/integration.md" }] },
   { id: "bench", title: "Virga bench", sub: "own ground truth", x: 806, y: 252, w: 140, h: 52,
-    what: ["A separate process injecting faults over its own NETCONF, under the same device lock.", "Reads only the audit; the system under test cannot read its catalogue."],
+    what: ["A separate process injecting faults over its own NETCONF, under the same device lock.", "Reads only the audit; the system under test cannot read its catalogue.", "The operator can now run it live from the Fault lab (/virga): one fault at a time, held for a few minutes, then reverted and verified."],
     files: ["bench/virga/runner.py", "bench/virga/scoring.py", "bench/catalogue.yaml"], evidence: [{ label: "Bench notes", path: "docs/build/bench.md" }] },
   { id: "edge", title: "VPS gateway", sub: "Cloudflare → Caddy", x: 612, y: 428, w: 150, h: 52,
     what: ["TLS, per-address rate limits, security headers; reads go to the live lab over NetBird first, the replay second.", "Writes and MCP go to the live lab only; never replayed."],

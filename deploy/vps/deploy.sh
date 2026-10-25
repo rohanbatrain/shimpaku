@@ -74,6 +74,13 @@ if w.get("replay"):
 else:
     print("live")')
 echo "api/whoami: $mode"
+# Virga live: the anonymous health read that Uptime Kuma's "Live lab" monitors use. Soft check: the lab
+# daemon may not run the Virga build yet (ops/golive/run.sh lab-config), so a miss warns, never fails.
+if h=$(curl -fsS "$APP/api/public/health" 2>/dev/null | python3 -c 'import json,sys; h=json.load(sys.stdin); print(" ".join(f"{k}={h[k]}" for k in ("campus", "fabric", "drill", "lab")))' 2>/dev/null); then
+  echo "api/public/health: $h"
+else
+  echo "note: /api/public/health is not answering yet (the lab daemon needs the Virga live build); the Live lab monitors stay red until it does" >&2
+fi
 mcp=$(code -X POST "$APP/mcp")
 wbody=$(mktemp)
 write=$(curl -s -o "$wbody" -w "%{http_code}" -X POST "$APP/api/actions/x/approve")

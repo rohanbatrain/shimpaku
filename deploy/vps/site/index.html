@@ -50,6 +50,8 @@ a{color:var(--accent-ink)}
 .live li b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line);margin-right:7px;vertical-align:2px}
 .live li.ok b::before{background:var(--accent)}.live li.warn b::before{background:var(--warn)}.live li.bad b::before{background:#c0392b}
 .live p{margin:0;font-size:13px;color:var(--muted)}.live .live-note{margin-top:8px;font-size:12px}
+.live .drill{margin:0 0 12px;padding:10px 12px;border:1px solid #c0392b;border-left-width:6px;border-radius:8px;font-size:14px;color:var(--fg)}
+.live .drill b{font-size:16px;color:#c0392b}
 .hw{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:14px}
 .hw .card b{display:block;font-size:22px;color:var(--accent-ink);line-height:1.25}
 .rack{list-style:none;margin:0;padding:12px;display:grid;gap:6px;background:#16211c;border-radius:10px}
@@ -79,7 +81,7 @@ a{color:var(--accent-ink)}
     <a class="btn" href="__REPO__/blob/main/docs/INCIDENTS.md">What went wrong</a>
     <a class="btn" href="https://{{$status}}/">Uptime status</a>
   </div>
-  <div class="live" id="live" data-src="https://{{$app}}/api/public/summary" aria-live="polite">
+  <div class="live" id="live" data-src="https://{{$app}}/api/public/summary" data-lab="https://{{$app}}/virga" data-status="https://{{$status}}/" aria-live="polite">
     <p>Live status could not be loaded here. The dashboard shows the live lab when it is online and a
     recorded replay when it is not; <a href="https://{{$status}}/">the status page</a> has uptime.</p>
   </div>
@@ -139,6 +141,13 @@ a{color:var(--accent-ink)}
 
 <section>
   <h2>Break it, watch it get fixed</h2>
+  <p style="margin:0 0 14px">You can watch a real fault happen. With <strong>Virga</strong>, the fault-injection
+  benchmark, the operator injects a catalogued fault into the live lab (a real Junos commit, made through the
+  same lease, journal and <code>commit confirmed</code> as the benchmark), then reverts it and checks the revert.
+  While a drill runs, the strip above says <em>fault drill running</em>, the dashboard's
+  <a href="https://{{$app}}/virga">Fault lab</a>, Topology and Theatre show it as it is detected, and the
+  <a href="https://{{$status}}/">status page</a>'s "Live lab" group turns red on purpose, then green again once
+  the fault is reverted. Anyone can watch; only the operator can inject.</p>
   <figure class="clip">
     <video autoplay muted loop playsinline preload="metadata" poster="theatre-live.png" aria-describedby="clip-text" width="1280" height="800">
       <source src="theatre-live.mp4" type="video/mp4">

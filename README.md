@@ -146,6 +146,27 @@ vJunos fabric and campus devices. A full scored benchmark run (≥85 fault trial
 trials) is a three-week v2 item (see `docs/build/*` and the lab book's `PLAN.md`); this MVP
 proves the harness itself works, repeatably, on the real lab.
 
+## Virga fault lab
+
+The same harness, live. In the dashboard's **Fault lab** (`/virga`) the operator picks a catalogued fault, say
+FAB-01 on leaf1, and Virga injects it into the real devices; the system under test then finds out the way it
+would find out about any fault. Design and API: [`docs/build/virga-live.md`](docs/build/virga-live.md).
+
+- **What a viewer can watch**, with no sign-in: the catalogue, the running trial as a phase timeline (inject,
+  verified, hold, revert, verified reverted) with the runner's log, and the history. While a drill runs a banner
+  says so on every page, Topology marks the nodes and links it touches, Theatre follows it, the landing page's
+  live strip says "fault drill running", and the public status page's **Live lab** group (campus, fabric, no
+  drill running) turns red within a minute, on purpose, and green again after the revert.
+- **Who can inject:** only the operator's own dashboard session (password and TOTP). Never a token, an agent, a
+  tester or a visitor. Every inject, revert and recover, allowed or refused, is one hash-chained audit row.
+- **Safety:** one trial at a time, under the same per-device lease and journal as the self-test. Every inject is
+  a `commit confirmed` whose rollback timer outlives the hold, so if the daemon dies mid-drill the device rolls
+  itself back (the dead man's switch); the journal is the second way back, and an unfinished trial at start-up
+  blocks new injects until the operator presses **Recover**. A fault that would blind the daemon (management
+  lockout, CAM-06) is not offered. It is off unless `SHIMPAKU_VIRGA_LIVE=1`, and the public replay never injects.
+
+Setup: [`docs/GO-LIVE.md`](docs/GO-LIVE.md) (Live fault drills). Presenter's script: [`DEMO.md`](DEMO.md).
+
 ## Evidence (everything below was run on the live lab)
 
 | Claim | Proof | Where |
@@ -187,7 +208,7 @@ The live demo script is [`DEMO.md`](DEMO.md) (`shimpaku demo seed | break | stat
 
 | | |
 |---|---|
-| [`DEMO.md`](DEMO.md) | 10-minute live walkthrough |
+| [`DEMO.md`](DEMO.md) | 10-minute live walkthrough, and the script for a live fault drill |
 | [`SECURITY.md`](SECURITY.md) | threat model and controls |
 | [`docs/INCIDENTS.md`](docs/INCIDENTS.md) | defects found by running it, with fixes and tests |
 | [`docs/RESEARCH.md`](docs/RESEARCH.md) | what each cited research report (R1–R9, REVIEW) established |

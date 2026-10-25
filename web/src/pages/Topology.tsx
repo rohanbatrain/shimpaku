@@ -7,6 +7,7 @@ import { usePoll } from "../components/poll";
 import { Load, Pill, Seg, StatusPill } from "../components/ui";
 import { ago, time } from "../format";
 import Scrubber, { useTimeParam } from "../components/Scrubber";
+import { useFaultMarks } from "../virga";
 import { fmtBps, useAsOf, useTraffic, type AsOf, type TrafficLink } from "../live";
 
 const Topo3D = lazy(() => import("../components/Topo3D"));
@@ -72,7 +73,7 @@ export function TrafficPop({ t, onClose }: { t: TrafficLink; onClose: () => void
   );
 }
 
-function NodePanel({ n, data, onClose, past }: { n: TNode; data: Topo; onClose: () => void; past?: boolean }) {
+function NodePanel({ n, data, onClose, past, faulted }: { n: TNode; data: Topo; onClose: () => void; past?: boolean; faulted?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => { ref.current?.focus(); }, [n.name]);
   const links = data.links.filter((l) => l.a === n.name || l.b === n.name);
@@ -87,6 +88,7 @@ function NodePanel({ n, data, onClose, past }: { n: TNode; data: Topo; onClose: 
         <button className="icon-btn" onClick={onClose} aria-label="Close details"><Close size="16px" color="currentColor" /></button>
       </div>
       {past && <div className="notice info small">These details are live (now), not as of the chosen minute.</div>}
+      {faulted && <div className="notice warn small"><b>Fault injected.</b> A Virga fault drill is touching this device right now. <Link to="/virga">Open the Fault lab →</Link></div>}
       <dl className="kv kv-narrow">
         <dt>Role</dt><dd>{n.role} · {n.site}</dd>
         <dt>Model</dt><dd className="mono">{n.kind ?? "—"}</dd>
@@ -141,6 +143,7 @@ function NodePanel({ n, data, onClose, past }: { n: TNode; data: Topo; onClose: 
 
 export default function Topology() {
   const q = usePoll<Topo>("/api/viz/topology");
+  const fm = useFaultMarks();
   const [sp, setSp] = useSearchParams();
   const sel = sp.get("n");
   const view = sp.get("view") === "3d" ? "3d" : "2d";
@@ -179,13 +182,14 @@ export default function Topology() {
                 <div className={`topo-wrap${node ? " has-panel" : ""}`}>
                   <div className="card topo-card">
                     {(() => {
-                      const flat = <TopoMap data={d} selected={sel} onSelect={(n) => select(n === sel ? null : n)}
+                      const faults = t == null ? fm : null; // a live drill says nothing about a past minute
+                      const flat = <TopoMap data={d} faults={faults} selected={sel} onSelect={(n) => select(n === sel ? null : n)}
                         traffic={traffic} onLink={(id) => setSelLink(id === selLink ? null : id)} selectedLink={selLink} />;
                       return view === "3d"
                         ? <Fallback to={flat}><Suspense fallback={flat}><Topo3D data={d} selected={sel} onSelect={(n) => select(n === sel ? null : n)} /></Suspense></Fallback>
                         : flat;
                     })()}
-                    <Legend />
+                    <Legend faults={!!(t == null && fm)} />
                     <TrafficLegend live={t == null} speedReason={t == null ? live?.speed_reason : "not collected"} at={trafficAt} />
                     {t == null && live?.available === false && <div className="small weak">Traffic not available: {live.reason}</div>}
                     {tl && <TrafficPop t={tl} onClose={() => setSelLink(null)} />}
@@ -195,7 +199,7 @@ export default function Topology() {
                       </div>
                     )}
                   </div>
-                  {node && <NodePanel n={node} data={d0} past={t != null} onClose={() => select(null)} />}
+                  {node && <NodePanel n={node} data={d0} past={t != null} faulted={!!fm?.nodes.includes(node.name)} onClose={() => select(null)} />}
                 </div>
                 <div className="card flush">
                   <div className="card-h"><h2>Links</h2><span className="small weak">the same data as the map</span></div>
