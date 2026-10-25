@@ -29,6 +29,7 @@ export function toolHref(name: string): string | null {
   if (name.startsWith("audit")) return "/audit";
   if (/^(topo_|routing_|device_|iface_|port_|inventory|config_)/.test(name)) return "/topology";
   if (name.startsWith("bench")) return "/benchmark";
+  if (name.startsWith("kb_")) return "/architecture";
   return null;
 }
 

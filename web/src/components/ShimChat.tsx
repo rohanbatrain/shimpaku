@@ -58,7 +58,8 @@ const SUGGEST: [RegExp, string[]][] = [
   [/^\/actions|^\/theatre/, ["What is waiting for my approval?", "Is VLAN 999 present on sw1 ge-0/0/5?"]],
   [/^\/hardware/, ["Which device is busiest right now?", "Are all seven VMs healthy?"]],
   [/^\/virga/, ["What fault is Virga injecting right now?", "Did Shimpaku detect the last drill?"]],
-  [/.*/, ["What's the fabric looking like?", "Anything wrong in the lab right now?", "What is waiting for my approval?"]],
+  [/^\/architecture|^\/guardrails|^\/audit|^\/benchmark/, ["How do the guardrails stop an unsafe change?", "Why is approval a dashboard session and not an MCP tool?", "How does the audit chain detect tampering?"]],
+  [/.*/, ["What's the fabric looking like?", "Anything wrong in the lab right now?", "How does commit confirmed protect a change?", "How is Shimpaku built?"]],
 ];
 const suggestFor = (p: string) => SUGGEST.find(([r]) => r.test(p))![1];
 
@@ -161,8 +162,8 @@ export function Welcome({ onPick }: { onPick: (q: string) => void }) {
   const loc = useLocation();
   return (
     <div className="sc-welcome">
-      <b>Ask anything about the lab.</b>
-      <span className="weak">Shim reads the same live data as this dashboard and shows every tool it used. It can propose a fix; only a human approves it.</span>
+      <b>Ask about the live lab, or how Shimpaku is built.</b>
+      <span className="weak">Shim reads the same live data as this dashboard, and Shimpaku's own engineering documents for design and how-to questions. It shows every tool it used and names its sources. It can propose a fix; only a human approves it.</span>
       <div className="sc-sugg">
         {suggestFor(loc.pathname).map((s) => <button key={s} type="button" className="btn" onClick={() => onPick(s)}>{s}</button>)}
       </div>

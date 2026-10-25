@@ -586,6 +586,8 @@ def create_app(
     async def reject(action_id: str, p: Principal = Depends(writer)):
         return await call("action_reject", action_id, p.caller())
 
+    tester_asks: dict[str, int] = {}  # lease id -> Shim questions asked on the shared key
+
     @app.post("/api/assistant/ask")
     async def ask(body: AskBody, request: Request, p: Principal = Depends(reader)):
         if p.effective_role == "visitor" and p.kind == "anonymous":
@@ -602,10 +604,17 @@ def create_app(
                 key = await leases.llm_key(p.lease_id or "")
             except LLMKeyError:
                 raise HTTPException(503, "Ask Shim is unavailable: the LLM gateway refused a key for this lease") from None
-            if key is None:
+            if key is not None:
+                extra["llm_key"] = key
+            elif settings.tester_shim_shared_key:
+                # opt-in: no per-lease key, so the operator's key with a per-lease question cap
+                used = tester_asks.get(p.lease_id or "", 0)
+                if used >= settings.tester_shim_questions:
+                    raise HTTPException(429, f"This session's {settings.tester_shim_questions} Shim questions are used up")
+                tester_asks[p.lease_id or ""] = used + 1
+            else:
                 raise HTTPException(503, "Ask Shim is not enabled for testers on this server "
                                          "(no LLM admin key is configured)")
-            extra["llm_key"] = key
         rate("ask", p)
         params = inspect.signature(ask_fn).parameters
         if "history" in params and body.history:
@@ -663,8 +672,8 @@ def create_app(
     @app.get("/api/lease")
     async def get_lease(p: Principal = Depends(reader)) -> dict:
         role = p.effective_role
-        assistant_ok = bool(leases.keys and leases.keys.enabled and ask_fn is not None
-                            and "llm_key" in inspect.signature(ask_fn).parameters)
+        assistant_ok = bool(ask_fn is not None and "llm_key" in inspect.signature(ask_fn).parameters
+                            and ((leases.keys and leases.keys.enabled) or settings.tester_shim_shared_key))
         if role == "tester":
             return {"role": role, "lease": _public_lease(leases.lease(p.lease_id)), "assistant": assistant_ok,
                     "demo_ops": leases.demo_ops}

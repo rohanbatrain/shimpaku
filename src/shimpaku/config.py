@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     llm_admin_key: str | None = Field(default=None, repr=False)
     tester_llm_budget_usd: float = 0.50
     tester_llm_rpm: int = 10
+    # Without an admin key no per-lease key can be minted. Opt in to let testers' Shim spend the
+    # operator's key instead, capped at tester_shim_questions per lease (SECURITY.md, testers).
+    tester_shim_shared_key: bool = False
+    tester_shim_questions: int = 25
     tester_llm_models: str = ""            # comma list; empty = the models in llm_models
     # per-principal/global requests per minute: category=per_principal/global
     # read (anonymous visitors, per address) and request (session requests, per address) were added

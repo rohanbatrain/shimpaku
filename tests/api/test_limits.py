@@ -146,6 +146,26 @@ def test_without_an_admin_key_testers_get_no_assistant(world, monkeypatch):
     assert "key" not in seen
 
 
+def test_tester_shim_on_the_shared_key_is_opt_in_and_capped(world, monkeypatch):
+    from shimpaku.config import settings
+    monkeypatch.setattr(settings, "tester_shim_shared_key", True)
+    monkeypatch.setattr(settings, "tester_shim_questions", 2)
+    app, lm, seen = _ask_app(world, LiteLLMKeys(GW, None, budget_usd=0.5, rpm=7, models=[]))
+    inv = lm.create_invite("n", "admin")
+    lease = lm.redeem(inv["token"], consent=True)
+    c = TestClient(app)
+    c.get("/api/whoami")
+    from shimpaku.api.lease import tester_name
+    c.cookies.set("shimpaku_session", world.auth.create_session(tester_name(inv["id"]), role="tester",
+                                                                 lease_id=lease["id"]))
+    assert c.get("/api/lease").json()["assistant"] is True
+    with respx.mock(assert_all_called=False) as mock:
+        codes = [c.post("/api/assistant/ask", json={"question": f"q{i}"}, headers=csrf(c)).status_code for i in range(3)]
+        assert not mock.calls  # no key is minted on the shared path
+    assert codes == [200, 200, 429]
+    assert seen["key"] is None  # the operator's key (the assistant's default), not a lease key
+
+
 @respx.mock
 def test_key_is_deleted_by_alias_after_a_restart(world):
     respx.post(f"{GW}/key/generate").mock(return_value=httpx.Response(200, json={"key": "sk-1"}))
