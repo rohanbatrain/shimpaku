@@ -12,7 +12,8 @@
 .twin-slot { fill: none; stroke: #9fb3aa; stroke-dasharray: 1.5 2; stroke-width: .7px; }
 .twin-site { font: 700 1.5px var(--mono); letter-spacing: .2em; fill: #6d7c76; }
 .twin-guest.clickable { cursor: pointer; }
-.twin-guest:focus { outline: none; }
+.twin-guest:focus:not(:focus-visible) { outline: none; }
+.twin-guest:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 3px; }
 .twin-guest .iso-edge { stroke-width: 1.1px; }
 .twin-guest.st-up .iso-edge { stroke: #0f6e4f; }
 .twin-guest.st-degraded .iso-edge { stroke: #b07800; }
