@@ -4,6 +4,7 @@ import { useSession } from "../session";
 import { EraseData } from "./Erase";
 import { Busy } from "./ui";
 import { fixtureArgs } from "./fixture";
+import { Link } from "react-router";
 
 export type Lease = { id: string; state: string; remaining_s: number | null; queue_position: number | null; breaks_left: number; seeds_left: number; token_issued: boolean; ends: number | null };
 type LeaseResp = { role: string; lease: Lease | null; assistant?: boolean };
@@ -83,7 +84,7 @@ export function FixturePanel({ tester }: { tester: boolean }) {
   const cmd = tok ? `claude mcp add --transport http shimpaku ${tok.mcp_url} --header "Authorization: Bearer ${tok.token}"` : "";
   return (
     <div className="card">
-      <h2 style={{ marginTop: 0 }}>Demo fixture · VLAN 999 on sw1 ge-0/0/5</h2>
+      <h2 style={{ marginTop: 0, display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>Demo fixture · VLAN 999 on sw1 ge-0/0/5 <Link to="/theatre" style={{ textTransform: "none", letterSpacing: 0, fontSize: 13 }}>Open theatre mode →</Link></h2>
       <p className="weak small" style={{ marginTop: 0 }}>1. Break removes VLAN 999 from the trunk (a real commit). 2. Propose the fix, or let Shim or your own agent propose it. 3. Open the action and approve it. 4. Watch it validate for 3 minutes.</p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button className="btn danger" disabled={!active || !!busy} onClick={() => run("break", () => api("/api/demo/break", { method: "POST" }), (r) => (r.changed ? "VLAN 999 removed from the trunk." : "Already broken: nothing changed."))}>{busy === "break" && <Busy />} Break VLAN 999</button>

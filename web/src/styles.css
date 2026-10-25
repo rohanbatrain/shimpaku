@@ -349,3 +349,9 @@ svg.blast-tree { width: 100%; min-width: 640px; height: auto; display: block; }
 .topo .topo-if, .topo .topo-name, .topo .topo-role, .topo .topo-site-s {
   paint-order: stroke; stroke: var(--topo-halo, #f6f9f8); stroke-width: 5px; stroke-linejoin: round;
 }
+
+/* commits on the action page: time | comment, details on their own line (the timeline's 3rd
+   column is a 14 px dot slot, which squeezed the comment to one character per line) */
+ul.tl.commits li { grid-template-columns: 64px minmax(0, 1fr); row-gap: 2px; }
+ul.tl.commits li > :nth-child(3) { grid-column: 2; }
+ul.tl.commits li > * { min-width: 0; overflow-wrap: anywhere; }

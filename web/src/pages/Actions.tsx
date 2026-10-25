@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useApi } from "../api";
 import TopBar from "../components/TopBar";
 import { FixturePanel } from "../components/Lease";
@@ -11,6 +11,9 @@ type A = { id: string; title: string; kind: string; tier: string; device: string
 export default function Actions() {
   const q = useApi<{ actions: A[] }>("/api/actions", { url: "/api/stream/actions", event: "actions" });
   const nav = useNavigate();
+  // ?ids=a,b&band=… : the actions behind one band of the guardrail funnel (/guardrails)
+  const [sp] = useSearchParams();
+  const only = sp.get("ids") ? new Set(sp.get("ids")!.split(",")) : null;
   const { who } = useSession();
   const tester = who.role === "tester";
   const showFixture = !who.replay && (tester || (who.role === "operator" && who.kind === "session"));
@@ -29,7 +32,13 @@ export default function Actions() {
           ))}
         </div>
         <div className="card flush">
-          <Load q={q} empty={(d) => (d.actions.length ? null : <Empty title="No actions">Nothing has been proposed.</Empty>)}>
+          {only && (
+            <div className="notice" style={{ margin: 12 }}>
+              Showing {only.size} action{only.size === 1 ? "" : "s"} from the guardrail funnel{sp.get("band") ? <> · <b>{sp.get("band")}</b></> : null}.{" "}
+              <Link to="/actions">Show all</Link> · <Link to="/guardrails">Back to the funnel</Link>
+            </div>
+          )}
+          <Load q={only ? { ...q, data: q.data && { ...q.data, actions: q.data.actions.filter((a) => only.has(String(a.id))) } } : q} empty={(d) => (d.actions.length ? null : <Empty title="No actions">Nothing has been proposed.</Empty>)}>
             {(d) => (
               <table className="t cards">
                 <thead><tr><th>#</th><th>Action</th><th>Tier</th><th>Device</th><th>Mode</th><th>Proposed by</th><th>Created</th><th>Status</th></tr></thead>

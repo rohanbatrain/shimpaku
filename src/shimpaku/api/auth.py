@@ -77,6 +77,9 @@ class Principal:
     # tokens bound to one lease) are issued by the lease manager (DEPLOY-DESIGN build step 4).
     role: str | None = None
     lease_id: str | None = None
+    # Presenter mode: an operator session showing the visitor-style UI (shimpaku.api.routes_console).
+    # Only ever True on an operator session; authority stays the operator's.
+    presenting: bool = False
 
     @property
     def effective_role(self) -> str:
@@ -98,6 +101,12 @@ class Principal:
     def is_operator(self) -> bool:
         """Operator-only surfaces (invites, leases, tokens): an operator's dashboard session."""
         return self.kind == "session" and self.effective_role == "operator"
+
+    @property
+    def can_present(self) -> bool:
+        """Presenter features (the Junos console): the operator's own dashboard session only.
+        Never a token, a tester or a visitor, whatever the ``presenting`` flag says."""
+        return self.is_operator and self.scope == "admin" and self.token_id is None
 
     @property
     def can_propose(self) -> bool:
@@ -123,7 +132,8 @@ class AuthStore:
     # Columns added after the first release. Existing token rows get NULL expires_at = no expiry
     # (the operator's agent tokens); NULL role = derived from kind, as before.
     _ADDED = {"token": ("expires_at TEXT", "role TEXT", "lease_id TEXT"),
-              "session": ("role TEXT", "lease_id TEXT", "idle_s INTEGER", "absolute_s INTEGER")}
+              "session": ("role TEXT", "lease_id TEXT", "idle_s INTEGER", "absolute_s INTEGER",
+                          "presenting INTEGER")}
 
     def _migrate(self) -> None:
         for table, cols in self._ADDED.items():
@@ -176,8 +186,8 @@ class AuthStore:
         h = _digest(sid)
         now = self.session_clock()
         with self._lock:
-            row = self._db.execute("SELECT user, created_at, expires_at, role, lease_id, idle_s, absolute_s"
-                                   " FROM session WHERE session_id=?", (h,)).fetchone()
+            row = self._db.execute("SELECT user, created_at, expires_at, role, lease_id, idle_s, absolute_s,"
+                                   " presenting FROM session WHERE session_id=?", (h,)).fetchone()
             if row is None:
                 return None
             user, created, expires = row[0], _ts(row[1]), _ts(row[2])
@@ -187,7 +197,16 @@ class AuthStore:
                 return None
             new_exp = min(now + idle, created + absolute)
             self._db.execute("UPDATE session SET expires_at=? WHERE session_id=?", (_iso(new_exp), h))
-            return {"user": user, "role": row[3], "lease_id": row[4]}
+            return {"user": user, "role": row[3], "lease_id": row[4], "presenting": bool(row[7])}
+
+    def set_presenting(self, sid: str | None, on: bool) -> bool:
+        """Presenter mode on an operator session (never a tester's). False when no such session."""
+        if not sid:
+            return False
+        with self._lock:
+            return self._db.execute(
+                "UPDATE session SET presenting=? WHERE session_id=? AND (role IS NULL OR role='operator')",
+                (1 if on else 0, _digest(sid))).rowcount > 0
 
     def session_user(self, sid: str | None) -> str | None:
         rec = self.session_record(sid)

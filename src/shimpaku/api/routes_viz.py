@@ -345,4 +345,5 @@ def router(call: Callable[..., Awaitable[Any]], reader: Callable[..., Any]) -> A
             **({"demo": True} if topo.get("demo") else {}),
         }
 
+    r.topology = topology_cached  # type: ignore[attr-defined]  # shared with routes_hardware
     return r

@@ -4,10 +4,15 @@ import { Close, Send, Robot } from "grommet-icons";
 import { ask, type AskEvent } from "../api";
 import { Busy, Rich } from "./ui";
 import { useSession } from "../session";
+import TraceDiagram from "./TraceDiagram";
+import { argsOf, nextTraceId, putTrace, type Trace } from "../traces";
+import "../explain.css";
 
 type Turn = {
   id: number;
   q: string;
+  at: number;
+  page: string;
   model?: string;
   tools: Extract<AskEvent, { type: "tool" }>[];
   evidence: Extract<AskEvent, { type: "evidence" }>[];
@@ -18,13 +23,19 @@ type Turn = {
 
 const SUGGEST = ["What's the fabric looking like?", "Why did campus connect drop?", "What is waiting for my approval?"];
 
+function traceOf(t: Turn): Trace {
+  return {
+    id: t.id, q: t.q, at: t.at, page: t.page, model: t.model, text: t.text, done: t.done, error: t.error, evidence: t.evidence,
+    steps: t.tools.map((c) => ({ name: c.name, call: c.call, args: argsOf(c), ms: c.ms, ok: c.ok, ids: c.ids ?? [] })),
+  };
+}
+
 export default function AssistantPanel({ seed, onClose }: { seed?: string; onClose: () => void }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
-  const seq = useRef(0);
   const seeded = useRef(false);
   const loc = useLocation();
   const busy = turns.length > 0 && !turns[turns.length - 1].done;
@@ -34,8 +45,8 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
   const send = (question: string) => {
     if (!question.trim() || busy || visitor) return;
     setQ("");
-    const id = ++seq.current;
-    setTurns((t) => [...t, { id, q: question, tools: [], evidence: [], text: "", done: false }]);
+    const id = nextTraceId();
+    setTurns((t) => [...t, { id, q: question, at: Date.now() / 1000, page: loc.pathname, tools: [], evidence: [], text: "", done: false }]);
     const upd = (f: (t: Turn) => Turn) => setTurns((all) => all.map((t) => (t.id === id ? f(t) : t)));
     abort.current = new AbortController();
     ask(question, { page: loc.pathname }, (e) => {
@@ -59,6 +70,7 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
   }, []);
   useEffect(() => {
     body.current?.scrollTo({ top: body.current.scrollHeight });
+    turns.forEach((t) => putTrace(traceOf(t))); // in-memory only (traces.ts)
   }, [turns]);
 
   return (
@@ -96,17 +108,10 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
           <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div className="msg-u">{t.q}</div>
             <div className="msg-a">
-              {t.tools.length > 0 && (
-                <div aria-label="Tool trace">
-                  <div className="k" style={{ marginBottom: 4 }}>
-                    Tool trace {t.model && <span className="weak" style={{ textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>· {t.model}</span>}
-                  </div>
-                  {t.tools.map((c, j) => (
-                    <span key={j} className="chip" title={c.ms ? `${c.ms} ms` : undefined}>
-                      <span style={{ color: c.ok === false ? "#B3261E" : "#00785C" }}>{c.ok === false ? "✕" : "✓"}</span>
-                      {c.call}
-                    </span>
-                  ))}
+              {(t.tools.length > 0 || t.done) && (
+                <div className="trace-wrap">
+                  <TraceDiagram t={traceOf(t)} compact />
+                  <Link to="/assistant/trace" className="small">Open reasoning trace →</Link>
                 </div>
               )}
               {t.text ? <p style={{ margin: 0 }}><Rich text={t.text} /></p> : !t.done && <Busy />}

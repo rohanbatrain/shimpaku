@@ -14,6 +14,19 @@ bonsai juniper; no HPE/Juniper/Mist/Marvis trademark is used anywhere in this pr
 > The proof is a 35-scenario fault-injection benchmark and an agent-safety red team, both
 > runnable on demand, not a one-off demo recording.
 
+**The lab behind it.** Seven Junos devices run as VMs on one libvirt/KVM host: r1 and r2
+(vJunos-router), sw1, spine1, spine2, leaf1 and leaf2 (vJunos-switch, Junos 26.2), 4 vCPU and
+5 GiB each, streaming gNMI telemetry every 10 s and read over NETCONF. They run the same Junos OS
+as real hardware, per Juniper's documentation: vJunos-switch "is built using EX9214 as a reference
+Juniper switch" ([overview](https://www.juniper.net/documentation/us/en/software/vjunos/vjunos-switch-kvm/topics/vjunos-switch-overview-understanding.html)),
+and vJunos-router "is built using vMX as a reference Juniper router", with "feature consistency
+with the physical MX Series platforms" ([overview](https://www.juniper.net/documentation/us/en/software/vjunos-router/vjunos-router-kvm/topics/vjunos-router-overview-understanding.html)).
+They do not have that hardware's forwarding: the data plane is software in an x86 VM, "up to
+100 Mbps aggregated over all the interfaces", labs only. The dashboard's **Hardware** view
+(`/hardware`) draws the host and each device as a front panel whose port LEDs, traffic blinks,
+CPU and memory are read live; the drawings are original and generic, not product images
+(research: [`docs/research/2026-10-25-hardware-twin.md`](docs/research/2026-10-25-hardware-twin.md)).
+
 ## 30-second tour
 
 ```bash
@@ -31,16 +44,29 @@ open http://127.0.0.1:8780             # the dashboard: Service levels → Root 
 - **Benchmark**: an injected-fault scenario, verified independently of the system under test,
   scored against four baselines (see [Benchmark](#benchmark)).
 
-## Screens (live lab, 2026-10-24)
+## Screens (live lab, 2026-10-25)
 
-Every screen below is the running system against the real vJunos lab. No demo data is used.
+Captured from the running system against the real vJunos lab: the numbers below are what the lab showed at capture time, not demo data.
+
+[![Hardware: seven Junos devices on one hypervisor](docs/screens/desktop/24-hardware-digital-twin.png)](docs/screens/desktop/24-hardware-digital-twin.png)
+**Hardware.** Seven vJunos guests on one libvirt/KVM host, each drawn with its live CPU, memory and Junos 26.2R1.7, and the real-world equivalent of each model as Juniper documents it (EX9214-class switch, MX Series router), with the caveats: lab use only, up to 100 Mbps, software forwarding.
 
 | | |
 |---|---|
-| ![Overview](docs/screens/11-overview.png) **Overview.** All 7 devices reachable, every link up, the audit chain verified, and today's actions, 5 of them blocked by guardrails. | ![Topology](docs/screens/12-topology.png) **Live topology.** Both sites, each link coloured by LLDP, OSPF and BFD state. The demo trunk shows VLAN 999 present or missing. |
-| ![Service levels, campus, 24 h](docs/screens/01-service-levels-campus.png) **Service levels.** Real probe- and device-minutes, with `n` shown. The change timeline lists every commit and action on sw1 today, including the blocked, recurred and cancelled ones. | ![Root cause](docs/screens/03-root-cause.png) **Root cause.** The fabric BFD incident: classifier breakdown, blast-radius verdict and scored evidence. |
-| ![An action that recurred](docs/screens/05-action-recurred.png) **An action that recurred.** VLAN 999 was restored under `commit confirmed`, then removed again during validation. The system reopened the issue instead of trusting its own fix. | ![A tester blocked](docs/screens/07-action-blocked-tester-scope.png) **A guest tester blocked.** A tester tried a port bounce on leaf2, and the engine refused it as outside the tester scope. |
-| ![Benchmark](docs/screens/08-benchmark.png) **Benchmark.** 16 fault scenarios × 5 trials, each injected, verified independently and reverted. | ![Tester pass](docs/screens/10-tester-start.png) **Tester pass.** An invited guest's start page, with a privacy notice and consent before a 30-minute session. |
+| [![Overview](docs/screens/desktop/01-overview.png)](docs/screens/desktop/01-overview.png)<br>**Overview.** 7 of 7 devices reachable, 6 of 6 links up, audit chain verified over 94 rows, and 6 actions today (4 blocked by guardrails, 2 verified). | [![Live topology](docs/screens/desktop/02-topology-live-traffic.png)](docs/screens/desktop/02-topology-live-traffic.png)<br>**Live topology.** Both sites with each link coloured by LLDP, OSPF and BFD state, and in/out rates from gNMI counters drawn on the links. |
+| [![Blast radius](docs/screens/desktop/07-root-cause-blast-radius.png)](docs/screens/desktop/07-root-cause-blast-radius.png)<br>**Blast radius.** A closed fabric BFD incident, with the affected devices ringed on the map and the verdict `diffuse` (1 of 20 units failing). | [![A verified action](docs/screens/desktop/09-action-verified-real-run.png)](docs/screens/desktop/09-action-verified-real-run.png)<br>**A verified action.** VLAN 999 restored on sw1 under `commit confirmed`, ten guardrails passed, then six validation checks before it was called verified. |
+| [![Theatre](docs/screens/desktop/12-theatre-real-run.png)](docs/screens/desktop/12-theatre-real-run.png)<br>**Theatre.** The same run replayed from its recorded events: fault injected, probe dip 9.5 s later, fix proposed, committed, verified at +3 min 6 s. | [![An action that recurred](docs/screens/desktop/10-action-recurred.png)](docs/screens/desktop/10-action-recurred.png)<br>**An action that recurred.** The fix held for one validation check, then the symptom came back, so the system reopened triage instead of trusting its own fix. |
+| [![A guardrail block](docs/screens/desktop/11-action-blocked-by-guardrail.png)](docs/screens/desktop/11-action-blocked-by-guardrail.png)<br>**A guardrail block.** A tester's port bounce on leaf2 was refused at T0 (outside the tester scope); no commit was made. | [![Guardrail funnel](docs/screens/desktop/13-guardrail-funnel.png)](docs/screens/desktop/13-guardrail-funnel.png)<br>**Guardrail funnel.** 16 proposals in 7 days: 8 blocked at T0, 1 at G5, 7 passed, 6 executed, 5 verified, 1 recurred. |
+| [![Audit chain](docs/screens/desktop/14-audit-chain.png)](docs/screens/desktop/14-audit-chain.png)<br>**Audit chain.** Hash-chained rows for every MCP, REST and executor call, each row's hash covering the one before; chain verified, with a tamper test per row. | [![Benchmark](docs/screens/desktop/15-benchmark.png)](docs/screens/desktop/15-benchmark.png)<br>**Benchmark.** The fault-injection harness self-test: 80 of 80 trials passed over 16 scenarios, config restored after each. No detection or repair score is published yet. |
+
+All 23 desktop screens (1600×1000 @2x): [`docs/screens/desktop/`](docs/screens/desktop/). All phone screens (390×844 @2x, full page, long pages cut at 2600 CSS px): [`docs/screens/mobile/`](docs/screens/mobile/).
+
+<p>
+  <img src="docs/screens/mobile/00-navigation-drawer.png" width="200" alt="Phone navigation drawer">
+  <img src="docs/screens/mobile/01-overview.png" width="200" alt="Phone overview">
+  <img src="docs/screens/mobile/02-topology-live-traffic.png" width="200" alt="Phone topology">
+  <img src="docs/screens/mobile/11-action-blocked-by-guardrail.png" width="200" alt="Phone blocked action">
+</p>
 
 ## Architecture
 

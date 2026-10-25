@@ -88,6 +88,57 @@ validation, added a test that fails on the old code, and wrote it up."*
 > write path: proposal, guardrails, human approval, lock, `commit confirmed`, validation. And
 > the README lists what I deliberately didn't build, and why."
 
+## Presenter mode and the Junos console
+
+Signed in as the operator, press **Presenter mode** in the top bar: the dashboard switches to the
+clean visitor-style view (no admin nav, a green **Presenting** badge) and keeps your operator
+console. Open **Console** in the nav, pick a device, tap a quick command (`show interfaces terse`,
+`show ospf neighbor`, `show bfd session`, `show vlans`, `show system alarms`) or type one. ↑/↓
+walks the history, Ctrl+L clears, each output has **Copy**.
+
+Only operational-mode `show`, `ping` (count ≤ 10) and `traceroute` run; a good moment is typing
+`req sys reboot` and showing it refused (and audited) — changes go through Actions with approval.
+**Stop presenting** returns to the operator view. In demo mode (`SHIMPAKU_DEMO=1`) the console
+answers with canned output (`api/demo_console.py`).
+
+## Theatre mode and the landing clip
+
+**Theatre** (`/theatre`, in the side menu, also linked from the Actions page, the fixture panel and a
+fixture action) follows the break-and-fix demo on one screen: fault injected, probe dip, incident,
+proposed (by whom), guardrails G0-G9, approved (by whom), commit-confirmed leg with its Junos commit
+time, fresh-session health check, confirm commit, a live countdown to the action's recorded validation
+end, then Verified or Recurred. Left: the trunk going red then green; right: each step with its time
+and the gap since the one before ("approved in 19 s"). It binds to the newest demo-fixture action, or
+`?action=<id>`; `?kiosk=1` hides the app chrome for a projector. Operators (and testers with a lease)
+get Break / Propose via Shim / Approve buttons that call the existing endpoints and checks. Visitors
+get a read-only replay of the most recent completed run with its recorded times (gaps over 12 s are
+fast-forwarded and labelled). A stage with no record (no incident opened, no probe dip) shows as
+"none recorded", never an invented time.
+
+**The clip on the landing page** (`deploy/vps/site/theatre-demo.mp4` and `.png` poster) is recorded
+with `scripts/record_demo.mjs`:
+
+```bash
+cd scripts && npm install                                   # puppeteer-core; uses your installed Chrome
+SHIMPAKU_DEMO=1 SHIMPAKU_AUTH_MODE=off python -m shimpaku.api   # the demo backend, port 8780 (SHIMPAKU_PORT to change)
+node record_demo.mjs --base http://127.0.0.1:8780              # presses the buttons itself; ~45 s; ffmpeg -> MP4 (<= 8 MB)
+```
+
+It refuses a backend that is not the demo backend, so it cannot break the live lab. Without ffmpeg it
+falls back to WebM through MediaRecorder (`--webm` forces that).
+
+**Re-recording against the live lab after a real run** (a read-only replay, nothing is pressed):
+
+1. Do the real run (`shimpaku demo break`, propose, approve, let it validate to Verified) and note the
+   action id from **Actions**.
+2. Tunnel to the dashboard as in "Before you start" (auth must let you read: operator session, or public view).
+3. `node record_demo.mjs --base http://127.0.0.1:8780 --replay --action act-... --name theatre-live`
+   films `/theatre?kiosk=1&replay=1&action=act-...`, which plays the run's recorded timings from the
+   live store. Check the poster, then change the `<source>` and `poster` names in
+   `deploy/vps/site/index.html` (or record as `--name theatre-demo` to overwrite) and say in the
+   caption that it is recorded from the live lab.
+4. Run `deploy/vps/deploy.sh` as usual; the whole `site/` directory ships.
+
 ## Session requests
 
 With `SHIMPAKU_PUBLIC_VIEW=1` (and `SHIMPAKU_AUTH_MODE=local`) anyone can open the dashboard

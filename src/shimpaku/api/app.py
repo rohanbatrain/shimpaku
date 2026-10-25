@@ -301,9 +301,9 @@ def create_app(
                 return VISITOR if public else None
             return Principal("session", rec["user"], "tester", role="tester", lease_id=rec["lease_id"])
         if mode == "off":
-            return Principal("session", OFF_MODE_USER, "admin")
+            return Principal("session", OFF_MODE_USER, "admin", presenting=bool(getattr(app.state, "presenting_off", False)))
         if rec:
-            return Principal("session", rec["user"], "admin")
+            return Principal("session", rec["user"], "admin", presenting=bool(rec.get("presenting")))
         return VISITOR if public else None
 
     def check_csrf(request: Request, p: Principal | None) -> None:
@@ -395,7 +395,7 @@ def create_app(
             "user": p.name if p else None, "kind": p.kind if p else None, "scope": p.scope if p else None,
             "can_approve": bool(p and p.can_approve), "can_propose": bool(p and p.can_propose),
             "role": p.effective_role if p else None, "lease_id": p.lease_id if p else None,
-            "public_view": public,
+            "public_view": public, "presenting": bool(p and p.can_present and p.presenting),
             # sign-in form hints: whether a code is asked for, and the operator idle timeout
             "totp_required": mode == "local" and (public or totp.enabled),
             "operator_idle_min": settings.operator_idle_min if public else None,
@@ -919,7 +919,16 @@ def create_app(
         return poller(request, "incidents", EVENTS_TICK_S, lambda: _viewed(view.incident_list, call("incident_list")))
 
     from shimpaku.api import routes_viz  # /api/viz/*: Overview, Topology, Device pages (read-only)
-    app.include_router(routes_viz.router(call, reader))
+    app.include_router(viz := routes_viz.router(call, reader))
+    from shimpaku.api import routes_hardware; app.include_router(routes_hardware.router(call, reader, service, topology=viz.topology, hostmon=lambda: getattr(app.state, "hostmon", None)))  # noqa: E702  /api/hardware
+    from shimpaku.api import routes_console; app.include_router(routes_console.router(call, reader, rate))  # noqa: E702
+    from shimpaku.api import routes_ops; app.include_router(routes_ops.router(operator, app, is_demo))  # noqa: E702  /api/ops/*: operator-only
+    from shimpaku.api import routes_public  # /api/probes/heatmap, /api/public/summary (landing)
+    app.include_router(routes_public.router(call, reader))
+    from shimpaku.api import routes_live  # /api/live/*: link traffic, event stream, time travel (read-only)
+    app.include_router(routes_live.router(call, reader, service))
+    from shimpaku.api import routes_explain; app.include_router(routes_explain.router(call, reader))  # noqa: E702
+    from shimpaku.api import routes_theatre; app.include_router(routes_theatre.router(call, reader))  # noqa: E702  /api/theatre*
 
     @app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
     async def api_404(rest: str):

@@ -26,6 +26,8 @@ it plainly so it can be reviewed.
 | An operator session left open on a shared computer | In public view operator sessions end after 30 min idle and 4 h absolute (`SHIMPAKU_OPERATOR_IDLE_MIN`, `SHIMPAKU_OPERATOR_MAX_H`; 12 h / 7 d off public view; tester and visitor sessions unchanged). The session cookie never has `Max-Age`/`Expires` (gone when the browser closes). Sign out drops the server session, clears the app's `sessionStorage` and `shimpaku*` `localStorage` keys and reloads the read-only view; `POST /api/logout-all` (operator; "Sign out everywhere" in Settings) deletes every operator session, testers' kept | `api/auth.py:AuthStore.create_session`, `session_record`, `drop_operator_sessions`, `web/src/session.tsx:signOutAndClear` |
 | Session requests: spam, enumeration, a link that works too early or too long | `POST /api/session-requests` needs CSRF, consent and passes the `request` limit (3/20 per minute per address; Caddy 5 per 10 min); at most 200 pending (503). The status token is 256-bit, stored as SHA-256; any unknown token is the same 404. Approval is operator-only (REST and `shimpaku admin requests`) and makes a single-use invite with `not_before` = slot − 10 min and expiry = slot end; redeeming early is 425; the lease is capped at slot end + 5 min. `GET /api/invites/ics` and the status page never consume. Exception to "only hashes stored": the approved invite's token is kept in `session_request.invite_token` so the status page can show the link; it is wiped when the invite is used, the slot ends or the request is declined | `api/requests.py`, `api/lease.py`, `api/app.py` |
 | Tampering with history | Every MCP tool call, and every REST propose, approve, reject and cancel (refusals included), is a hash-chained audit row carrying the caller's `role` and `lease_id`; a verifier detects an edited row. Rows written before `role`/`lease_id` existed are kept as written and still verify. (Before 2026-10-24 REST approvals reached only the approvals table, not the chain.) | `mcp/audit.py`, `service.py:_audit_row` |
+| Ops panels leak a secret or reach non-operators | `/api/ops/host` and `/api/ops/gateway` depend on the app's `operator` dependency (visitor, tester, bearer token, replay: 401/403; tested). The host panel is sensor readings and VM names only, read without root. The gateway panel uses `SHIMPAKU_LLM_ADMIN_KEY` server-side only, shows keys as alias or last 4 of LiteLLM's hashed token, the gateway URL as scheme+host, errors as path + exception type; it never calls LiteLLM `/health` (that runs a paid test call per model). The thermal guard (`SHIMPAKU_THERMAL_GUARD=1`) only warns and records an event; stopping VMs is left to the owner | `api/routes_ops.py`, `hostmon.py`, `gateway.py` |
+| The hardware twin (`GET /api/hardware`) shows a guest more than the lab devices | Port state, rates, counters, CPU/memory, version and uptime only; no management address, configuration text or interface description for anyone. Guest power states come from the host sampler's `virsh list` mapped to lab device names; other domains on the host are never named. The host block (CPU count, memory, load, temperature) is returned to operators only (tested for testers, visitors, public view and the replay) | `api/routes_hardware.py`, `tests/api/test_hardware.py` |
 | Benchmark gaming | Ground truth lives in a separate store owned by a separate Unix user; external agents can run as a sandbox user that cannot reach the lab devices directly, only the MCP endpoint | `bench/`, `ops/phase0-root.sh` |
 
 ## Credentials
@@ -55,6 +57,46 @@ computer:
   the browser closes); if you forgot, **Settings → Sign out everywhere** from any device, or
   `shimpaku admin totp enable --force` plus a new password if the password was exposed;
 - if a recovery code was used, `shimpaku admin totp status` shows how many are left.
+
+## Presenter mode and the Junos console
+
+**Presenter mode** is the operator's own session (password + TOTP on the public site) showing the
+clean visitor-style dashboard: no admin navigation, a "Presenting" badge. It is a flag on the
+operator's session row (`session.presenting`), set at `POST /api/console/presenting`; it can never
+be set on a tester's session and never exists on a token. Authority stays the operator's.
+
+**The console** (`/console`, `POST /api/console/exec`) runs one Junos operational-mode command
+over the daemon's existing PyEZ/NETCONF read pool (`dev.cli(cmd, warning=False)`, text), never a
+shell. Enforcement points:
+
+1. `Principal.can_present` (`api/auth.py`): an operator dashboard session only. Visitors, testers,
+   every bearer token (any scope, even one minted with role `operator`) and anonymous callers get
+   401/403; the replay refuses it. Cookie writes pass the usual Origin + double-submit CSRF check.
+2. `shimpaku/console_policy.py`, the only gate on what reaches the device: printable ASCII only
+   (newlines, unicode look-alikes, `;` `` ` `` `$` `&` `<` `>` quotes refused before parsing);
+   the first word is resolved against the **full** Junos verb table the way Junos resolves unique
+   prefixes (`conf` = configure, `req sys` = request system, `sta sh` = start shell, `s` is
+   ambiguous), and only `show`, `ping`, `traceroute` are allowed; ping/traceroute options are
+   resolved against their own tables with bounds (`count` 1–10, inserted as 5 if absent); pipes
+   are resolved against the full pipe table and only `match`, `except`, `find`, `count`, `last`,
+   `no-more`, `trim` pass (`| s …` is `save`, refused). `show configuration` is refused: on a
+   shared screen it shows password hashes and keys.
+3. `api/routes_console.py`: 20 s timeout (also set as the NETCONF RPC timeout), 64 KiB output
+   cap, rate limit `console` (20/min per principal, 60/min global), at most two commands at once,
+   device errors reported by exception type only (no addresses).
+4. Audit: every attempt (ok, refused, error) is one hash-chained row (`tool: console_exec`, actor
+   role `presenter` or `operator`) with device, command as typed, command sent, outcome, duration
+   and output **length**; the output itself is never stored.
+
+**Why configuration changes do not go through the console.** A CLI change skips everything the
+action path guarantees: policy G0–G9, a second look (approval), `commit confirmed` with a
+health check and automatic rollback, the one-action-per-device lock and an audited diff. A typo
+in a live demo would be a real outage with no undo. So the console is read-only by construction
+(an allow-list, not a deny-list), and every change stays a proposed, approved action.
+
+**Known gap:** `show` output can include management addresses (`show interfaces terse` lists
+`fxp0`/`em0`), which the rest of the UI withholds from visitors. Presenter mode is the operator on
+their own screen; mind what is shared.
 
 ## Network exposure
 

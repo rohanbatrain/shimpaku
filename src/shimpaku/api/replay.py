@@ -63,6 +63,15 @@ async def sle_get_summary(site: str, window_min: int = 60) -> dict:
     return _tag(by_site[str(w)])
 
 
+async def probe_heatmap(site: str = "campus", window_min: int = 60) -> dict:
+    by_site = (load().get("probes") or {}).get(site)
+    if not by_site:
+        return {"available": False, "reason": "probe heatmap is not in this snapshot", "replay": True}
+    have = sorted(int(w) for w in by_site)
+    w = next((x for x in have if x >= window_min), have[-1])
+    return _tag(by_site[str(w)])
+
+
 async def incident_list(status: str | None = None) -> dict:
     rows = load()["incidents"]["incidents"]
     return _tag({"incidents": [i for i in rows if not status or i.get("status") == status]})

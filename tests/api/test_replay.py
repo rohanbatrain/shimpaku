@@ -69,3 +69,14 @@ def test_scrub_and_leak_check():
     assert out == {"log": "~/x on <redacted>", "n": [{"h": "<redacted>"}]}
     assert leaks(json.dumps(out), ["labhost"]) == []
     assert leaks('{"x": "LABHOST"}', ["labhost"]) == ["labhost"]
+
+
+def test_hardware_twin_degrades_on_the_replay(client):
+    """The replay holds no live counters or facts: the twin still renders, saying so, with no host block."""
+    r = client.get("/api/hardware")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["hypervisor"]["host"] is None and d["hypervisor"]["guests"] == {}
+    for x in d["devices"]:
+        assert x["uptime_s"] is None and x["counters_reason"]
+    assert "10.99." not in r.text and "mgmt_ip" not in r.text

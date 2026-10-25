@@ -15,6 +15,7 @@ export type Who = {
   public_view?: boolean;
   totp_required?: boolean;
   operator_idle_min?: number | null;
+  presenting?: boolean; // operator in presenter mode: visitor-style UI, operator authority server-side
 };
 
 /** Sign out and leave nothing behind for the next person at this browser: drop the server

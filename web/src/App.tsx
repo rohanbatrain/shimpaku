@@ -1,14 +1,16 @@
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
 import "./requests.css";
+import { Notification as EventsIcon } from "grommet-icons";
 const AssistantPanel = lazy(() => import("./components/AssistantPanel"));
 const ServiceLevels = lazy(() => import("./pages/ServiceLevels"));
 const Overview = lazy(() => import("./pages/Overview"));
 const Topology = lazy(() => import("./pages/Topology"));
+const Events = lazy(() => import("./pages/Events"));
 const Device = lazy(() => import("./pages/Device"));
 const RootCause = lazy(() => import("./pages/RootCause"));
 const RootCauseIndex = lazy(() => import("./pages/RootCause").then((m) => ({ default: m.RootCauseIndex })));
@@ -23,6 +25,16 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Request = lazy(() => import("./pages/Request"));
 const RequestStatus = lazy(() => import("./pages/RequestStatus"));
 const SessionRequests = lazy(() => import("./pages/SessionRequests"));
+const Console = lazy(() => import("./pages/Console"));
+const OpsHost = lazy(() => import("./pages/OpsHost"));
+const OpsGateway = lazy(() => import("./pages/OpsGateway"));
+const Probes = lazy(() => import("./pages/Probes"));
+const Architecture = lazy(() => import("./pages/Architecture"));
+const Guardrails = lazy(() => import("./pages/Guardrails"));
+const Audit = lazy(() => import("./pages/Audit"));
+const AssistantTrace = lazy(() => import("./pages/AssistantTrace"));
+const Theatre = lazy(() => import("./pages/Theatre"));
+const Hardware = lazy(() => import("./pages/Hardware"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -36,7 +48,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/hardware", "Hardware"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -75,7 +87,7 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
   }, [drawer, onClose]);
   const acts = useApi<{ actions: { status: string }[] }>("/api/actions", { url: "/api/stream/actions", event: "actions" });
   const open = acts.data?.actions.filter((a) => ["proposed", "awaiting_approval"].includes(a.status)).length ?? 0;
-  const op = who.role === "operator";
+  const op = who.role === "operator" && !who.presenting; // presenter mode: no admin nav
   const reqs = useApi<{ pending: number }>(op && who.mode === "local" ? "/api/admin/session-requests?status=pending" : null);
   useEffect(() => {
     if (!op || who.mode !== "local") return;
@@ -101,6 +113,12 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
       <NavLink to="/topology">
         <Cluster {...ic} /> Topology
       </NavLink>
+      <NavLink to="/hardware">
+        <Servers {...ic} /> Hardware
+      </NavLink>
+      <NavLink to="/events">
+        <EventsIcon {...ic} /> Events
+      </NavLink>
       <NavLink to="/sle">
         <Dashboard {...ic} /> Service levels
       </NavLink>
@@ -115,9 +133,30 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
           </span>
         )}
       </NavLink>
+      {who.role === "operator" && (
+        <NavLink to="/console">
+          <Terminal {...ic} /> Console
+        </NavLink>
+      )}
+      <NavLink to="/theatre">
+        <Play {...ic} /> Theatre
+      </NavLink>
+      <div className="sect">Explain</div>
+      <NavLink to="/guardrails">
+        <Shield {...ic} /> Guardrails
+      </NavLink>
+      <NavLink to="/audit">
+        <ChainIcon {...ic} /> Audit chain
+      </NavLink>
+      <NavLink to="/assistant/trace">
+        <Robot {...ic} /> Shim's reasoning
+      </NavLink>
       <div className="sect">Evaluate</div>
       <NavLink to="/benchmark">
         <BenchIcon {...ic} /> Benchmark
+      </NavLink>
+      <NavLink to="/architecture">
+        <Tree {...ic} /> Architecture
       </NavLink>
       {op && (
         <>
@@ -127,6 +166,12 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
           </NavLink>
           <NavLink to="/settings">
             <SettingsOption {...ic} /> Settings
+          </NavLink>
+          <NavLink to="/ops/host">
+            <Monitor {...ic} /> Lab host
+          </NavLink>
+          <NavLink to="/ops/gateway">
+            <Cloud {...ic} /> LLM gateway
           </NavLink>
           {who.mode === "local" && (
             <NavLink to="/admin/requests">
@@ -248,6 +293,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/topology" element={<Topology />} />
+            <Route path="/hardware" element={<Hardware />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/devices/:name" element={<Device />} />
             <Route path="/login" element={<Navigate to="/sle" replace />} />
             <Route path="/start" element={<Navigate to="/actions" replace />} />
@@ -256,10 +303,19 @@ export default function App() {
             <Route path="/root-cause/:id" element={<RootCause />} />
             <Route path="/actions" element={<Actions />} />
             <Route path="/actions/:id" element={<ActionDetail />} />
+            <Route path="/theatre" element={<Theatre />} />
             <Route path="/benchmark" element={<Benchmark />} />
+            <Route path="/probes" element={<Probes />} />
+            <Route path="/architecture" element={<Architecture />} />
             <Route path="/agents" element={<Agents />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin/requests" element={<SessionRequests />} />
+            <Route path="/console" element={<Console />} />
+            <Route path="/ops/host" element={<OpsHost />} />
+            <Route path="/ops/gateway" element={<OpsGateway />} />
+            <Route path="/guardrails" element={<Guardrails />} />
+            <Route path="/audit" element={<Audit />} />
+            <Route path="/assistant/trace" element={<AssistantTrace />} />
             <Route path="*" element={<div className="content"><h1>Not found</h1><p className="weak">No page at {loc.pathname}.</p></div>} />
           </Routes>
           </Suspense>

@@ -1,0 +1,8 @@
+{
+  "name": "shimpaku-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Recorder for the landing-page theatre clip (record_demo.mjs)",
+  "scripts": { "record": "node record_demo.mjs" },
+  "devDependencies": { "puppeteer-core": "^23.11.1" }
+}

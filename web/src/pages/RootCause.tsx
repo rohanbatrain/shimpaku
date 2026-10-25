@@ -7,6 +7,7 @@ import { FailBars } from "../components/charts";
 import { Empty, Load, StatusPill } from "../components/ui";
 import { ago, time } from "../format";
 import { useSession } from "../session";
+import BlastMap from "../components/BlastMap";
 
 type Incident = { id: string; title: string; site: string; sle: string; classifier: string; status: string; opened_at: number; impact: Record<string, number>; action_id?: string | null; summary?: string };
 type Node = { name: string; share_pct: number; children: Node[] };
@@ -82,8 +83,8 @@ function Tree({ nodes, depth = 0 }: { nodes: Node[]; depth?: number }) {
 function BlastTree({ b }: { b: Blast }) {
   const rows: { g: Node; c: Node; gi: number }[] = [];
   b.tree.forEach((g, gi) => (g.children?.length ? g.children : [{ name: "—", share_pct: g.share_pct, children: [] }]).forEach((c) => rows.push({ g, c, gi })));
-  const RH = 44, top = 18, H = Math.max(rows.length * RH + top * 2, 120), W = 920;
-  const X0 = 150, X1 = 470, X2 = 760;
+  const RH = 52, top = 22, H = Math.max(rows.length * RH + top * 2, 140), W = 1180;
+  const X0 = 170, X1 = 580, X2 = 900;
   const rootY = H / 2;
   const bw = (p: number) => Math.max(2, (p / 100) * 26);
   const gY = (gi: number) => { const r = rows.map((x, i) => [x, i] as const).filter(([x]) => x.gi === gi).map(([, i]) => i); return top + ((r[0] + r[r.length - 1]) / 2) * RH + RH / 2; };
@@ -101,8 +102,8 @@ function BlastTree({ b }: { b: Blast }) {
       {b.tree.map((g, gi) => (
         <g key={"g" + gi} transform={`translate(${X1} ${gY(gi)})`}>
           <circle r="7" fill={tone(g.share_pct)} stroke="#fff" strokeWidth="2" />
-          <text x="0" y="-12" textAnchor="middle" className="bt-l"><tspan fontWeight="600">{g.name}</tspan></text>
-          <text x="0" y="22" textAnchor="middle" className="bt-v">{g.share_pct}%</text>
+          <text x="0" y="-24" textAnchor="middle" className="bt-l"><tspan fontWeight="600">{g.name}</tspan></text>
+          <text x="0" y="32" textAnchor="middle" className="bt-v">{g.share_pct}%</text>
         </g>
       ))}
       {rows.map((r, i) => (
@@ -146,6 +147,7 @@ export default function RootCause() {
             </div>
           )}
         </Load>
+        <BlastMap id={id} />
         <Load q={br} rows={6}>
           {(b) => (
             <>

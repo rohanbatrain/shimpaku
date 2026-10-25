@@ -4,7 +4,13 @@ import TopoMap, { Legend, LinkTable, type Topo } from "../components/TopoMap";
 import { usePoll } from "../components/poll";
 import { Load, StatusPill } from "../components/ui";
 import { statusLabel, STATUS_TONE, time } from "../format";
-import { Freshness } from "./Topology";
+import { applyAsOf, Freshness } from "./Topology";
+import EventTicker from "../components/EventTicker";
+import { TwinStrip } from "../components/twin";
+import Scrubber, { useTimeParam } from "../components/Scrubber";
+import { useAsOf, useTraffic } from "../live";
+import { FunnelSummary, type FunnelData } from "../components/Funnel";
+import "../explain.css";
 
 type Ov = {
   generated_at: number;
@@ -62,12 +68,18 @@ export default function Overview() {
   const ov = usePoll<Ov>("/api/viz/overview");
   const topo = usePoll<Topo>("/api/viz/topology");
   const nav = useNavigate();
+  const [t, setT] = useTimeParam();
+  const asOf = useAsOf(t);
+  const traffic = useTraffic(t == null);
+  const past = t != null ? asOf.data : undefined;
+  const fun = usePoll<FunnelData>("/api/explain/funnel?window=7d", 30000);
   return (
     <>
       <TopBar title="Overview" crumbs="Seven vJunos devices, two sites, live">
         <Freshness t={ov.data?.generated_at} />
       </TopBar>
       <div className="content">
+        <TwinStrip />
         <Load q={ov} rows={3}>
           {(o) => (
             <div className="kpis">
@@ -85,10 +97,11 @@ export default function Overview() {
                 {o.audit ? (o.audit.ok ? <span className="tone-ok">✓ Verified</span> : <span className="tone-crit">✗ Broken</span>) : "—"}
               </Tile>
               <div className="card kpi kpi-wide">
-                <div className="k">Service levels · last hour</div>
-                {o.sles.length === 0 ? <span className="small weak">Not collected yet.</span> : (
+                <div className="k">Service levels · {t == null ? "last hour" : `hour ending ${time(t)}`}</div>
+                {t != null && past?.available === false ? <span className="small weak">History not available: {past.reason}</span> :
+                  (t != null ? past?.sles ?? [] : o.sles).length === 0 ? <span className="small weak">{t != null && asOf.loading ? "Reading stored minutes…" : "Not collected yet."}</span> : (
                   <div className="sle-mini">
-                    {o.sles.map((s) => (
+                    {(t != null ? (past?.sles ?? []).map((s) => ({ ...s, series: [] as { t: number; value: number }[] })) : o.sles).map((s) => (
                       <Link key={s.site + s.id} to={`/sle?site=${s.site}`} className="sle-mini-i">
                         <span className="small weak">{s.site} · {s.name}</span>
                         <span><b className="kpi-s">{s.value_pct == null ? "—" : `${s.value_pct.toFixed(1)}%`}</b> <span className="small weak">n = {s.n ?? "—"}</span></span>
@@ -97,6 +110,7 @@ export default function Overview() {
                     ))}
                   </div>
                 )}
+                <div style={{ marginTop: 8 }}><Scrubber t={t} onChange={setT} label="Service level time travel" /></div>
               </div>
               <Link className="card kpi kpi-wide link" to="/actions">
                 <div className="k">Actions today <span style={{ textTransform: "none", letterSpacing: 0 }}>(since {time(o.actions_today.since)})</span></div>
@@ -106,6 +120,7 @@ export default function Overview() {
             </div>
           )}
         </Load>
+        <EventTicker />
         <div className="ov-grid">
           <div className="card">
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
@@ -116,7 +131,9 @@ export default function Overview() {
             <Load q={topo} rows={5}>
               {(d) => (
                 <>
-                  <TopoMap data={d} compact onSelect={(n) => nav(`/topology?n=${n}`)} />
+                  {t != null && <div className="small" style={{ color: "#8a5a00", marginBottom: 4 }}>As of {time(t)} · stored state</div>}
+                  <TopoMap data={t == null ? d : applyAsOf(d, past)} compact onSelect={(n) => nav(`/topology?n=${n}${t != null ? `&t=${Math.floor(t)}` : ""}`)}
+                    traffic={t == null ? (traffic?.available === false ? null : traffic?.links) : past?.traffic?.links} />
                   <Legend />
                   <div className="sr-only"><LinkTable data={d} /></div>
                 </>
@@ -142,6 +159,14 @@ export default function Overview() {
               )}
             </Load>
           </div>
+        </div>
+        <div className="card ov-funnel">
+          <div className="ex-head">
+            <h2 style={{ margin: 0 }}>Guardrail funnel · last 7 days</h2>
+            <span style={{ flex: 1 }} />
+            <Link className="small" to="/guardrails">Open funnel →</Link>
+          </div>
+          <Load q={fun} rows={2}>{(f) => <FunnelSummary data={f} />}</Load>
         </div>
         <section className="card how" aria-labelledby="how-h">
           <h2 id="how-h">How this works</h2>

@@ -1,0 +1,39 @@
+/* Junos CLI console (pages/Console.tsx) and presenter mode controls (components/TopBar.tsx). */
+.console-page { display: flex; flex-direction: column; gap: 12px; }
+.con-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.con-dev { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--tw); }
+.con-dev select { font: inherit; font-family: var(--mono); color: var(--t); padding: 6px 8px; border: 1px solid var(--line2); border-radius: 6px; background: var(--front); min-height: 34px; }
+.con-chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.con-chip { font-family: var(--mono); font-size: 12px; padding: 5px 10px; border-radius: 14px; border: 1px solid var(--line2); background: var(--front); color: var(--t); cursor: pointer; min-height: 30px; }
+.con-chip:hover:not(:disabled) { border-color: var(--p); color: var(--p-ink); }
+.con-chip:disabled { opacity: .55; cursor: default; }
+.con-term { background: #0b1411; color: #d6e4dd; border-radius: 10px; border: 1px solid #1f2f29; display: flex; flex-direction: column; min-height: 420px; height: calc(100vh - 230px); overflow: hidden; font-family: var(--mono); font-size: 13px; line-height: 1.45; }
+.con-screen { flex: 1; overflow: auto; padding: 14px 16px; }
+.con-hint { color: #7f978c; white-space: normal; }
+.con-hint b { color: #b9d3c7; font-weight: 600; }
+.con-entry { margin-bottom: 12px; }
+.con-cmd { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; color: #f2f7f4; }
+.con-prompt { color: #01a982; font-weight: 600; white-space: nowrap; }
+.con-meta { color: #6b8379; font-size: 11px; margin-left: auto; }
+.con-copy { font: inherit; font-size: 11px; color: #9fb8ad; background: transparent; border: 1px solid #2c3f38; border-radius: 4px; padding: 1px 8px; cursor: pointer; }
+.con-copy:hover { color: #fff; border-color: #01a982; }
+.con-out { margin: 4px 0 0; white-space: pre; overflow-x: auto; font: inherit; color: #d6e4dd; }
+.con-err { color: #ff9b8f; white-space: pre-wrap; }
+.con-busy { color: #7f978c; animation: con-blink 1s steps(2) infinite; }
+@keyframes con-blink { 50% { opacity: .35; } }
+.con-input { display: flex; align-items: center; gap: 8px; border-top: 1px solid #1f2f29; padding: 10px 12px; background: #0e1a16; }
+.con-input input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #f2f7f4; font: inherit; font-size: 14px; caret-color: #01a982; }
+.con-input input::placeholder { color: #4d6359; }
+.con-run { flex: none; }
+.con-err-line { color: var(--crit); font-size: 13px; }
+.badge-presenting { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 10px; background: var(--p); color: var(--on-p); letter-spacing: .02em; }
+.btn.present-toggle { font-size: 12px; padding: 4px 10px; }
+@media (prefers-reduced-motion: reduce) { .con-busy { animation: none; } }
+@media (max-width: 900px) {
+  .con-term { height: calc(100dvh - 260px); min-height: 320px; font-size: 12px; }
+  .con-chips { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .con-chip { white-space: nowrap; }
+  .con-input input { font-size: 16px; } /* no iOS zoom on focus */
+  .con-meta { margin-left: 0; }
+  .con-clear { padding: 4px 12px; min-height: 30px; }
+}

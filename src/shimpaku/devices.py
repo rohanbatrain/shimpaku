@@ -342,6 +342,44 @@ def _range_covers(line: str, ifname: str) -> bool:
     return lo[1:] <= me[1:] <= hi[1:]
 
 
+def parse_facts(sw_xml, uptime_xml, now: float | None = None) -> dict:
+    """Junos version, model and uptime from `get-software-information` and
+    `get-system-uptime-information`. Written from the Junos XML schema, not yet from a captured
+    vJunos 26.2 reply: any field not found stays None (shown as "not collected"), never guessed."""
+    out: dict[str, Any] = {"version": None, "model": None, "uptime_s": None, "booted_at": None}
+    if sw_xml is not None:
+        v = sw_xml.findtext(".//junos-version")
+        if not v:
+            for pkg in sw_xml.iter("package-information"):
+                if (_t(pkg, "name") or "") in ("junos", "junos-version"):
+                    m = re.search(r"\[([^\]]+)\]", _t(pkg, "comment") or "")
+                    v = m.group(1) if m else None
+                    break
+        out["version"] = v.strip() if v else None
+        model = sw_xml.findtext(".//product-model")
+        out["model"] = model.strip() if model else None
+    if uptime_xml is not None:
+        dt = uptime_xml.find(".//system-booted-time/date-time")
+        secs = dt.get("seconds") if dt is not None else None
+        if secs and secs.isdigit():
+            booted = float(secs)
+            out["booted_at"] = booted
+            out["uptime_s"] = max(0, int((now if now is not None else time.time()) - booted))
+    return out
+
+
+def facts(device: str) -> dict:
+    """Read-only: Junos version, model and uptime of one device (two small RPCs)."""
+    def f(dev):
+        sw = dev.rpc.get_software_information()
+        try:
+            up = dev.rpc.get_system_uptime_information()
+        except Exception:  # noqa: BLE001  (uptime is optional)
+            up = None
+        return parse_facts(sw, up)
+    return {"device": device, **pool.run(device, f)}
+
+
 def health_snapshot(dev) -> dict:
     """Protocol health used before/after a change: counts must not drop."""
     ospf = parse_ospf(dev.rpc.get_ospf_neighbor_information())

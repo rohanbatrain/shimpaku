@@ -172,9 +172,51 @@ Free plan, proxied. The free plan has no partial (CNAME) setup, so the nameserve
 
 `uptime-kuma` runs in the compose project, bound to `127.0.0.1:3001` on the VPS. Its admin UI is
 reached with `ssh -L 3001:127.0.0.1:3001 <vps>` over NetBird and is not published: it is an
-admin app with its own login, and keeping it off the internet costs nothing. A public status page
-can be added later as `status.<domain>` in the Caddyfile. Kuma on the VPS cannot report the VPS
-itself being down; pair it with an external free checker (e.g. UptimeRobot) on the landing page.
+admin app with its own login, and keeping it off the internet costs nothing. Kuma on the VPS
+cannot report the VPS itself being down; pair it with an external free checker (e.g. UptimeRobot).
+
+### Public status page (`status.<domain>`)
+
+Caddy serves `status.<domain>` (`SHIMPAKU_STATUS_HOSTS`, written by `deploy.sh` as `status.` + each
+domain) by proxying **only** Kuma's public status-page paths, GET/HEAD only: `/status`,
+`/status/<slug>` (and its `/rss`), `/api/status-page/<slug>…` and `/api/status-page/heartbeat/<slug>`
+(the routes in Kuma's `server/routers/status-page-router.js`), plus the SPA's static files
+(`/assets/*`, `/upload/*` for a logo, icons, `/manifest.json`). `/` redirects to
+`/status/$SHIMPAKU_STATUS_SLUG` (default `shimpaku`). Everything else is a 404 at the edge, including
+the admin routes (`/dashboard`, `/settings`, `/manage-status-page`, `/add`), `/socket.io` (the admin
+API the admin UI runs on), `/api/push/*` and `/metrics`. The status page reads over plain HTTP; it
+does not need socket.io.
+
+Create it once, over the SSH tunnel to the admin UI:
+
+1. Create the monitors below (only these are public; name them for visitors, e.g. "Dashboard",
+   "Live lab"; never put an internal address in a monitor's *name* or *description*).
+2. *Status Pages → New Status Page*: name "Shimpaku", slug `shimpaku` (or set
+   `SHIMPAKU_STATUS_SLUG` in `.env` to match). Add the monitors you want shown, *Save*.
+3. In the page settings, leave *Show Certificate Expiry* and *Show Tags* off and turn off
+   "Show Powered By" if wanted; Kuma shows monitor names and uptime only, not URLs, unless
+   *Show URL* is ticked on a monitor — leave it off for the lab and replay monitors.
+4. DNS: a proxied `status` record for each domain, like `app`.
+5. Check from outside: `https://status.<domain>/` lands on the page;
+   `https://status.<domain>/dashboard` and `/socket.io/` are 404.
+
+The landing page links to it ("Uptime status") and to the dashboard's `/architecture` page.
+
+### Landing status strip (`GET /api/public/summary`)
+
+The landing page (`site/index.html`, plus `site/live.js`; no inline script) fetches
+`https://app.<host>/api/public/summary` on load and shows: lab online/offline (offline = the edge is
+serving the replay), devices up/total (live only; the replay says "—" rather than guess), the last
+action (relative time and status), unsafe actions executed (actions that committed to a device
+without an `allowed` guardrail decision, over the whole action record) and whether the audit chain
+verifies. On any failure the static fallback text stays.
+
+The endpoint needs no sign-in, returns aggregates only (no addresses, config, tokens or user
+names), is cached 20 s and rate limited per address. CORS is an allow-list:
+`SHIMPAKU_PUBLIC_CORS_ORIGINS="https://<domain>,https://<domain2>"`, GET only, never with
+credentials. `deploy.sh` sets it for the replay container; **set the same variable on the lab
+daemon** (its environment file) or the live answer will carry no CORS header and the landing will
+show the fallback while the lab is up.
 
 Monitors to create (20–60 s interval):
 
@@ -185,6 +227,7 @@ Monitors to create (20–60 s interval):
 | Live API via edge | HTTP(s) – keyword (JSON query) | `https://app.<domain>/api/whoami` | 200 and `replay` is `false` (alerts when serving the replay) |
 | Replay | HTTP(s) | `http://replay:8780/api/whoami` | 200 |
 | Lab over NetBird | HTTP(s) | `http://<lab netbird ip>:8780/api/whoami` | 200 (needs the container to reach NetBird, as for Caddy) |
+| Status page itself | HTTP(s) | `https://status.<domain>/status/shimpaku` | 200 |
 | TLS expiry | HTTP(s) with certificate expiry notification | `https://app.<domain>/` | alert at 14 days (the Cloudflare edge certificate; check the origin's with `curl --resolve` from the VPS) |
 
 ## First deploy

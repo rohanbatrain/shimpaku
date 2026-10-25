@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Close } from "grommet-icons";
 import TopBar from "../components/TopBar";
@@ -6,6 +6,8 @@ import TopoMap, { Legend, LinkTable, STATE_LABEL, STATE_TONE, type Topo, type TN
 import { usePoll } from "../components/poll";
 import { Load, Pill, StatusPill } from "../components/ui";
 import { ago, time } from "../format";
+import Scrubber, { useTimeParam } from "../components/Scrubber";
+import { fmtBps, useAsOf, useTraffic, type AsOf, type TrafficLink } from "../live";
 
 const n0 = (v: number | null | undefined, unit = "") => (v == null ? "—" : `${Math.round(v * 10) / 10}${unit}`);
 
@@ -13,7 +15,55 @@ export function Freshness({ t }: { t?: number }) {
   return <span className="small weak" aria-live="off">{t ? `Updated ${time(t)} · refreshes every 10 s` : ""}</span>;
 }
 
-function NodePanel({ n, data, onClose }: { n: TNode; data: Topo; onClose: () => void }) {
+/** The live map data with link / node state replaced by the stored state as of a past minute. */
+export function applyAsOf(d: Topo, a: AsOf | undefined): Topo {
+  if (!a || a.available === false) return d;
+  const L = new Map(a.links.map((l) => [l.id, l]));
+  const N = new Map(a.nodes.map((n) => [n.name, n]));
+  return {
+    ...d,
+    links: d.links.map((l) => { const x = L.get(l.id); return x ? { ...l, state: x.state, good: x.good, bad: x.bad, evidence: x.evidence } : { ...l, state: "unknown", good: [], bad: [] }; }),
+    nodes: d.nodes.map((n) => { const x = N.get(n.name); return { ...n, state: x ? x.state : "unknown" }; }),
+  };
+}
+
+export function AsOfBanner({ t, a, onLive }: { t: number; a?: AsOf; onLive: () => void }) {
+  return (
+    <div className="asof-banner" role="status">
+      <span>Showing stored state <b>as of {time(t)}</b>{a?.available === false ? ` — ${a.reason ?? "history not available"}` : ""}</span>
+      <span className="small">{a?.available !== false ? "links: port oper status + OSPF; devices: collector connection + device-minute verdict" : ""}</span>
+      <span style={{ flex: 1 }} />
+      <button className="btn" onClick={onLive}>Back to live</button>
+    </div>
+  );
+}
+
+export function TrafficLegend({ live, speedReason, at }: { live: boolean; speedReason?: string | null; at?: number | null }) {
+  return (
+    <div className="traffic-bar">
+      <span className="sw"><svg width="34" height="10" aria-hidden><line x1="2" y1="5" x2="32" y2="5" stroke="#2F6690" strokeWidth="4" strokeDasharray="7 9" strokeLinecap="round" /></svg>
+        Traffic: width = bits/s (log scale), dashes move with the flow, one lane per direction</span>
+      <span>{speedReason ? "Link speed unknown — absolute rates only, no utilisation colour" : ""}</span>
+      <span className="weak">{at ? `${live ? "counters sampled" : "as of"} ${time(at)}` : "no counter samples"}</span>
+    </div>
+  );
+}
+
+export function TrafficPop({ t, onClose }: { t: TrafficLink; onClose: () => void }) {
+  return (
+    <div className="traffic-pop" role="region" aria-label={`Traffic on ${t.a}–${t.b}`}>
+      <span className="dir">{t.a} {t.a_if} → {t.b}</span><span className="v">{fmtBps(t.ab_bps)}</span>
+      <span className="dir">{t.b} {t.b_if} → {t.a}</span><span className="v">{fmtBps(t.ba_bps)}</span>
+      <span className="foot">
+        {t.reason ?? (t.sample_t ? `Sample at ${new Date(t.sample_t * 1000).toLocaleTimeString([], { hour12: false })}${t.stale ? " — stale (over 60 s old)" : ""}` : "")}
+        {" · "}{t.speed_bps ? `link speed ${fmtBps(t.speed_bps)}` : "link speed not collected, utilisation unknown"}
+      </span>
+      <button className="btn" onClick={onClose}>Close</button>
+    </div>
+  );
+}
+
+function NodePanel({ n, data, onClose, past }: { n: TNode; data: Topo; onClose: () => void; past?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => { ref.current?.focus(); }, [n.name]);
   const links = data.links.filter((l) => l.a === n.name || l.b === n.name);
@@ -27,6 +77,7 @@ function NodePanel({ n, data, onClose }: { n: TNode; data: Topo; onClose: () => 
         <span style={{ flex: 1 }} />
         <button className="icon-btn" onClick={onClose} aria-label="Close details"><Close size="16px" color="currentColor" /></button>
       </div>
+      {past && <div className="notice info small">These details are live (now), not as of the chosen minute.</div>}
       <dl className="kv kv-narrow">
         <dt>Role</dt><dd>{n.role} · {n.site}</dd>
         <dt>Model</dt><dd className="mono">{n.kind ?? "—"}</dd>
@@ -71,7 +122,10 @@ function NodePanel({ n, data, onClose }: { n: TNode; data: Topo; onClose: () => 
           </ul>
         )}
       </div>
-      <Link className="btn primary" to={`/devices/${n.name}`} style={{ alignSelf: "flex-start" }}>Open device page →</Link>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Link className="btn primary" to={`/devices/${n.name}`}>Open device page →</Link>
+        <Link className="btn" to={`/hardware?d=${encodeURIComponent(n.name)}`}>Front panel →</Link>
+      </div>
     </aside>
   );
 }
@@ -80,29 +134,47 @@ export default function Topology() {
   const q = usePoll<Topo>("/api/viz/topology");
   const [sp, setSp] = useSearchParams();
   const sel = sp.get("n");
-  const select = (n: string | null) => setSp(n ? { n } : {}, { replace: true });
+  const [t, setT] = useTimeParam();
+  const live = useTraffic(t == null);
+  const asOf = useAsOf(t);
+  const [selLink, setSelLink] = useState<string | null>(null);
+  const select = (n: string | null) => {
+    const next = new URLSearchParams(sp);
+    if (n) next.set("n", n); else next.delete("n");
+    setSp(next, { replace: true });
+  };
+  const traffic = t == null ? (live?.available === false ? null : live?.links) : asOf.data?.traffic?.links;
+  const trafficAt = t == null ? live?.at : asOf.data?.traffic?.at;
   return (
     <>
       <TopBar title="Topology" crumbs="Both sites, intended links with live state">
         <Freshness t={q.data?.generated_at} />
       </TopBar>
       <div className="content">
+        <div className="card"><Scrubber t={t} onChange={setT} label="Topology time travel" /></div>
+        {t != null && <AsOfBanner t={t} a={asOf.data} onLive={() => setT(null)} />}
         <Load q={q} rows={8}>
-          {(d) => {
-            const node = d.nodes.find((n) => n.name === sel) ?? null;
+          {(d0) => {
+            const d = t == null ? d0 : applyAsOf(d0, asOf.data);
+            const node = d0.nodes.find((n) => n.name === sel) ?? null;
+            const tl = traffic?.find((x) => x.id === selLink);
             return (
               <>
                 <div className={`topo-wrap${node ? " has-panel" : ""}`}>
                   <div className="card topo-card">
-                    <TopoMap data={d} selected={sel} onSelect={(n) => select(n === sel ? null : n)} />
+                    <TopoMap data={d} selected={sel} onSelect={(n) => select(n === sel ? null : n)}
+                      traffic={traffic} onLink={(id) => setSelLink(id === selLink ? null : id)} selectedLink={selLink} />
                     <Legend />
+                    <TrafficLegend live={t == null} speedReason={t == null ? live?.speed_reason : "not collected"} at={trafficAt} />
+                    {t == null && live?.available === false && <div className="small weak">Traffic not available: {live.reason}</div>}
+                    {tl && <TrafficPop t={tl} onClose={() => setSelLink(null)} />}
                     {Object.entries(d.sources).some(([, v]) => v !== "ok") && (
                       <div className="small weak" style={{ marginTop: 6 }}>
                         Sources: {Object.entries(d.sources).map(([k, v]) => `${k} ${v}`).join(" · ")}
                       </div>
                     )}
                   </div>
-                  {node && <NodePanel n={node} data={d} onClose={() => select(null)} />}
+                  {node && <NodePanel n={node} data={d0} past={t != null} onClose={() => select(null)} />}
                 </div>
                 <div className="card flush">
                   <div className="card-h"><h2>Links</h2><span className="small weak">the same data as the map</span></div>

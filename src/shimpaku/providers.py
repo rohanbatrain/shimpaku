@@ -285,6 +285,23 @@ def register_all(store) -> None:
                 "source": "gNMI interface counters stored by the collector (metric_sample)",
                 "interfaces": [r for r in rows if r["series"]]}
 
+    async def probe_heatmap(site: str = "campus", window_min: int = 60) -> dict:
+        from shimpaku.analytics import heatmap
+        end = pd.Timestamp.now(tz="UTC").tz_localize(None)
+        start = end - pd.Timedelta(minutes=window_min)
+        with adb.lock_of(store):
+            cur = _cursor()
+            try:
+                if "probe_result" not in adb.tables(cur):
+                    df = pd.DataFrame(columns=heatmap.COLS)
+                else:
+                    df = cur.execute("SELECT ts, client_id, target, kind, ok, rtt_ms, jitter_ms, loss_pct "
+                                     "FROM probe_result WHERE ts >= ? AND ts < ?", [start, end]).df()
+            finally:
+                cur.close()
+        return heatmap.build(df, start, end, site, window_min)
+
+    service.register_provider("probe_heatmap", probe_heatmap)
     service.register_provider("sle_get_summary", sle_get_summary)
     service.register_provider("sle_get_blast_radius", sle_get_blast_radius)
     service.register_provider("probe_run", probe_run)
@@ -293,3 +310,6 @@ def register_all(store) -> None:
     service.register_provider("bench_results", bench_results)
     service.register_provider("device_get_health", device_get_health)
     service.register_provider("iface_get_history", iface_get_history)
+
+    from shimpaku import providers_live  # live traffic, event tail, as-of state (api/routes_live.py)
+    providers_live.register_all(store)

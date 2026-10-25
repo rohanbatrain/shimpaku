@@ -1,0 +1,33 @@
+/* Ops panels: Lab host (/ops/host) and LLM gateway (/ops/gateway). */
+.ops-banner { font-size: 14px; }
+.gauges { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.gauge, .g-stat { text-align: center; padding: 4px 0; min-width: 0; }
+.gauge svg { width: 100%; max-width: 170px; display: block; margin: 0 auto; }
+.g-track, .g-val { fill: none; stroke-width: 9; stroke-linecap: round; }
+.g-track { stroke: var(--neutral-bg); }
+.g-val { stroke: var(--line2); }
+.g-ok .g-val { stroke: var(--p); }
+.g-warn .g-val { stroke: #d9922b; }
+.g-crit .g-val { stroke: var(--crit); }
+.g-num { font-size: 26px; font-weight: 650; margin-top: -30px; font-variant-numeric: tabular-nums; }
+.g-num span { font-size: 14px; font-weight: 500; color: var(--tw); margin-left: 2px; }
+.g-crit .g-num { color: var(--crit); }
+.g-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--tw); font-weight: 600; margin-top: 4px; }
+.g-sub { font-size: 12px; color: var(--tw); margin-top: 2px; overflow-wrap: anywhere; }
+.g-stat-n { font-size: 26px; font-weight: 650; margin-top: 22px; color: var(--crit); font-variant-numeric: tabular-nums; }
+.ops-inset { margin: 12px 16px; }
+.ops-events { margin: 0; padding-left: 18px; font-size: 13px; }
+.card-h .spacer { flex: 1; }
+.ops-health { display: flex; flex-wrap: wrap; gap: 14px 28px; }
+.ops-health > div { min-width: 0; }
+.ops-health .g-label { display: block; margin: 0 0 3px; }
+.ops-kpi-n { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.ops-scroll { overflow-x: auto; }
+.ops-barcol { width: 18%; min-width: 80px; }
+.ops-bar { display: block; height: 8px; border-radius: 4px; background: var(--p); min-width: 2px; }
+.ops-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (max-width: 900px) {
+  .gauges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ops-health { gap: 10px 20px; }
+  .ops-barcol { display: none; }
+}
