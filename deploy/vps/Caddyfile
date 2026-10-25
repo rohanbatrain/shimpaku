@@ -84,7 +84,7 @@
 	}
 	@kuma_public {
 		method GET HEAD
-		path /status /status/* /api/status-page/* /assets/* /upload/* /icon.svg /icon-192x192.png /icon-512x512.png /favicon.ico /apple-touch-icon.png /manifest.json
+		path /status /status/* /api/status-page/* /api/entry-page /assets/* /upload/* /icon.svg /icon-192x192.png /icon-512x512.png /favicon.ico /apple-touch-icon.png /manifest.json
 	}
 	handle @kuma_public {
 		reverse_proxy {$SHIMPAKU_KUMA_UPSTREAM:uptime-kuma:3001} {
@@ -92,8 +92,18 @@
 			header_up X-Real-IP {client_ip}
 		}
 	}
+	# `/`: Kuma serves the status page whose domain list holds this host (one page per domain,
+	# scripts/kuma_setup.mjs --status-host). A host no page claims gets Kuma's redirect to its admin
+	# dashboard, which is turned into the default page here instead.
 	handle / {
-		redir * /status/{$SHIMPAKU_STATUS_SLUG:shimpaku} 302   # `*`: a first argument starting with / would be read as a matcher
+		reverse_proxy {$SHIMPAKU_KUMA_UPSTREAM:uptime-kuma:3001} {
+			header_up X-Forwarded-For {client_ip}
+			header_up X-Real-IP {client_ip}
+			@admin header Location /dashboard*
+			handle_response @admin {
+				redir * /status/{$SHIMPAKU_STATUS_SLUG:shimpaku} 302   # `*`: a first argument starting with / would be read as a matcher
+			}
+		}
 	}
 	handle {
 		header Cache-Control no-store

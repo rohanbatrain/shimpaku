@@ -8,6 +8,7 @@
 //   <url> ...     the website monitors (HTTP, status 2xx): landing page, dashboard, status page.
 //   --group <name>  the status-page group for the URLs after it (one per domain, e.g. "Example (host)").
 //                 URLs before any --group go in the group "Website". A "Website" group left empty is removed.
+//   --status-host <host>  (after a --group) that group gets its own status page, served at / of <host>.
 //   --app <url>   the dashboard's base URL (or KUMA_APP_URL). Adds the group "Live lab": three keyword
 //                 monitors on <url>/api/public/health (docs/build/virga-live.md §2) that turn red while
 //                 a Virga fault drill is running, and green again after the revert:
@@ -30,12 +31,14 @@ const SLUG = process.env.KUMA_SLUG || "shimpaku";
 
 const GROUP_WEBSITE = "Website", GROUP_LIVE = "Live lab";
 const targets = [];   // { group, url }
+const hosts = {};     // group -> the status host whose page shows that group
 let appUrl = process.env.KUMA_APP_URL || "", current = GROUP_WEBSITE;
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   if (argv[i] === "--app") appUrl = argv[++i] || "";
   else if (argv[i].startsWith("--app=")) appUrl = argv[i].slice(6);
   else if (argv[i] === "--group") current = argv[++i] || GROUP_WEBSITE;
+  else if (argv[i] === "--status-host") hosts[current] = argv[++i] || "";
   else targets.push({ group: current, url: argv[i] });
 }
 appUrl = appUrl.replace(/\/+$/, "");
@@ -114,7 +117,7 @@ s.on("connect", async () => {
     };
 
     // Website groups (one per --group, in order): the HTTP monitors, named by their host.
-    const groups = [];
+    let groups = [];
     for (const g of [...new Set(targets.map((t) => t.group))]) {
       const gid = await group(g);
       const ids = [];
@@ -135,6 +138,8 @@ s.on("connect", async () => {
     }
 
     // Live lab: keyword monitors on the daemon's anonymous health endpoint, via the public edge.
+    const siteGroups = groups;
+    groups = [];
     if (appUrl) {
       const liveId = await group(GROUP_LIVE);
       const live = [];
@@ -151,22 +156,33 @@ s.on("connect", async () => {
       if (have.length) groups.push({ name: GROUP_LIVE, monitorList: have });
     }
 
-    const add = await call("addStatusPage", "Shimpaku", SLUG);
-    if (add?.ok) console.log(`status page created: /status/${SLUG}`);
-    else if (!/exist|taken|used|UNIQUE/i.test(add?.msg || "")) fail(`addStatusPage: ${add?.msg}`);
-    else console.log(`status page exists: /status/${SLUG}`);
+    const live = groups;
 
-    const config = {
-      slug: SLUG, title: "Shimpaku",
-      description: "Live status of the Shimpaku site and its lab. The \"Live lab\" group goes red on purpose " +
-        "while the operator injects a real fault into the lab with Virga, and green again once it is reverted and verified.",
-      icon: "/icon.svg", theme: "auto", published: true, showTags: false, showPoweredBy: false,
-      showCertificateExpiry: true, footerText: "Independent project. Not affiliated with HPE or Juniper Networks.",
-      customCSS: "", analyticsType: null, analyticsId: null, analyticsScriptUrl: null, domainNameList: [], autoRefreshInterval: 300,
-    };
-    const save = await call("saveStatusPage", SLUG, config, "/icon.svg", groups);
-    if (!save?.ok) fail(`saveStatusPage: ${save?.msg}`);
-    console.log(`status page published: ${groups.map((g) => `${g.name} (${g.monitorList.length})`).join(", ")}`);
+    // Status pages. With --status-host, each group gets its own page bound to that host (Kuma serves a
+    // page at / of every domain in its domainNameList): the first keeps SLUG, the rest SLUG-<n>; each shows
+    // its own group plus Live lab. Without it, one page (SLUG) shows every group.
+    const hosted = siteGroups.filter((g) => hosts[g.name]);
+    const pages = hosted.length
+      ? hosted.map((g, i) => ({ slug: i ? `${SLUG}-${i + 1}` : SLUG, domains: [hosts[g.name]], groups: [g, ...live] }))
+      : [{ slug: SLUG, domains: [], groups: [...siteGroups, ...live] }];
+    for (const p of pages) {
+      const add = await call("addStatusPage", "Shimpaku", p.slug);
+      if (add?.ok) console.log(`status page created: /status/${p.slug}`);
+      else if (!/exist|taken|used|UNIQUE/i.test(add?.msg || "")) fail(`addStatusPage ${p.slug}: ${add?.msg}`);
+      const config = {
+        slug: p.slug, title: "Shimpaku",
+        description: "Live status of the Shimpaku site and its lab. The \"Live lab\" group goes red on purpose " +
+          "while the operator injects a real fault into the lab with Virga, and green again once it is reverted and verified.",
+        icon: "/icon.svg", theme: "auto", published: true, showTags: false, showPoweredBy: false,
+        showCertificateExpiry: true, footerText: "Independent project. Not affiliated with HPE or Juniper Networks.",
+        customCSS: "", analyticsType: null, analyticsId: null, analyticsScriptUrl: null, domainNameList: p.domains,
+        autoRefreshInterval: 300,
+      };
+      const save = await call("saveStatusPage", p.slug, config, "/icon.svg", p.groups);
+      if (!save?.ok) fail(`saveStatusPage ${p.slug}: ${save?.msg}`);
+      console.log(`status page /status/${p.slug}${p.domains.length ? ` (at / of ${p.domains.join(", ")})` : ""}: `
+        + p.groups.map((g) => `${g.name} (${g.monitorList.length})`).join(", "));
+    }
     s.close(); process.exit(0);
   } catch (e) { fail(e.message); }
 });
