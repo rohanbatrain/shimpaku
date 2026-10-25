@@ -1,0 +1,6 @@
+# r2 (campus): OSPF neighbour of r1.
+# Merged on top of the lab's boot config (lab/nodes/init.conf.tmpl). Lab addressing only.
+set interfaces ge-0/0/0 unit 0 family inet address 10.0.12.2/30
+set interfaces lo0 unit 0 family inet address 10.255.0.2/32
+set protocols ospf area 0.0.0.0 interface ge-0/0/0.0
+set protocols ospf area 0.0.0.0 interface lo0.0

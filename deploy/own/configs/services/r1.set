@@ -1,0 +1,7 @@
+# What Shimpaku needs on every device: gNMI in clear text on 32767 in the management instance
+# (docs/RESEARCH.md R2; the collector dials in with the lab credentials). Lab-only: no TLS.
+set system services http servers server shimpaku-gnmi port 32767
+set system services http servers server shimpaku-gnmi routing-instance mgmt_junos
+set system services http servers server shimpaku-gnmi grpc gnmi
+# r1 protects its routing engine (PROTECT-RE on lo0): let the collector in.
+set firewall family inet filter PROTECT-RE term mgmt from destination-port 32767

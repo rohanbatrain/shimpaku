@@ -1,0 +1,12 @@
+# What Shimpaku needs on every device: gNMI in clear text on 32767 in the management instance
+# (docs/RESEARCH.md R2; the collector dials in with the lab credentials). Lab-only: no TLS.
+set system services http servers server shimpaku-gnmi port 32767
+set system services http servers server shimpaku-gnmi routing-instance mgmt_junos
+set system services http servers server shimpaku-gnmi grpc gnmi
+# RPM probe owner shimpaku (docs/build/rpm-config.set): campus users (VLAN 10, instance USER) to servers
+set services rpm probe shimpaku test users-servers probe-type icmp-ping
+set services rpm probe shimpaku test users-servers target address 10.20.0.1
+set services rpm probe shimpaku test users-servers routing-instance USER
+set services rpm probe shimpaku test users-servers probe-count 5
+set services rpm probe shimpaku test users-servers probe-interval 1
+set services rpm probe shimpaku test users-servers test-interval 10
