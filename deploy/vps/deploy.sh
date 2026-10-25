@@ -48,6 +48,8 @@ sed -e "s#__REPO__#$REPO#g" "$HERE/site/index.html" > "$HERE/site-built/index.ht
 echo "== ship"
 ssh "$VPS" 'mkdir -p ~/shimpaku'
 git archive --format=tar HEAD | ssh "$VPS" 'cd ~/shimpaku && tar -xf -'
+# the containers run as unprivileged users; the snapshot and the site are public data
+chmod -R a+rX "$HERE/snapshot" "$HERE/site-built"
 tar -C "$HERE" -cf - snapshot site-built | ssh "$VPS" 'cd ~/shimpaku/deploy/vps && tar -xf -'
 ssh "$VPS" "cd ~/shimpaku/deploy/vps && printf 'SHIMPAKU_SITE_HOSTS=%s\nSHIMPAKU_APP_HOSTS=%s\nSHIMPAKU_STATUS_HOSTS=%s\nSHIMPAKU_PUBLIC_CORS_ORIGINS=%s\nSHIMPAKU_LAB_UPSTREAM=%s\n' '$SITE_HOSTS' '$APP_HOSTS' '$STATUS_HOSTS' '$CORS' '$LAB_UP' > .env"
 # Docker needs root on the VPS (no docker group: it is root-equivalent). The sudo password is decrypted
