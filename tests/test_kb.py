@@ -20,3 +20,10 @@ def test_search_finds_the_guardrails_and_read_returns_the_section():
 def test_scrub_removes_addresses_and_key_like_strings():
     s = kb.scrub("mgmt 10.99.0.5 and key sk-abcdef1234567890 and fe80::1")
     assert "10.99.0.5" not in s and "sk-abcdef" not in s and "<host>" in s and "<redacted>" in s
+
+
+def test_grounding_brings_matching_docs_and_nothing_for_noise():
+    g = kb.grounding("Why is approval a dashboard session and not an MCP tool?")
+    assert g and "SECURITY.md" in g or "mcp-actions.md" in (g or "")
+    assert "not live lab state" in g
+    assert kb.grounding("zzqx blorf") is None

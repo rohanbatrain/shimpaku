@@ -111,7 +111,9 @@ class Assistant:
         tool_timeout_s: float = 30.0,
         deadline_s: float = 300.0,
         seed: int | None = None,
+        kb: bool = True,
     ) -> None:
+        self.kb = kb
         self.mcp_target = mcp_target if mcp_target is not None else default_mcp_url()
         self.model = model
         self.llm_factory = llm_factory or (lambda name: LLM(name, seed=seed))
@@ -143,7 +145,16 @@ class Assistant:
                 listed = await mcp.list_tools()
                 tools = mcp_tools_to_openai(listed.tools)
                 known = {t["function"]["name"] for t in tools}
-                messages: list[dict[str, Any]] = [{"role": "system", "content": prompts.SYSTEM}]
+                system = prompts.SYSTEM
+                if self.kb:
+                    try:
+                        from shimpaku import kb
+                        bg = kb.grounding(question)
+                    except Exception:  # noqa: BLE001 — the knowledge base is an aid, never a blocker
+                        bg = None
+                    if bg:
+                        system = f"{system}\n\n{bg}"
+                messages: list[dict[str, Any]] = [{"role": "system", "content": system}]
                 messages += list(history or [])
                 messages.append({"role": "user", "content": question})
                 while True:

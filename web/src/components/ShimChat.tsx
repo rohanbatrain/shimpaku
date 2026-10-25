@@ -28,8 +28,33 @@ export function Md({ text }: { text: string }) {
   };
   let para: string[] = [];
   const flushP = () => { if (para.length) out.push(<p key={out.length}>{inline(para.join(" "), `${out.length}-`)}</p>); para = []; };
-  for (const raw of text.replace(/\r/g, "").split("\n")) {
+  const lines = text.replace(/\r/g, "").split("\n");
+  for (let li = 0; li < lines.length; li++) {
+    const raw = lines[li];
     const line = raw.trim();
+    // fenced code block
+    if (line.startsWith("```")) {
+      flushP(); flush();
+      const code: string[] = [];
+      while (++li < lines.length && !lines[li].trim().startsWith("```")) code.push(lines[li]);
+      out.push(<pre key={out.length} className="md-code"><code>{code.join("\n")}</code></pre>);
+      continue;
+    }
+    // pipe table: a header row, a --- separator, then rows
+    if (line.startsWith("|") && /^\|?\s*:?-{3,}/.test((lines[li + 1] ?? "").trim())) {
+      flushP(); flush();
+      const cells = (l: string) => l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+      const head = cells(line);
+      const rows: string[][] = [];
+      li += 1;
+      while (li + 1 < lines.length && lines[li + 1].trim().startsWith("|")) rows.push(cells(lines[++li]));
+      const k = out.length;
+      out.push(
+        <div key={k} className="md-table"><table><thead><tr>{head.map((h, i) => <th key={i}>{inline(h, `${k}h${i}`)}</th>)}</tr></thead>
+          <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{inline(c, `${k}-${i}-${j}`)}</td>)}</tr>)}</tbody></table></div>);
+      continue;
+    }
+    if (line.startsWith(">")) { flushP(); flush(); out.push(<blockquote key={out.length}>{inline(line.replace(/^>\s?/, ""), `${out.length}-`)}</blockquote>); continue; }
     const b = line.match(/^[-*•]\s+(.*)$/), n = line.match(/^\d+[.)]\s+(.*)$/), h = line.match(/^#{1,4}\s+(.*)$/);
     if (!line) { flushP(); flush(); continue; }
     if (b || n) {
