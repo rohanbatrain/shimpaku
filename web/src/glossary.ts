@@ -80,6 +80,7 @@ export const PAGES: [string, Explainer][] = [
   ["/shim", { title: "About Shim", body: "Chat with the built-in assistant. It answers from the lab's live data and shows every tool call it made; it can propose a fix but never approve it. Your conversations stay in this browser." }],
   ["/benchmark", { title: "About Benchmark", body: "How the system scored against Virga's catalogue of faults: detection, correct explanation, safe fix, and time taken." }],
   ["/architecture", { title: "About Architecture", body: "How the parts fit together. One program owns all the data; one door (the MCP server) is the only way to a device. Click any box for what it does and the code behind it." }],
+  ["/deploy", { title: "About Deploy your own", body: "How to run this whole lab on your own computer: a spare x86 Linux machine, Juniper's free lab images, and an installer you run from your own laptop. This page only writes the command for you; it never asks for a password and sends nothing anywhere." }],
   ["/probes", { title: "About the Probe heatmap", body: "Each cell is one minute of test messages between two devices: darker means more lost or slower. A dark row or column points at the device or path in trouble." }],
   ["/", { title: "About this dashboard", body: "Shimpaku watches a small real network, explains problems in plain terms, and fixes them safely: AI may propose a change, a human approves it, and the device itself rolls back a bad change. Start here for the overall health; every (i) explains what you are looking at." }],
 ];

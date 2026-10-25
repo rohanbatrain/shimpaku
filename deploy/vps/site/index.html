@@ -74,6 +74,7 @@ a{color:var(--accent-ink)}
 .rack li{display:flex;align-items:center;gap:10px;background:#22302b;border:1px solid #33433d;border-radius:6px;padding:6px 10px;color:#e8eeeb;font:13px ui-monospace,SFMono-Regular,Menlo,monospace}
 .rack li span{color:#9fb2aa;font-size:12px}
 .rack li em{margin-left:auto;font-style:normal;color:#9fb2aa;font-size:12px}
+pre.cmd{margin:0;padding:12px 14px;background:#16211c;color:#e8eeeb;border-radius:10px;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
 .split{display:grid;gap:18px;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}
 @media (max-width:760px){.split{grid-template-columns:1fr}}
 @media (max-width:760px){.top nav{display:none}.top .btn{margin-left:auto}.fgrid{grid-template-columns:1fr 1fr}.fgrid>div:first-child{grid-column:1/-1}}
@@ -88,6 +89,7 @@ a{color:var(--accent-ink)}
     <nav aria-label="Page">
       <a href="#hardware">Devices</a>
       <a href="#write-path">How it works</a>
+      <a href="#deploy-your-own">Deploy your own</a>
       <a href="#evidence">Evidence</a>
       <a href="__REPO__">Source</a>
     </nav>
@@ -196,6 +198,33 @@ a{color:var(--accent-ink)}
   </figure>
 </section>
 
+<section id="deploy-your-own">
+  <h2>Deploy your own</h2>
+  <p style="margin:0 0 14px">Like the demo? Run the whole lab, all seven devices plus Shimpaku and the Virga fault lab, on a
+  spare machine of your own. The installer runs on your computer and talks to your hypervisor over SSH; it checks the
+  machine first, says what it will change, and can remove exactly that again.</p>
+  <div class="split">
+    <ol class="flow" style="grid-template-columns:1fr">
+      <li><b>Bring</b>A bare-metal x86_64 Linux machine with nested KVM (about 40 GiB of free RAM for all seven devices), and the
+      two vJunos images, which you download yourself from <a href="https://www.juniper.net/us/en/dm/vjunos-labs.html">Juniper's free lab page</a>.</li>
+      <li><b>Check, then deploy</b>Clone the repository and run the installer with <code>--check</code> (read-only), then again
+      without it. The boot takes 5 to 10 minutes.</li>
+      <li><b>Open</b>An SSH tunnel to <code>127.0.0.1:8780</code> and the same dashboard is yours.</li>
+    </ol>
+    <div>
+<pre class="cmd">./deploy/own/install.sh --host &lt;your-hypervisor&gt; \
+  --check --router-image r.qcow2 --switch-image s.qcow2
+# happy with the plan? run it again without --check</pre>
+      <p class="note" style="margin:10px 0 0">You type the root password into the installer on your own computer, never into
+      this website. Juniper does not support vJunos inside a virtual machine, so the host must be bare metal.</p>
+    </div>
+  </div>
+  <div class="cta">
+    <a class="btn primary" href="https://{{$app}}/deploy">Build your command</a>
+    <a class="btn" href="__REPO__/blob/main/docs/DEPLOY-YOUR-OWN.md">Read the guide</a>
+  </div>
+</section>
+
 <section id="evidence">
   <h2>Evidence, run on the live lab</h2>
   <div class="grid">
@@ -232,6 +261,7 @@ a{color:var(--accent-ink)}
           <li><a href="https://{{$app}}/hardware">Devices, live</a></li>
           <li><a href="https://{{$app}}/virga">Fault lab</a></li>
           <li><a href="https://{{$app}}/architecture">Architecture</a></li>
+          <li><a href="https://{{$app}}/deploy">Deploy your own</a></li>
         </ul>
       </div>
       <div>
