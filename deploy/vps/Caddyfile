@@ -41,7 +41,11 @@
 (upstream_opts) {
 	health_uri /api/whoami
 	health_interval 10s
-	health_timeout 3s
+	# the lab is a busy laptop: one slow answer is not an outage. Three failed checks in a row
+	# (about 30 s) mark it down; one good one brings it back. The daemon logs its own stalls (loopwatch).
+	health_timeout 5s
+	health_fails 3
+	health_passes 1
 	health_status 200
 	fail_duration 30s
 	max_fails 2
@@ -233,7 +237,9 @@
 		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {
 			health_uri /api/whoami
 			health_interval 10s
-			health_timeout 3s
+			health_timeout 5s
+			health_fails 3
+			health_passes 1
 			fail_duration 30s
 			flush_interval -1
 			header_up X-Forwarded-For {client_ip}
@@ -255,7 +261,9 @@
 		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {
 			health_uri /api/whoami
 			health_interval 10s
-			health_timeout 3s
+			health_timeout 5s
+			health_fails 3
+			health_passes 1
 			fail_duration 30s
 			header_up X-Forwarded-For {client_ip}
 			header_up X-Real-IP {client_ip}
