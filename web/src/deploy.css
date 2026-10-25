@@ -1,0 +1,63 @@
+/* Deploy your own (pages/DeployOwn.tsx) */
+.own { max-width: 1040px; }
+.own-lede { margin: 0; max-width: 760px; font-size: 14.5px; }
+.own h2 { margin-bottom: 8px; }
+.own-p { margin: 8px 0; }
+.own-note { margin: 10px 0; }
+.own-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 28px; }
+.own-list { margin: 6px 0; padding-left: 18px; }
+.own-list li { margin: 6px 0; }
+.own code { font-family: var(--mono); font-size: 12px; background: var(--neutral-bg); padding: 1px 4px; border-radius: 3px; overflow-wrap: anywhere; }
+.own .notice { overflow-wrap: anywhere; }
+.own .notice + .card, .own .card + .notice { margin-top: 0; }
+.own section.card .notice { margin-top: 12px; }
+
+.own-scroll { overflow-x: auto; margin: 10px 0 0; }
+table.own-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.own-table th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--tw); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); background: #fafbfa; }
+table.own-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.own-table tr.on td { background: #eaf6f1; }
+table.own-pre td:first-child { white-space: nowrap; }
+
+.own-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; margin-top: 8px; }
+.own-form .field, .own-form .own-adv, .own-form .own-check { min-width: 0; }
+.own-form .field input, .own-form .field select { min-width: 0; width: 100%; }
+.own-form .field:first-child, .own-form .own-adv, .own-form .own-check { grid-column: 1 / -1; }
+.own-adv { margin-bottom: 12px; }
+.own-adv summary { cursor: pointer; color: var(--p-ink); font-size: 13px; margin-bottom: 8px; }
+.own-adv .field { max-width: 460px; }
+.own-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 0 0 8px; cursor: pointer; }
+.own-check input { margin-top: 3px; flex: none; }
+.own-bad { color: var(--crit); }
+
+.own-steps { list-style: none; counter-reset: s; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.own-steps > li { counter-increment: s; position: relative; padding-left: 34px; min-width: 0; }
+.own-steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--p); color: var(--on-p); font-weight: 700; font-size: 13px; display: grid; place-items: center; }
+
+.own-cmd { margin-top: 8px; border-radius: 8px; overflow: hidden; background: #0e1a16; min-width: 0; }
+.own-cmd-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 8px 4px 12px; background: #16271f; color: #9fb2aa; font-size: 12px; }
+.own-cmd-h .btn { background: #1b3329; border-color: #2c4339; color: #e8eeeb; font-size: 12px; padding: 3px 10px; }
+.own-cmd-h .btn:hover { background: #24443a; }
+.own-cmd pre { margin: 0; padding: 12px; color: #e8eeeb; font: 12.5px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.own-cmd pre:focus-visible { outline: 2px solid var(--p); outline-offset: -2px; }
+
+@media (max-width: 900px) {
+  .own-two, .own-form { grid-template-columns: minmax(0, 1fr); }
+  .own-form .field:first-child, .own-form .own-adv, .own-form .own-check { grid-column: auto; }
+  .own-cmd-h .btn { min-height: 36px; }
+}
+@media (max-width: 600px) {
+  .own-scroll { overflow-x: visible; }
+  table.own-table, table.own-table tbody { display: block; }
+  table.own-table thead { display: none; }
+  table.own-table tr { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  table.own-table td { display: contents; }
+  table.own-table td::before { content: attr(data-label); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--tw); font-weight: 600; }
+  table.own-table td > * { min-width: 0; }
+  table.own-pre td:first-child { white-space: normal; }
+  table.own-table tr.on { background: #eaf6f1; }
+  .own-steps > li { padding-left: 0; padding-top: 30px; }
+  .own-steps > li::before { top: 0; }
+  .own-check { min-height: 44px; align-items: center; }
+  .own-check input { width: 20px; height: 20px; margin-top: 0; }
+}

@@ -180,6 +180,21 @@ Setup: [`docs/GO-LIVE.md`](docs/GO-LIVE.md) (Live fault drills). Presenter's scr
 | Eight defects were found only by running it live, including one false "verified" from our own validation | Each has a fix and, where it could recur, a test that fails on the old code. The false verification is left unedited in the audit history and corrected in writing | [`docs/INCIDENTS.md`](docs/INCIDENTS.md) |
 | The audit trail holds | `GET /api/audit/verify` recomputes the hash chain over every row: `{"ok": true}` | `src/shimpaku/mcp/audit.py` |
 
+## Deploy your own
+
+Run the whole lab (seven vJunos devices, Shimpaku and Virga) on your own hypervisor. You need a spare bare-metal x86_64
+Linux machine with nested KVM (about 40 GiB of free RAM for all seven devices; `--profile fabric` or `campus` need
+less) and Juniper's free vJunos lab images, which you download yourself. An installer on your own computer checks the
+machine (`--check` is read-only), shows a plan, builds the lab over SSH, and `--uninstall` removes exactly what it made.
+
+```bash
+./deploy/own/install.sh --host <hypervisor> --check --router-image r.qcow2 --switch-image s.qcow2
+```
+
+Full guide: [`docs/DEPLOY-YOUR-OWN.md`](docs/DEPLOY-YOUR-OWN.md). The dashboard's **Deploy your own** page (`/deploy`) writes the
+command for you in your browser; it never takes a password and sends nothing anywhere. Design:
+[`docs/build/deploy-your-own.md`](docs/build/deploy-your-own.md).
+
 ## Run it
 
 On the lab host (Linux, Python 3.12, the vJunos lab reachable on its management network):
@@ -208,6 +223,7 @@ The live demo script is [`DEMO.md`](DEMO.md) (`shimpaku demo seed | break | stat
 
 | | |
 |---|---|
+| [`docs/DEPLOY-YOUR-OWN.md`](docs/DEPLOY-YOUR-OWN.md) | run the whole lab on your own hypervisor: requirements, images, check, deploy, uninstall |
 | [`DEMO.md`](DEMO.md) | 10-minute live walkthrough, and the script for a live fault drill |
 | [`SECURITY.md`](SECURITY.md) | threat model and controls |
 | [`docs/INCIDENTS.md`](docs/INCIDENTS.md) | defects found by running it, with fixes and tests |

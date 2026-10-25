@@ -7,7 +7,7 @@ import DrillBanner from "./components/DrillBanner";
 import { VirgaProvider } from "./virga";
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers, StatusGood, ShareRounded } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers, StatusGood, ShareRounded, Deploy as DeployIcon } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -44,6 +44,7 @@ const Theatre = lazy(() => import("./pages/Theatre"));
 const Hardware = lazy(() => import("./pages/Hardware"));
 const ShimPage = lazy(() => import("./pages/Shim"));
 const Virga = lazy(() => import("./pages/Virga"));
+const DeployOwn = lazy(() => import("./pages/DeployOwn"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -61,7 +62,7 @@ export const DISCLAIMER = "Independent project. Not affiliated with HPE or Junip
 const STATUS_URL = /^[^.]+-app\./.test(location.hostname)
   ? `https://${location.hostname.replace(/^([^.]+)-app\./, "$1-status.")}/` : null;
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/hardware", "Hardware"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/virga", "Virga"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/hardware", "Hardware"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/virga", "Virga"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/deploy", "Deploy your own"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -178,6 +179,9 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
       </NavLink>
       <NavLink to="/architecture">
         <Tree {...ic} /> Architecture
+      </NavLink>
+      <NavLink to="/deploy">
+        <DeployIcon {...ic} /> Deploy your own
       </NavLink>
       {op && (
         <>
@@ -336,6 +340,7 @@ export default function App() {
             <Route path="/benchmark" element={<Benchmark />} />
             <Route path="/probes" element={<Probes />} />
             <Route path="/architecture" element={<Architecture />} />
+            <Route path="/deploy" element={<DeployOwn />} />
             <Route path="/agents" element={<Agents />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin/requests" element={<SessionRequests />} />

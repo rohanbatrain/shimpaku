@@ -8,7 +8,7 @@ const PAGES = [
   () => import("./pages/Device"), () => import("./pages/Events"), () => import("./pages/ServiceLevels"),
   () => import("./pages/RootCause"), () => import("./pages/Actions"), () => import("./pages/ActionDetail"),
   () => import("./pages/Theatre"), () => import("./pages/Guardrails"), () => import("./pages/Audit"),
-  () => import("./pages/AssistantTrace"), () => import("./pages/Benchmark"), () => import("./pages/Architecture"),
+  () => import("./pages/AssistantTrace"), () => import("./pages/Benchmark"), () => import("./pages/Architecture"), () => import("./pages/DeployOwn"),
   () => import("./pages/Probes"), () => import("./components/AssistantPanel"), () => import("./pages/Shim"), () => import("./components/Topo3D"), () => import("./components/ShimMarkdown"),
 ];
 
