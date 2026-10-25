@@ -928,6 +928,7 @@ def create_app(
     app.include_router(routes_live.router(call, reader, service))
     from shimpaku.api import routes_explain; app.include_router(routes_explain.router(call, reader))  # noqa: E702
     app.include_router(routes_explain.router(call, reader))
+    from shimpaku.api import routes_theatre; app.include_router(routes_theatre.router(call, reader))  # noqa: E702  /api/theatre*
 
     @app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
     async def api_404(rest: str):

@@ -546,3 +546,7 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
 
 
 from shimpaku.api.demo_explain import audit_chain, audit_verify  # noqa: E402,F401,F811  (explain views)
+# ---- theatre mode: the demo fixture as a state machine (api/demo_theatre.py) -------------
+from shimpaku.api import demo_theatre as _theatre  # noqa: E402
+
+_theatre.install(__import__("sys").modules[__name__])

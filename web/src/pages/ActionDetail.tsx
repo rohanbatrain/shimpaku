@@ -52,6 +52,7 @@ export default function ActionDetail() {
     <>
       <TopBar title={a ? <>Action {a.id} · {a.title}</> : `Action ${id}`} crumbs={<><Link to="/actions">Actions</Link>{a?.incident_id && <> / <Link to={`/root-cause/${a.incident_id}`}>{a.incident_id}</Link></>}</>}>
         {a && <StatusPill status={a.status} />}
+        {a && a.kind === "add_vlan_to_trunk" && a.args?.ifname === "ge-0/0/5" && a.args?.vlan === 999 && <Link className="btn" to={`/theatre?action=${a.id}`}>Watch in theatre</Link>}
         {a && <Pill tone={a.tier === "T2" ? "warn" : "neutral"}>{a.mode ? `${a.tier} · ${a.mode}` : a.tier}</Pill>}
         {a && ["proposed", "awaiting_approval"].includes(a.status) && (
           <>
