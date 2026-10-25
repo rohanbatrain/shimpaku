@@ -3,6 +3,7 @@ import { Chat } from "grommet-icons";
 import { api } from "../api";
 import { useSession } from "../session";
 import "../console.css";
+import QuickLink from "./QuickLink";
 import { DemoBadge, ReplayBadge } from "./ui";
 
 // these titles repeat the mobile app bar, so they are visually hidden there (kept for screen readers)
@@ -23,6 +24,7 @@ export default function TopBar({ title, crumbs, children }: { title: ReactNode; 
       <DemoBadge on={who.demo} />
       <ReplayBadge replay={who.replay} />
       {/* visitors: the read-only notice and both ways in live in AccessBanner, once per page */}
+      {who.role === "operator" && !who.replay && <QuickLink />}
       {who.role === "operator" && !who.replay && (who.presenting
         ? <><span className="badge-presenting" title="Presenter mode: the visitor view, with your operator console">Presenting</span>
             <button type="button" className="btn present-toggle" onClick={() => present(false)}>Stop presenting</button></>

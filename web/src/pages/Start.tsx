@@ -14,11 +14,11 @@ const WHY: Record<string, string> = {
 };
 const at = (t: number) => new Date(t * 1000).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
 
-/** The invite landing page. Opening it never uses the invite up; only "Start demo" does. */
+/** The invite landing page. Opening it never uses the invite up (link previews fetch it too);
+ *  only "Agree and start" does, one click under a short notice. */
 export default function Start({ onDone }: { onDone: () => void }) {
   const token = new URLSearchParams(location.search).get("i") ?? "";
   const [st, setSt] = useState<Status | null>(null);
-  const [consent, setConsent] = useState(false);
   const [name, setName] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -31,7 +31,8 @@ export default function Start({ onDone }: { onDone: () => void }) {
     setBusy(true);
     setErr(null);
     try {
-      await api("/api/invites/redeem", { json: { token, consent, display_name: name.trim() || null } });
+      // pressing "Agree and start" under the notice is the consent (one click for someone short on time)
+      await api("/api/invites/redeem", { json: { token, consent: true, display_name: name.trim() || null } });
       onDone();
     } catch (e: any) {
       setErr(e.status === 429 ? "Too many attempts. Wait a minute." : e.status === 425 ? "Your session has not opened yet. Try again at the time shown." : e.message);
@@ -69,28 +70,28 @@ export default function Start({ onDone }: { onDone: () => void }) {
             </div>
           ) : (
             <>
-              <p className="weak" style={{ marginTop: 0 }}>A {st?.lease_minutes ?? 30}-minute session on the demo fixture. If someone else is using the lab, you join a queue.</p>
-              <div className="notice info" style={{ marginBottom: 14 }}>
-                <b>Before you start</b>
-                <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+              <p className="weak" style={{ marginTop: 0 }}>A {st?.lease_minutes ?? 30}-minute session on seven real Junos devices. If someone else is using the lab, you join a queue.</p>
+              {err && <div className="notice crit" role="alert" style={{ marginBottom: 12 }}>{err}</div>}
+              <button className="btn primary" type="submit" disabled={busy || !st} style={{ width: "100%", justifyContent: "center", padding: "11px", fontSize: 15 }}>
+                {busy && <Busy />} Agree and start
+              </button>
+              <p className="small weak" style={{ margin: "10px 0 0" }}>
+                By starting you agree that the owner keeps the times of your session, what you do in it (audited under a pass id, not your name)
+                and the owner's note about you, for {days} days. You can erase it any time from this link.
+              </p>
+              <details className="small" style={{ marginTop: 10 }}>
+                <summary>Full notice, and add your name (optional)</summary>
+                <ul style={{ margin: "6px 0 10px", paddingLeft: 18 }}>
                   <li><b>Purpose:</b> to know who tried this demo and follow up with them.</li>
                   <li><b>What is kept:</b> your request (name, contact, message) or the owner's note about you, the display name below if you give one, the times of your session, and what you do in it (your actions are audited under a pass id, not your name).</li>
                   <li><b>How long:</b> your name, contact, message and the owner's note are deleted {days} days after your session ends. The audit trail keeps only the pass id.</li>
                   <DeletionLine days={days} contact={st?.contact} />
                 </ul>
-              </div>
-              <div className="field">
-                <label htmlFor="dn">Display name (optional)</label>
-                <input id="dn" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} autoComplete="off" />
-              </div>
-              <label className="small" style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 14 }}>
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required />
-                <span>I have read this notice and agree to this data being kept as described.</span>
-              </label>
-              {err && <div className="notice crit" role="alert" style={{ marginBottom: 12 }}>{err}</div>}
-              <button className="btn primary" type="submit" disabled={busy || !consent || !st} style={{ width: "100%", justifyContent: "center", padding: "9px" }}>
-                {busy && <Busy />} Start demo
-              </button>
+                <div className="field">
+                  <label htmlFor="dn">Display name (optional)</label>
+                  <input id="dn" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+                </div>
+              </details>
             </>
           )}
         </form>
