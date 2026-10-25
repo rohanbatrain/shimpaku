@@ -22,12 +22,7 @@ export default function TopBar({ title, crumbs, children }: { title: ReactNode; 
       <span className="spacer" />
       <DemoBadge on={who.demo} />
       <ReplayBadge replay={who.replay} />
-      {who.role === "visitor" && !who.replay && (
-        <>
-          <span className="badge-view" title="Public view: live data, nothing can be changed">Viewing read-only</span>
-          <a className="btn primary req-cta" href="/request">Request a live session</a>
-        </>
-      )}
+      {/* visitors: the read-only notice and both ways in live in AccessBanner, once per page */}
       {who.role === "operator" && !who.replay && (who.presenting
         ? <><span className="badge-presenting" title="Presenter mode: the visitor view, with your operator console">Presenting</span>
             <button type="button" className="btn present-toggle" onClick={() => present(false)}>Stop presenting</button></>

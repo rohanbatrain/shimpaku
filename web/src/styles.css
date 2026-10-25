@@ -355,3 +355,15 @@ svg.blast-tree { width: 100%; min-width: 640px; height: auto; display: block; }
 ul.tl.commits li { grid-template-columns: 64px minmax(0, 1fr); row-gap: 2px; }
 ul.tl.commits li > :nth-child(3) { grid-column: 2; }
 ul.tl.commits li > * { min-width: 0; overflow-wrap: anywhere; }
+
+/* read-only notice for visitors (and the replay): first thing on every page */
+.access-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 16px;
+  padding: 12px 16px; border-radius: 8px; background: #fff7e0; border: 1px solid #ecd28a; color: #4a3400; font-size: 14px; }
+.access-banner strong { font-weight: 700; }
+.access-banner.replay { background: #eef3f8; border-color: #c8d6e5; color: #1f3346; }
+.access-banner .access-actions { display: flex; gap: 8px; margin-left: auto; }
+.access-banner .btn { padding: 6px 12px; font-size: 13px; min-height: 36px; display: inline-flex; align-items: center; text-decoration: none; }
+@media (max-width: 600px) {
+  .access-banner .access-actions { margin-left: 0; width: 100%; }
+  .access-banner .access-actions .btn { flex: 1; justify-content: center; min-height: 44px; }
+}
