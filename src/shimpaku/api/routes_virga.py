@@ -3,6 +3,8 @@
 Reads (catalogue, live state, its SSE stream, history) use ``reader``: everyone who may read the
 dashboard may watch, visitors included (D3). The payloads are built from an allow-list in
 ``shimpaku.virga_live``: no config lines, no management addresses, the actor reduced to a role.
+The SSE stream is capped per client address and in all (``STREAMS_PER_IP``, ``STREAMS_TOTAL``; the
+operator's own view is not counted): past a cap it is 429 and the page polls the state instead.
 
 Writes (inject, revert now, recover) need ``Principal.can_present``: the operator's own dashboard
 session (password + TOTP on the public site). Every bearer token, tester, visitor and anonymous
@@ -34,7 +36,24 @@ from shimpaku.api.ratelimit import RateLimiter
 
 VIRGA_RATE = (6, 12)   # injects per principal / globally, per hour
 STREAM_TICK_S = 1.0
+# Open SSE views of the fault lab per client address and in all (the operator's own are not counted).
+# Past either cap the stream is 429 and the page polls /api/virga/state every 5 s instead (web/src/virga.tsx).
+STREAMS_PER_IP, STREAMS_TOTAL = 6, 100
 NOT_OPERATOR = "fault injection is for the operator's own signed-in session"
+
+
+class CountedStream(EventSourceResponse):
+    """An SSE response that gives its slot back however it ends (also when it never started)."""
+
+    def __init__(self, *a: Any, release: Callable[[], None], **kw: Any):
+        super().__init__(*a, **kw)
+        self._release = release
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            self._release()
 
 
 class TrialBody(BaseModel):
@@ -85,9 +104,27 @@ def router(call: Callable[..., Any], reader: Callable[..., Principal], rate: Cal
     async def trials(request: Request, p: Principal = Depends(reader)) -> dict:
         return await asyncio.to_thread(vl.manager_for(request.app).trials_view)
 
+    streams: dict[str, int] = {}  # client address -> open streams (not the operator's)
+
     @r.get("/api/virga/stream")
     async def stream(request: Request, p: Principal = Depends(reader)):
         m = vl.manager_for(request.app)
+        ip = request.client.host if request.client else "?"
+        counted = not p.can_present
+        if counted:
+            if streams.get(ip, 0) >= STREAMS_PER_IP or sum(streams.values()) >= STREAMS_TOTAL:
+                raise HTTPException(429, "too many live views of the fault lab; the page refreshes every few seconds instead",
+                                    headers={"Retry-After": "60"})
+            streams[ip] = streams.get(ip, 0) + 1
+        released = False
+
+        def release() -> None:
+            nonlocal released
+            if counted and not released:
+                released = True
+                streams[ip] -= 1
+                if streams[ip] <= 0:
+                    del streams[ip]
 
         async def gen():
             last = None
@@ -98,7 +135,7 @@ def router(call: Callable[..., Any], reader: Callable[..., Principal], rate: Cal
                     yield {"event": "state", "data": blob}
                 await asyncio.sleep(STREAM_TICK_S)
 
-        return EventSourceResponse(gen(), ping=15)
+        return CountedStream(gen(), ping=15, release=release)
 
     # ---- writes ------------------------------------------------------------------------------
     @r.post("/api/virga/trials", status_code=202)
