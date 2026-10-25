@@ -45,7 +45,7 @@ def test_invite_and_request_status_pages_send_no_referrer():
 def test_the_landing_page_has_a_csp_and_cannot_be_framed():
     site = block("{$SHIMPAKU_SITE_HOSTS}")
     csp = re.search(r'Content-Security-Policy "([^"]+)"', site).group(1)
-    for d in ("default-src 'self'", "script-src 'self'", "object-src 'none'", "frame-ancestors 'none'", "base-uri 'none'"):
+    for d in ("default-src 'self'", "script-src 'self' https://static.cloudflareinsights.com", "object-src 'none'", "frame-ancestors 'none'", "base-uri 'none'"):
         assert d in csp
     assert "unsafe-eval" not in csp and "X-Frame-Options DENY" in site
 
