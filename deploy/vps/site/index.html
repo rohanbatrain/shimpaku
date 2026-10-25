@@ -34,6 +34,10 @@ ol.flow b{display:block}
 table{width:100%;border-collapse:collapse;font-size:14px}
 td,th{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--muted);font-weight:600}
+.clip{margin:0}
+.clip video{display:block;width:100%;height:auto;aspect-ratio:8/5;background:#0b1512;border:1px solid var(--line);border-radius:10px}
+.clip figcaption{color:var(--muted);font-size:14px;margin-top:10px}
+.clip details{margin-top:8px;font-size:14px;color:var(--muted)}
 code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
 .note{color:var(--warn);font-size:14px}
 footer{padding:32px 0 48px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
@@ -85,6 +89,30 @@ a{color:var(--accent-ink)}
 </section>
 
 <section>
+  <h2>Break it, watch it get fixed</h2>
+  <figure class="clip">
+    <video autoplay muted loop playsinline preload="metadata" poster="theatre-demo.png" aria-describedby="clip-text" width="1280" height="800">
+      <source src="theatre-demo.mp4" type="video/mp4">
+      Your browser cannot play the clip; the steps are written out below.
+    </video>
+    <figcaption id="clip-text">Theatre mode following one run on demo data: VLAN 999 is removed from a trunk, the
+    built-in agent proposes the fix, a person approves, the change is committed with <code>commit confirmed</code>,
+    health-checked from a fresh session and confirmed, then watched for a validation window until it reads
+    Verified. Every step carries its recorded time.</figcaption>
+    <details><summary>The same thing as text</summary>
+      <ol>
+        <li>Fault injected: VLAN 999 removed from the sw1 ge-0/0/5 trunk; the trunk turns red.</li>
+        <li>The agent proposes adding it back; eight guardrail checks pass, each shown as a tick.</li>
+        <li>A person approves; the executor commits with <code>commit confirmed</code>.</li>
+        <li>A fresh-session health check passes, the commit is confirmed, the trunk turns green.</li>
+        <li>A countdown runs through the validation window, then the run is marked Verified.</li>
+      </ol>
+      <p>Recorded from demo data, not the live lab. It plays at real time; the open dashboard has a replay of a real run.</p>
+    </details>
+  </figure>
+</section>
+
+<section>
   <h2>Evidence, run on the live lab</h2>
   <div class="grid">
     <div class="card"><div class="num">0</div><p>unsafe actions executed in a live red team: forged approvals, wildcard and interface-range smuggling, fabric-link disables</p></div>
@@ -112,5 +140,6 @@ a{color:var(--accent-ink)}
 </footer>
 </div>
 <script src="live.js" defer></script>
+<script src="clip.js" defer></script>
 </body>
 </html>
