@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # Anonymous visitors get live read-only access in auth_mode=local (role visitor). Off by default
     # so a lab without the edge in front of it stays closed.
     public_view: bool = False
+    # Origins (scheme://host) allowed to read GET /api/public/* cross-origin: the landing page's
+    # hosts, e.g. "https://shimpaku.example". Comma-separated; empty = no CORS header at all.
+    public_cors_origins: str = ""
     # Operator sessions while public view is on (the owner may sign in from someone else's laptop):
     # sliding idle timeout in minutes and absolute lifetime in hours. Off public view: 12 h / 7 d.
     operator_idle_min: float = 30.0

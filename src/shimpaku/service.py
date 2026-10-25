@@ -93,6 +93,12 @@ async def sle_get_summary(site: str, window_min: int = 60) -> dict:
     return await _call_provider("sle_get_summary", site=site, window_min=int(window_min))
 
 
+async def probe_heatmap(site: str = "campus", window_min: int = 60) -> dict:
+    """Stored RPM results as a probe-path × time grid (loss, RTT, jitter, n, SLE-bad minutes).
+    Target addresses are never returned. Provider: B-analytics (``analytics/heatmap.py``)."""
+    return await _call_provider("probe_heatmap", site=site, window_min=int(window_min))
+
+
 async def sle_get_blast_radius(incident_id: str) -> dict:
     """Blast radius of an incident (scope, statistics, abstention). Provider: B-analytics."""
     return await _call_provider("sle_get_blast_radius", incident_id=incident_id)

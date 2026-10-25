@@ -920,6 +920,8 @@ def create_app(
 
     from shimpaku.api import routes_viz  # /api/viz/*: Overview, Topology, Device pages (read-only)
     app.include_router(routes_viz.router(call, reader))
+    from shimpaku.api import routes_public  # /api/probes/heatmap, /api/public/summary (landing)
+    app.include_router(routes_public.router(call, reader))
 
     @app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
     async def api_404(rest: str):
