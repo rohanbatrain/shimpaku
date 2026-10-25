@@ -4,6 +4,9 @@
 #   <label>-app.<parent>/api/*   the LIVE daemon on the lab host over NetBird ({$SHIMPAKU_LAB_UPSTREAM}),
 #                        falling back to the local read-only replay for reads when the lab is down
 #   <label>-app.<parent>/mcp     the live daemon only (never the replay); 503 JSON when the lab is down
+#                        Virga live (docs/build/virga-live.md): POST /api/virga/* = a write, live only, limited
+#                        per client IP (zone virga); GET /api/virga/* (incl. the SSE stream) and the anonymous
+#                        GET /api/public/health (Uptime Kuma's keyword monitors) are reads, live first then replay
 #   <label>-status.<parent>      Uptime Kuma's PUBLIC status page only (never its admin UI)
 # Env: SHIMPAKU_SITE_HOSTS ("a.example, b.example"), SHIMPAKU_APP_HOSTS ("app.a.example, app.b.example"),
 #      SHIMPAKU_STATUS_HOSTS ("status.a.example, ..."), SHIMPAKU_STATUS_SLUG (the Kuma status page slug),
@@ -154,6 +157,20 @@
 			window 1m
 		}
 	}
+	# Virga fault lab: an inject, revert or recover writes to the real devices (operator session only, the
+	# daemon decides; this just stops floods early). 10 / 10 min per client IP, POST only: the reads
+	# (catalogue, state, the SSE stream) stay under the general api zone. A refused 403 counts too.
+	@virga_write {
+		method POST
+		path /api/virga /api/virga/*
+	}
+	rate_limit @virga_write {
+		zone virga {
+			key {client_ip}
+			events 10
+			window 10m
+		}
+	}
 	@assistant path /api/assistant /api/assistant/*
 	rate_limit @assistant {
 		zone assistant {
@@ -218,6 +235,9 @@
 	}
 
 	# ---- Reads: live first, replay when the lab's health check fails.
+	# Anonymous reads included: /api/public/summary (landing strip, CORS by the app) and /api/public/health
+	# (Uptime Kuma). /api/virga/stream is SSE: flush_interval -1 comes from upstream_opts, and with the lab
+	# down the replay answers it as "disabled" (it never injects). Writes under /api/virga never get here.
 	handle @api {
 		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {$SHIMPAKU_REPLAY_UPSTREAM:replay:8780} {
 			lb_policy first
