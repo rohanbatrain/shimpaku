@@ -316,3 +316,120 @@ def test_install_has_no_bash4_only_constructs():
         text = (OWN / name).read_text()
         for bad in ("declare -A", "mapfile", "readarray", "${@,,}", ",,}", "^^}", "&>>", "|&", "coproc"):
             assert bad not in text, (name, bad)
+
+
+# ---- hostile values: nothing a flag carries may become an ssh option or a second command -----------------
+
+@pytest.mark.parametrize("flag,value", [
+    ("--bind", "127.0.0.1;touch /tmp/pwned"), ("--bind", "$(id)"), ("--user", "-oProxyCommand=id"),
+    ("--user", "root;id"), ("--ssh-alias", "-oProxyCommand=id"), ("--operator", "-ou0"),
+    ("--switch-image", "/tmp/a\nb"), ("--host", "-oProxyCommand=id"),
+])
+def test_install_refuses_hostile_values(flag, value):
+    p = subprocess.run(["bash", str(OWN / "install.sh"), "--dry-run", flag, value], capture_output=True, text=True,
+                       env={**os.environ, "LC_ALL": "C"})
+    assert p.returncode == 64, (flag, value, p.stdout[-300:], p.stderr[-300:])
+    assert "pwned" not in p.stdout and "ProxyCommand" not in p.stdout
+
+
+@pytest.mark.parametrize("args", [
+    ["--bind", "127.0.0.1;id"], ["--operator", "a b"], ["--operator", "-ou0"], ["--profile", "full;id"],
+    ["--data-dir", "/home/../etc"], ["--data-dir", "rel"], ["--upload", "switch=../../etc/shadow:1"],
+    ["--upload", "switch=vJunos-switch-1.qcow2;id:1"], ["--router-image", "/x\nid"],
+])
+def test_remote_deploy_checks_its_own_arguments(args):
+    """deploy.sh runs as root and builds command strings from these: it refuses bad ones itself."""
+    p = subprocess.run(["bash", str(OWN / "remote" / "deploy.sh"), "--stage", "rest", "--dry-run", *args],
+                       capture_output=True, text=True, env={**os.environ, "LC_ALL": "C"})
+    assert p.returncode == 64, (args, p.stdout[-300:], p.stderr[-300:])
+
+
+def test_uninstall_never_removes_through_dot_dot():
+    fn = re.search(r"^safe_path\(\) \{.*?^\}", (OWN / "remote" / "uninstall.sh").read_text(), re.S | re.M).group(0)
+    for path, ok in (("/home/lab", True), ("/home/shimpaku/src/shimpaku", True), ("/var/lib/shimpaku-own/x", True),
+                     ("/home/../etc", False), ("/home/x/../../etc", False), ("/var/lib/shimpaku-own/../../../etc", False),
+                     ("/home/lab/./../../root", False), ("/etc", False), ("/home", False)):
+        rc = subprocess.run(["bash", "-c", f'{fn}\nsafe_path "$1"', "_", path], capture_output=True).returncode
+        assert (rc == 0) == ok, path
+
+
+def _fake_codeload(tmp_path):
+    """A source tarball and a `curl` that 'downloads' it: get.sh end to end without a network."""
+    src = tmp_path / "pkg" / "shimpaku-x" / "deploy" / "own"
+    src.mkdir(parents=True)
+    (src / "install.sh").write_text('echo "install.sh ran with $*"\n')
+    subprocess.run(["tar", "-czf", str(tmp_path / "src.tgz"), "-C", str(tmp_path / "pkg"), "shimpaku-x"], check=True)
+    bin_ = tmp_path / "bin"
+    bin_.mkdir()
+    (bin_ / "curl").write_text(f'#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = -o ] && cp {tmp_path / "src.tgz"} "$2"; shift; done\n')
+    (bin_ / "curl").chmod(0o755)
+    return {**os.environ, "PATH": f"{bin_}:{os.environ['PATH']}", "XDG_DATA_HOME": str(tmp_path / "data")}
+
+
+def test_bootstrap_leaves_no_download_behind(tmp_path):
+    env = _fake_codeload(tmp_path)
+    ref = "a" * 40
+    p = subprocess.run(["bash", str(OWN / "get.sh"), "--check"], capture_output=True, text=True,
+                       env={**env, "SHIMPAKU_REF": ref})
+    assert p.returncode == 0 and "install.sh ran with --check" in p.stdout, p.stderr
+    base = tmp_path / "data" / "shimpaku-own"
+    assert sorted(x.name for x in base.iterdir()) == [f"src-{ref}"]   # no .get.* with the tarball in it
+
+
+def test_bootstrap_reuses_only_a_full_commit(tmp_path):
+    """A short hex ref may be a branch or tag name: it is downloaded again, never trusted from the cache."""
+    env = _fake_codeload(tmp_path)
+    for _ in range(2):
+        p = subprocess.run(["bash", str(OWN / "get.sh")], capture_output=True, text=True, env={**env, "SHIMPAKU_REF": "deadbeef"})
+        assert p.returncode == 0, p.stderr
+    assert "already in" not in p.stdout and "downloading" in p.stdout
+
+
+def test_root_never_touches_a_file_in_the_operators_image_dir():
+    """/home/lab/images is the operator user's (2770): a symlink planted there would turn a root cp, cat >,
+    mv, chown or chmod into a write or chown of any file. Those steps run as the operator user."""
+    env = {**os.environ, "LC_ALL": "C"}
+    out = subprocess.run(["bash", str(OWN / "remote" / "deploy.sh"), "--stage", "base", "--dry-run",
+                          "--router-image", "/root/vJunos-router-26.2R1.7.qcow2", "--switch-image", "/srv/vJunos-switch-26.2R1.7.qcow2"],
+                         capture_output=True, text=True, check=True, env=env).stdout
+    out += subprocess.run(["bash", str(OWN / "remote" / "deploy.sh"), "--stage", "rest", "--dry-run",
+                           "--upload", "switch=vJunos-switch-26.2R1.7.qcow2:0"],
+                          capture_output=True, text=True, check=True, env=env).stdout
+    touching = [ln for ln in out.splitlines() if ln.startswith("+ ") and "/home/lab/images/" in ln
+                and not ln.startswith("+ manifest")]
+    assert len(touching) == 3 and all(ln.startswith("+ [as shimpaku] ") for ln in touching), touching
+    install = (OWN / "install.sh").read_text()
+    assert "sh -c 'cat > $dst.part'" not in install and 'cp "$p" "$dst.part"' not in install
+    assert install.count("runuser -u") >= 2
+
+
+def test_the_bundle_is_extracted_as_root_owned():
+    """tar run by root keeps the archive's uid (the visitor's), which can be a user on the host."""
+    install = (OWN / "install.sh").read_text()
+    assert install.count("tar --no-same-owner -C $STATE/bundle.new -xf -") == 2
+    assert "tar -C $STATE/bundle.new" not in install
+
+
+def test_remove_key_never_writes_through_a_users_ssh_dir(tmp_path):
+    """--remove-key runs as root over every /home/*/.ssh/authorized_keys: a user's planted
+    authorized_keys.tmp symlink must not become a root write, and a symlinked authorized_keys is skipped."""
+    line = next(ln for ln in (OWN / "install.sh").read_text().splitlines() if "removed from" in ln)
+    quoted = re.search(r'"\$\{SUDO\}(sh -c .*)"$', line).group(1)
+    cmd = subprocess.run(["bash", "-c", f'printf %s "{quoted}"'], capture_output=True, text=True, check=True).stdout
+    script = re.match(r"sh -c '(.*)'$", cmd, re.S).group(1)
+    u1, u2, u3 = (tmp_path / u / ".ssh" for u in ("u1", "u2", "u3"))
+    for d in (u1, u2, u3):
+        d.mkdir(parents=True)
+    key, victim, other = "ssh-ed25519 KEY shimpaku-own", tmp_path / "victim", tmp_path / "other"
+    victim.write_text("victim\n")
+    other.write_text(key + "\n")
+    (u1 / "authorized_keys").write_text(f"ssh-ed25519 AAA mine\n{key}\n")
+    (u2 / "authorized_keys").write_text(key + "\n")
+    (u2 / "authorized_keys.tmp").symlink_to(victim)
+    (u3 / "authorized_keys").symlink_to(other)
+    script = script.replace("/root/.ssh/authorized_keys /home/*/.ssh/authorized_keys", f"{tmp_path}/u*/.ssh/authorized_keys")
+    subprocess.run(["sh", "-c", script], input=key + "\n", text=True, check=True,
+                   env={**os.environ, "TMPDIR": str(tmp_path)})
+    assert (u1 / "authorized_keys").read_text() == "ssh-ed25519 AAA mine\n"
+    assert (u2 / "authorized_keys").read_text() == ""
+    assert victim.read_text() == "victim\n" and other.read_text() == key + "\n"
