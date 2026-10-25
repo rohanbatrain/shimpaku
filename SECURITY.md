@@ -56,6 +56,46 @@ computer:
   `shimpaku admin totp enable --force` plus a new password if the password was exposed;
 - if a recovery code was used, `shimpaku admin totp status` shows how many are left.
 
+## Presenter mode and the Junos console
+
+**Presenter mode** is the operator's own session (password + TOTP on the public site) showing the
+clean visitor-style dashboard: no admin navigation, a "Presenting" badge. It is a flag on the
+operator's session row (`session.presenting`), set at `POST /api/console/presenting`; it can never
+be set on a tester's session and never exists on a token. Authority stays the operator's.
+
+**The console** (`/console`, `POST /api/console/exec`) runs one Junos operational-mode command
+over the daemon's existing PyEZ/NETCONF read pool (`dev.cli(cmd, warning=False)`, text), never a
+shell. Enforcement points:
+
+1. `Principal.can_present` (`api/auth.py`): an operator dashboard session only. Visitors, testers,
+   every bearer token (any scope, even one minted with role `operator`) and anonymous callers get
+   401/403; the replay refuses it. Cookie writes pass the usual Origin + double-submit CSRF check.
+2. `shimpaku/console_policy.py`, the only gate on what reaches the device: printable ASCII only
+   (newlines, unicode look-alikes, `;` `` ` `` `$` `&` `<` `>` quotes refused before parsing);
+   the first word is resolved against the **full** Junos verb table the way Junos resolves unique
+   prefixes (`conf` = configure, `req sys` = request system, `sta sh` = start shell, `s` is
+   ambiguous), and only `show`, `ping`, `traceroute` are allowed; ping/traceroute options are
+   resolved against their own tables with bounds (`count` 1–10, inserted as 5 if absent); pipes
+   are resolved against the full pipe table and only `match`, `except`, `find`, `count`, `last`,
+   `no-more`, `trim` pass (`| s …` is `save`, refused). `show configuration` is refused: on a
+   shared screen it shows password hashes and keys.
+3. `api/routes_console.py`: 20 s timeout (also set as the NETCONF RPC timeout), 64 KiB output
+   cap, rate limit `console` (20/min per principal, 60/min global), at most two commands at once,
+   device errors reported by exception type only (no addresses).
+4. Audit: every attempt (ok, refused, error) is one hash-chained row (`tool: console_exec`, actor
+   role `presenter` or `operator`) with device, command as typed, command sent, outcome, duration
+   and output **length**; the output itself is never stored.
+
+**Why configuration changes do not go through the console.** A CLI change skips everything the
+action path guarantees: policy G0–G9, a second look (approval), `commit confirmed` with a
+health check and automatic rollback, the one-action-per-device lock and an audited diff. A typo
+in a live demo would be a real outage with no undo. So the console is read-only by construction
+(an allow-list, not a deny-list), and every change stays a proposed, approved action.
+
+**Known gap:** `show` output can include management addresses (`show interfaces terse` lists
+`fxp0`/`em0`), which the rest of the UI withholds from visitors. Presenter mode is the operator on
+their own screen; mind what is shared.
+
 ## Network exposure
 
 - Binds `127.0.0.1` by default. With `SHIMPAKU_AUTH_MODE=off` (every caller is the operator) both the

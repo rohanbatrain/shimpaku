@@ -88,6 +88,19 @@ validation, added a test that fails on the old code, and wrote it up."*
 > write path: proposal, guardrails, human approval, lock, `commit confirmed`, validation. And
 > the README lists what I deliberately didn't build, and why."
 
+## Presenter mode and the Junos console
+
+Signed in as the operator, press **Presenter mode** in the top bar: the dashboard switches to the
+clean visitor-style view (no admin nav, a green **Presenting** badge) and keeps your operator
+console. Open **Console** in the nav, pick a device, tap a quick command (`show interfaces terse`,
+`show ospf neighbor`, `show bfd session`, `show vlans`, `show system alarms`) or type one. ↑/↓
+walks the history, Ctrl+L clears, each output has **Copy**.
+
+Only operational-mode `show`, `ping` (count ≤ 10) and `traceroute` run; a good moment is typing
+`req sys reboot` and showing it refused (and audited) — changes go through Actions with approval.
+**Stop presenting** returns to the operator view. In demo mode (`SHIMPAKU_DEMO=1`) the console
+answers with canned output (`api/demo_console.py`).
+
 ## Session requests
 
 With `SHIMPAKU_PUBLIC_VIEW=1` (and `SHIMPAKU_AUTH_MODE=local`) anyone can open the dashboard
