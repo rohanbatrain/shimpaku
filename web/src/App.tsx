@@ -1,7 +1,9 @@
 import AccessBanner from "./components/AccessBanner";
+import DrillBanner from "./components/DrillBanner";
+import { VirgaProvider } from "./virga";
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers, Bug } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -36,6 +38,7 @@ const Audit = lazy(() => import("./pages/Audit"));
 const AssistantTrace = lazy(() => import("./pages/AssistantTrace"));
 const Theatre = lazy(() => import("./pages/Theatre"));
 const Hardware = lazy(() => import("./pages/Hardware"));
+const Virga = lazy(() => import("./pages/Virga"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -49,7 +52,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/hardware", "Hardware"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/hardware", "Hardware"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/virga", "Fault lab"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -141,6 +144,9 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
       )}
       <NavLink to="/theatre">
         <Play {...ic} /> Theatre
+      </NavLink>
+      <NavLink to="/virga">
+        <Bug {...ic} /> Fault lab
       </NavLink>
       <div className="sect">Explain</div>
       <NavLink to="/guardrails">
@@ -282,6 +288,7 @@ export default function App() {
 
   return (
     <SessionCtx.Provider value={{ who, refresh, openAssistant }}>
+      <VirgaProvider live={!who.replay}>
       <a href="#main" className="sr-only">Skip to content</a>
       <div className={`shell${panel.open ? " with-panel" : ""}${drawer ? " drawer-open" : ""}`}>
         <AppBar open={drawer} onToggle={() => (drawer ? closeDrawer() : setDrawer(true))} btn={menuBtn}
@@ -290,6 +297,7 @@ export default function App() {
         {drawer && <div className="scrim" onClick={closeDrawer} aria-hidden />}
         <main className="main" id="main">
           <AccessBanner />
+          <DrillBanner />
           {who.role === "tester" && <Suspense fallback={null}><LeaseBanner /></Suspense>}
           <Suspense fallback={<Loading label="Loading" />}>
           <Routes>
@@ -306,6 +314,7 @@ export default function App() {
             <Route path="/actions" element={<Actions />} />
             <Route path="/actions/:id" element={<ActionDetail />} />
             <Route path="/theatre" element={<Theatre />} />
+            <Route path="/virga" element={<Virga />} />
             <Route path="/benchmark" element={<Benchmark />} />
             <Route path="/probes" element={<Probes />} />
             <Route path="/architecture" element={<Architecture />} />
@@ -325,6 +334,7 @@ export default function App() {
         {!panel.open && <AskBubble onOpen={() => openAssistant()} />}
         {panel.open && <Suspense fallback={null}><AssistantPanel key={panel.n} seed={panel.seed} onClose={() => setPanel((p) => ({ ...p, open: false, seed: undefined }))} /></Suspense>}
       </div>
+      </VirgaProvider>
     </SessionCtx.Provider>
   );
 }

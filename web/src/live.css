@@ -74,3 +74,12 @@
   .ev-row .k { display: none; }
 }
 .held-btn { position: sticky; top: 62px; z-index: 2; align-self: center; }
+
+/* Virga live: nodes and links a running fault drill touches */
+.topo-fault-ring { fill: none; stroke: #c2410c; stroke-width: 3; stroke-dasharray: 6 4; animation: faultspin 6s linear infinite; transform-box: fill-box; transform-origin: center; }
+.topo-fault-tag rect { fill: #c2410c; stroke: #fff; stroke-width: 2; }
+.topo-fault-tag text { fill: #fff; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+.topo-fault-link { stroke: #c2410c; stroke-width: 10; stroke-opacity: .28; stroke-dasharray: 3 8; stroke-linecap: round; fill: none; }
+@keyframes faultspin { to { stroke-dashoffset: -20; } }
+@media (prefers-reduced-motion: reduce) { .topo-fault-ring { animation: none; } }
+.fault-legend-sw { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px dashed #c2410c; }

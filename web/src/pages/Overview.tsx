@@ -11,6 +11,8 @@ import { TwinStrip } from "../components/twin";
 import Scrubber, { useTimeParam } from "../components/Scrubber";
 import { useAsOf, useTraffic } from "../live";
 import { FunnelSummary, type FunnelData } from "../components/Funnel";
+import VirgaTile from "../components/VirgaTile";
+import { useFaultMarks } from "../virga";
 import "../explain.css";
 
 type Ov = {
@@ -97,6 +99,7 @@ export default function Overview() {
   const traffic = useTraffic(t == null);
   const past = t != null ? asOf.data : undefined;
   const fun = usePoll<FunnelData>("/api/explain/funnel?window=7d", 30000);
+  const fm = useFaultMarks();
   return (
     <>
       <TopBar title="Overview" crumbs="Seven vJunos devices, two sites, live">
@@ -144,6 +147,7 @@ export default function Overview() {
             </div>
           )}
         </Load>
+        <VirgaTile />
         <EventTicker />
         <div className="ov-grid">
           <div className="card" ref={mapRef}>
@@ -156,9 +160,9 @@ export default function Overview() {
               {(d) => (
                 <>
                   {t != null && <div className="small" style={{ color: "#8a5a00", marginBottom: 4 }}>As of {time(t)} · stored state</div>}
-                  <TopoMap data={t == null ? d : applyAsOf(d, past)} compact layout={fit.tall ? "tall" : undefined} maxHeight={fit.h} onSelect={(n) => nav(`/topology?n=${n}${t != null ? `&t=${Math.floor(t)}` : ""}`)}
+                  <TopoMap data={t == null ? d : applyAsOf(d, past)} faults={t == null ? fm : null} compact layout={fit.tall ? "tall" : undefined} maxHeight={fit.h} onSelect={(n) => nav(`/topology?n=${n}${t != null ? `&t=${Math.floor(t)}` : ""}`)}
                     traffic={t == null ? (traffic?.available === false ? null : traffic?.links) : past?.traffic?.links} />
-                  <Legend />
+                  <Legend faults={!!(t == null && fm)} />
                   <div className="sr-only"><LinkTable data={d} /></div>
                 </>
               )}

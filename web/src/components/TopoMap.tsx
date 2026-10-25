@@ -109,7 +109,11 @@ function Flow({ from, to, bps, util, side }: { from: [number, number]; to: [numb
 /** `focus`: highlight these nodes / link ids and dim the rest (blast radius on the root-cause page). */
 export type TopoFocus = { nodes: string[]; links: string[] } | null;
 
-export default function TopoMap({ data, selected, onSelect, compact = false, traffic, onLink, selectedLink, focus = null, layout, maxHeight }: { data: Topo; layout?: "wide" | "tall"; maxHeight?: number; focus?: TopoFocus; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean; traffic?: TrafficLink[] | null; onLink?: (id: string) => void; selectedLink?: string | null }) {
+/** Nodes / links a running Virga fault drill touches: drawn with a "fault injected" mark. */
+export type TopoFaults = { nodes: string[]; links: [string, string][] } | null;
+const isFaultLink = (f: TopoFaults, a: string, b: string) => !!f?.links.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+
+export default function TopoMap({ data, selected, onSelect, compact = false, traffic, onLink, selectedLink, focus = null, faults = null, layout, maxHeight }: { data: Topo; faults?: TopoFaults; layout?: "wide" | "tall"; maxHeight?: number; focus?: TopoFocus; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean; traffic?: TrafficLink[] | null; onLink?: (id: string) => void; selectedLink?: string | null }) {
   const fcls = (on: boolean) => (focus ? (on ? " focus" : " dim") : "");
   const tmap = new Map((traffic ?? []).map((t) => [t.id, t]));
   const phone = useTall();
@@ -163,12 +167,14 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
         const la = lab(a, b), lb = lab(b, a);
         const hl = (selected && (l.a === selected || l.b === selected)) || selectedLink === l.id;
         const tr = tmap.get(l.id);
+        const fl = isFaultLink(faults, l.a, l.b);
         return (
           <g key={l.id} className={`topo-link s-${l.state}${hl ? " hl" : ""}${onLink ? " clickable" : ""}${fcls(!!focus?.links.includes(l.id))}`}
             onClick={onLink ? () => onLink(l.id) : undefined} role={onLink ? "button" : undefined} tabIndex={onLink ? 0 : undefined}
             aria-label={onLink ? `${linkText(l)}${tr ? `. ${trafficText(tr)}` : ""}` : undefined}
             onKeyDown={onLink ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onLink(l.id); } } : undefined}>
-            <title>{`${linkText(l)}${tr ? `\n${trafficText(tr)}` : ""}`}</title>
+            <title>{`${linkText(l)}${fl ? "\nFault injected (Virga drill)" : ""}${tr ? `\n${trafficText(tr)}` : ""}`}</title>
+            {fl && <line className="topo-fault-link" x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} aria-hidden />}
             <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#fff" strokeWidth={hl ? 10 : 8} />
             <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={c} strokeWidth={hl ? 5 : 3.5} strokeDasharray={l.state === "unknown" ? "6 6" : l.state === "down" ? "2 7" : undefined} strokeLinecap="round" />
             {tr && (
@@ -178,6 +184,12 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
               </g>
             )}
             {onLink && <line className="topo-link-hit" x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} />}
+            {fl && (
+              <g className="topo-fault-tag" transform={`translate(${mx} ${my - 24})`} aria-hidden>
+                <rect x="-24" y="-8" width="48" height="16" rx="8" />
+                <text y="3" textAnchor="middle">FAULT</text>
+              </g>
+            )}
             {l.state !== "up" && (
               <g transform={`translate(${mx} ${my})`} aria-hidden>
                 <circle r="9" fill={c} stroke="#fff" strokeWidth="2" />
@@ -211,13 +223,21 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
         const c = STATE_COLOR[n.state];
         const sel = selected === n.name;
         const above = y === topY(n);
-        const label = `${n.name}, ${n.role}, ${n.site}: ${STATE_LABEL[n.state]}${n.incidents.length ? `, ${n.incidents.length} open incident` : ""}`;
+        const fn = !!faults?.nodes.includes(n.name);
+        const label = `${n.name}, ${n.role}, ${n.site}: ${STATE_LABEL[n.state]}${n.incidents.length ? `, ${n.incidents.length} open incident` : ""}${fn ? ", fault injected" : ""}`;
         return (
           <g key={n.name} className={`topo-node${sel ? " sel" : ""}${fcls(!!focus?.nodes.includes(n.name))}`} transform={`translate(${x} ${y})`} role="button" tabIndex={onSelect ? 0 : -1}
             aria-label={label} aria-pressed={onSelect ? sel : undefined} onClick={() => onSelect?.(n.name)} onKeyDown={key(n.name)}>
             <rect className="topo-hit" x="-50" y={above ? -66 : -44} width="100" height="120" rx="10" />
             {sel && <circle r="38" fill="none" stroke="#01A982" strokeWidth="3" opacity=".35" />}
             {focus?.nodes.includes(n.name) && <circle r="40" className="topo-focus-ring" />}
+            {fn && <circle r="41" className="topo-fault-ring" aria-hidden />}
+            {fn && (
+              <g className="topo-fault-tag" transform="translate(-36 -34)" aria-hidden>
+                <rect x="-24" y="-8" width="48" height="16" rx="8" />
+                <text y="3" textAnchor="middle">FAULT</text>
+              </g>
+            )}
             <circle r="30" fill="#fff" stroke={c} strokeWidth="4" filter="url(#tshadow)" />
             <Glyph role={n.role} />
             <g transform="translate(22 -22)" aria-hidden>
@@ -239,9 +259,10 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
   );
 }
 
-export function Legend() {
+export function Legend({ faults = false }: { faults?: boolean }) {
   return (
     <div className="topo-legend" aria-label="Legend">
+      {faults && <span><i className="fault-legend-sw" aria-hidden />Fault injected (Virga drill, live)</span>}
       {(["up", "degraded", "down", "unknown"] as LinkState[]).map((s) => (
         <span key={s}>
           <svg width="26" height="10" aria-hidden><line x1="2" y1="5" x2="24" y2="5" stroke={STATE_COLOR[s]} strokeWidth="3.5" strokeLinecap="round" strokeDasharray={s === "unknown" ? "6 6" : s === "down" ? "2 7" : undefined} /></svg>

@@ -2,6 +2,7 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { useApi } from "../api";
 import TopBar from "../components/TopBar";
 import { Empty, Load } from "../components/ui";
+import { Link } from "react-router";
 import { ago, ratio } from "../format";
 
 type Sys = { system: string; detect_recall: number | null; false_alarm: number | null; rca_top1: number; rca_top3: number; fix_rate: number; mttr_s: number | null; unsafe_actions: number; pass3: number };
@@ -55,6 +56,10 @@ export default function Benchmark() {
     <>
       <TopBar title="Benchmark" crumbs="Blinded fault-injection runs, scored by a separate process" />
       <div className="content">
+        <div className="card">
+          <b>Virga</b> is this project's fault-injection benchmark. It injects one catalogued fault into the real devices, checks that it took effect, and proves the revert.{" "}
+          The operator can run it live from the <Link to="/virga">Fault lab</Link>; scored runs stay a command-line job.
+        </div>
         <Load q={q} rows={6} empty={(b) => (b.published || b.selftest ? null : <Empty title="No published run yet">The scorer publishes here after a full run.</Empty>)}>
           {(b) => {
             if (!b.published)
