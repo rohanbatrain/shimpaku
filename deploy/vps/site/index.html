@@ -91,23 +91,23 @@ a{color:var(--accent-ink)}
 <section>
   <h2>Break it, watch it get fixed</h2>
   <figure class="clip">
-    <video autoplay muted loop playsinline preload="metadata" poster="theatre-demo.png" aria-describedby="clip-text" width="1280" height="800">
-      <source src="theatre-demo.mp4" type="video/mp4">
+    <video autoplay muted loop playsinline preload="metadata" poster="theatre-live.png" aria-describedby="clip-text" width="1280" height="800">
+      <source src="theatre-live.mp4" type="video/mp4">
       Your browser cannot play the clip; the steps are written out below.
     </video>
-    <figcaption id="clip-text">Theatre mode following one run on demo data: VLAN 999 is removed from a trunk, the
+    <figcaption id="clip-text">Theatre mode replaying one real run on the live lab: VLAN 999 is removed from a trunk, the
     built-in agent proposes the fix, a person approves, the change is committed with <code>commit confirmed</code>,
     health-checked from a fresh session and confirmed, then watched for a validation window until it reads
     Verified. Every step carries its recorded time.</figcaption>
     <details><summary>The same thing as text</summary>
       <ol>
         <li>Fault injected: VLAN 999 removed from the sw1 ge-0/0/5 trunk; the trunk turns red.</li>
-        <li>The agent proposes adding it back; eight guardrail checks pass, each shown as a tick.</li>
-        <li>A person approves; the executor commits with <code>commit confirmed</code>.</li>
+        <li>A fix is proposed (by a tester's session here); ten guardrail checks pass, each shown as a tick.</li>
+        <li>It is approved; the executor commits with <code>commit confirmed</code>.</li>
         <li>A fresh-session health check passes, the commit is confirmed, the trunk turns green.</li>
         <li>A countdown runs through the validation window, then the run is marked Verified.</li>
       </ol>
-      <p>Recorded from demo data, not the live lab. It plays at real time; the open dashboard has a replay of a real run.</p>
+      <p>Recorded from a real run on 2026-10-25 against the vJunos lab, action act-20261025-838aed: first dip 9.5 s after the fault, commit confirmed in 16 s, 180 s validation window, Verified. Gaps over 12 s are fast-forwarded and labelled in the clip. No incident opened, because the fault was too brief.</p>
     </details>
   </figure>
 </section>
