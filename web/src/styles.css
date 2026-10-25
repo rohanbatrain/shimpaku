@@ -34,7 +34,7 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .nav .who button.sign-out { background: #c9d8d1; color: var(--nav); border-color: #c9d8d1; font-weight: 650; }
 .nav .who button { margin-left: auto; background: none; border: 1px solid #2c4339; color: #c9d8d1; border-radius: 5px; font: inherit; font-size: 11px; padding: 2px 8px; cursor: pointer; }
 
-.main { overflow: auto; display: flex; flex-direction: column; min-width: 0; overscroll-behavior: contain; }
+.main { overflow: auto; display: flex; flex-direction: column; min-width: 0; overscroll-behavior: contain; position: relative; }
 /* desktop: the shell is exactly the viewport and .main scrolls; the page itself never does, so a
    transient overflow while a page loads cannot scroll the shell away and leave a blank band */
 @media (min-width: 901px) { html, body { overflow: hidden; } .nav { overflow-y: auto; scrollbar-width: thin; } }
