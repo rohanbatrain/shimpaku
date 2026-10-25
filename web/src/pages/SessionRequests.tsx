@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Copy } from "grommet-icons";
 import { api, useApi } from "../api";
 import TopBar from "../components/TopBar";
@@ -100,6 +100,62 @@ function Row({ r: given, onChange }: { r: Req; onChange: () => void }) {
   );
 }
 
+type Inv = { id: string; note: string | null; status: string; expires: number; created: number; created_by: string | null; purged: number | null };
+const INV_TONE: Record<string, "info" | "ok"> = { open: "ok", early: "info" };
+
+/** Invites not yet used (quick links and approved slots): the operator can withdraw one here without the CLI. */
+function OpenInvites() {
+  const q = useApi<{ invites: Inv[] }>("/api/admin/invites");
+  const { reload } = q;
+  useEffect(() => {
+    window.addEventListener("shimpaku:invites", reload);
+    return () => window.removeEventListener("shimpaku:invites", reload);
+  }, [reload]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [gone, setGone] = useState<string | null>(null);
+  const open = (q.data?.invites ?? []).filter((i) => i.status === "open" || i.status === "early");
+  const revoke = async (i: Inv) => {
+    if (!confirm(`Revoke this invite${i.note ? ` (${i.note})` : ""}? Its link stops working.`)) return;
+    setBusy(i.id); setErr(null); setGone(null);
+    try {
+      await api(`/api/admin/invites/${encodeURIComponent(i.id)}`, { method: "DELETE" });
+      setGone(i.id);
+      q.reload();
+    } catch (e: any) {
+      setErr(e.status === 404 ? "That invite is no longer open." : e.message);
+      q.reload();
+    } finally { setBusy(null); }
+  };
+  return (
+    <section aria-labelledby="open-inv-h" style={{ marginTop: 22 }}>
+      <h2 id="open-inv-h" style={{ margin: "0 0 4px" }}>Open invites{q.data ? ` (${open.length})` : ""}</h2>
+      <p className="small weak" style={{ margin: "0 0 10px" }}>Links nobody has used yet, including Quick links made from the top bar. Revoke one to withdraw it.</p>
+      {gone && <div className="notice ok" role="status" style={{ marginBottom: 10 }}>Revoked {gone}.</div>}
+      {err && <div className="notice crit" role="alert" style={{ marginBottom: 10 }}>{err}</div>}
+      <div className="card flush">
+        <Load q={q} empty={() => (open.length ? null : <Empty title="No open invites">Make one with Quick link in the top bar.</Empty>)}>
+          {() => (
+            <ul className="inv-list">
+              {open.map((i) => (
+                <li key={i.id}>
+                  <div className="inv-main">
+                    <b>{i.purged ? "(erased)" : i.note || "No note"}</b> <Pill tone={INV_TONE[i.status] ?? "info"}>{i.status}</Pill>
+                    <div className="small weak"><span className="mono">{i.id}</span> · expires {when(i.expires)}</div>
+                  </div>
+                  <button type="button" className="btn danger" disabled={busy === i.id} aria-label={`Revoke invite ${i.id}${i.note ? `, ${i.note}` : ""}`} onClick={() => revoke(i)}>
+                    {busy === i.id && <Busy />} Revoke
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Load>
+      </div>
+    </section>
+  );
+}
+
 export default function SessionRequests() {
   const [filter, setFilter] = useState<"pending" | "all">("pending");
   const q = useApi<List>(`/api/admin/session-requests${filter === "pending" ? "?status=pending" : ""}`);
@@ -125,6 +181,7 @@ export default function SessionRequests() {
             )}
           </Load>
         </div>
+        <OpenInvites />
       </div>
     </>
   );

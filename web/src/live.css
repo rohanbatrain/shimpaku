@@ -7,7 +7,7 @@
 @media (prefers-reduced-motion: reduce) { .topo-flow { animation: none; stroke-dasharray: none; } }
 .topo-link.clickable { cursor: pointer; outline: none; }
 .topo-link-hit { stroke: transparent; stroke-width: 22; }
-.topo-link.clickable:focus-visible .topo-link-hit { stroke: rgba(1, 169, 130, .14); }
+.topo-link.clickable:focus-visible .topo-link-hit { stroke: rgba(0, 120, 92, .38); }
 
 .traffic-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 8px; font-size: 12.5px; color: var(--tw); }
 .traffic-bar .sw { display: inline-flex; align-items: center; gap: 6px; }

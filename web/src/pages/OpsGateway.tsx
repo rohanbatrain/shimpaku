@@ -20,7 +20,7 @@ function Table({ title, rows, total }: { title: string; rows: Row[]; total: numb
   return (
     <div className="card flush">
       <div className="card-h"><h2>{title}</h2></div>
-      <div className="ops-scroll">
+      <div className="ops-scroll" tabIndex={0} role="region" aria-label={`${title} table, scrolls sideways`}>
         <table className="t">
           <thead><tr><th>{title === "Per model" ? "Model" : "Key"}</th><th className="num">Requests</th><th className="num">Errors</th><th className="num">p50</th><th className="num">p95</th><th className="num">Spend</th><th className="ops-barcol">Share</th></tr></thead>
           <tbody>

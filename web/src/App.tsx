@@ -70,14 +70,14 @@ function AppBar({ open, onToggle, btn, onSignOut }: { open: boolean; onToggle: (
   const loc = useLocation();
   const title = TITLES.find(([p]) => loc.pathname.startsWith(p))?.[1] ?? (loc.pathname === "/" ? "Overview" : "Shimpaku");
   return (
-    <div className="appbar">
+    <header className="appbar">
       <Mark size={28} />
       <span className="appbar-t">{title}</span>
       {onSignOut && <button type="button" className="appbar-signout" onClick={onSignOut}>Sign out</button>}
       <button ref={btn} type="button" className="appbar-menu" onClick={onToggle} aria-expanded={open} aria-controls="main-nav" aria-label={open ? "Close menu" : "Open menu"}>
         {open ? <Close size="20px" color="currentColor" aria-hidden /> : <Menu size="20px" color="currentColor" aria-hidden />}
       </button>
-    </div>
+    </header>
   );
 }
 
