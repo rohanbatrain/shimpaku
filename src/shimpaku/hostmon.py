@@ -1,6 +1,6 @@
 """Lab host health (D1): a no-root sampler for the machine that runs the vJunos VMs.
 
-Why: on 2026-10-25 the lab host (sitar, an MSI laptop running 7 vJunos VMs under libvirt) crashed
+Why: on 2026-10-25 the lab host (a laptop running 7 vJunos VMs under libvirt) crashed
 from overheating: CPU package 94-98 C against a 100 C critical trip, ~150k thermal-throttle events.
 This makes that visible before it happens again.
 
