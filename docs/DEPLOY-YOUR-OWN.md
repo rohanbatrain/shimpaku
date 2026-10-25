@@ -85,6 +85,13 @@ git clone <this repository> shimpaku
 cd shimpaku
 ```
 
+**The one-liner.** From your computer: `curl -fsSL https://<landing-domain>/install.sh | bash`, or on the hypervisor
+itself, signed in as root or a sudo user: `curl -fsSL https://<landing-domain>/install.sh | sudo bash -s -- --local`.
+Options go after `bash -s --` (for example `| bash -s -- --host 192.0.2.10 --check`). The script it fetches is
+`deploy/own/get.sh`: it downloads Shimpaku at a pinned commit from GitHub and starts `deploy/own/install.sh` with your
+options; every prompt reads from your terminal. Read it first with `curl -fsSL https://<landing-domain>/install.sh | less`.
+The `./deploy/own/install.sh` commands below are the same thing from a clone.
+
 The installer is `deploy/own/install.sh`. It clones the lab toolchain
 ([`juniper-7-day-sprint`](https://github.com/rohanbatrain/juniper-7-day-sprint), `ops/`) and Shimpaku onto the
 hypervisor at the commits pinned in `deploy/own/PINS`, not at `main`, so what you get is what was tested.

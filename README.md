@@ -188,8 +188,12 @@ less) and Juniper's free vJunos lab images, which you download yourself. An inst
 machine (`--check` is read-only), shows a plan, builds the lab over SSH, and `--uninstall` removes exactly what it made.
 
 ```bash
-./deploy/own/install.sh --host <hypervisor> --check --router-image r.qcow2 --switch-image s.qcow2
+curl -fsSL https://<landing-domain>/install.sh | bash                      # from your computer: asks for the host
+curl -fsSL https://<landing-domain>/install.sh | sudo bash -s -- --local   # or on the hypervisor itself
 ```
+
+The script (`deploy/own/get.sh`, published as `install.sh`) only downloads Shimpaku at a pinned commit and starts
+`deploy/own/install.sh`; read it first with `curl -fsSL https://<landing-domain>/install.sh | less`.
 
 Full guide: [`docs/DEPLOY-YOUR-OWN.md`](docs/DEPLOY-YOUR-OWN.md). The dashboard's **Deploy your own** page (`/deploy`) writes the
 command for you in your browser; it never takes a password and sends nothing anywhere. Design:

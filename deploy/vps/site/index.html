@@ -207,14 +207,13 @@ pre.cmd{margin:0;padding:12px 14px;background:#16211c;color:#e8eeeb;border-radiu
     <ol class="flow" style="grid-template-columns:1fr">
       <li><b>Bring</b>A bare-metal x86_64 Linux machine with nested KVM (about 40 GiB of free RAM for all seven devices), and the
       two vJunos images, which you download yourself from <a href="https://www.juniper.net/us/en/dm/vjunos-labs.html">Juniper's free lab page</a>.</li>
-      <li><b>Check, then deploy</b>Clone the repository and run the installer with <code>--check</code> (read-only), then again
-      without it. The boot takes 5 to 10 minutes.</li>
+      <li><b>Run one line</b>On your computer (or on the hypervisor itself, with <code>sudo</code>). It asks for the address and
+      the images, checks the machine read-only, shows the plan and builds the lab on your yes. The boot takes 5 to 10 minutes.</li>
       <li><b>Open</b>An SSH tunnel to <code>127.0.0.1:8780</code> and the same dashboard is yours.</li>
     </ol>
     <div>
-<pre class="cmd">./deploy/own/install.sh --host &lt;your-hypervisor&gt; \
-  --check --router-image r.qcow2 --switch-image s.qcow2
-# happy with the plan? run it again without --check</pre>
+<pre class="cmd">curl -fsSL https://{{.Host}}/install.sh | bash
+# asks for your hypervisor, checks it (read-only), shows the plan, deploys on your yes</pre>
       <p class="note" style="margin:10px 0 0">You type the root password into the installer on your own computer, never into
       this website. Juniper does not support vJunos inside a virtual machine, so the host must be bare metal.</p>
     </div>

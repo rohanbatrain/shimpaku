@@ -51,11 +51,17 @@ function q(v: string): string {
 
 type Form = { host: string; profile: Profile; router: string; switchImg: string; user: string; key: string; nested: boolean; selftest: boolean };
 
-export function buildCommands(f: Form): { check: string; deploy: string } {
+// the one-liner's script lives on the landing page of the domain this dashboard is on:
+// <label>-app.<parent> -> <label>.<parent>/install.sh (deploy/vps/site/install.sh, a pinned bootstrap)
+export const INSTALL_URL = /^[^.]+-app\./.test(location.hostname)
+  ? `https://${location.hostname.replace(/^([^.]+)-app\./, "$1.")}/install.sh` : "https://<landing-domain>/install.sh";
+const PIPE = `curl -fsSL ${INSTALL_URL} | bash -s --`;
+
+export function buildCommands(f: Form): { check: string; deploy: string; local: string } {
   const host = hostKind(f.host) ? q(f.host.trim()) : "<hypervisor-address>";
   const user = /^[a-z_][a-z0-9_-]{0,31}$/i.test(f.user.trim()) && f.user.trim() !== "root" ? f.user.trim() : "";
   const p = PROFILES.find((x) => x.id === f.profile)!;
-  const base = ["./deploy/own/install.sh", "--host", host];
+  const base = [PIPE, "--host", host];
   if (user) base.push("--user", user);
   if (f.key.trim()) base.push("--key", q(f.key.trim()));
   const img: string[] = [];
@@ -70,7 +76,9 @@ export function buildCommands(f: Form): { check: string; deploy: string } {
   }, [a[0]]).join(" \\\n  ");
   const check = wrap([...base, "--check", ...img, ...extra]);
   const deploy = wrap([...base, ...img, ...extra, ...(f.selftest ? ["--selftest"] : [])]);
-  return { check, deploy };
+  // on the hypervisor itself: no SSH, no password; image paths are paths on that machine
+  const local = wrap([`curl -fsSL ${INSTALL_URL} | sudo bash -s --`, "--local", ...img, ...extra, ...(f.selftest ? ["--selftest"] : [])]);
+  return { check, deploy, local };
 }
 
 export function tunnel(host: string, user: string): string {
@@ -133,7 +141,7 @@ export default function DeployOwn() {
   const bad = f.host.trim() !== "" && !kind;
   const prof = PROFILES.find((p) => p.id === f.profile)!;
   const cmds = buildCommands(f);
-  const clone = `git clone ${REPO || "<this-repository-url>"} shimpaku\ncd shimpaku`;
+  const clone = `git clone ${REPO || "<this-repository-url>"} shimpaku\ncd shimpaku\n./deploy/own/install.sh --help`;
   const docs = REPO ? `${REPO}/blob/main/docs/DEPLOY-YOUR-OWN.md` : null;
   const link = (path: string) => (REPO ? <a href={`${REPO}/blob/main/${path}`} target="_blank" rel="noreferrer"><code>{path}</code></a> : <code>{path}</code>);
 
@@ -213,8 +221,8 @@ export default function DeployOwn() {
         <section className="card" aria-labelledby="own-cmd">
           <h2 id="own-cmd">Build your command</h2>
           <p className="weak own-p">
-            Fill in what you know; the commands below update as you type. They run in a terminal on <b>your</b> computer, from a clone of this repository.
-            Nothing you enter here is sent anywhere.
+            Fill in what you know; the commands below update as you type. Each is one line to paste into a terminal on <b>your</b> computer:
+            it downloads a small, pinned installer and runs it there. Nothing you enter here is sent anywhere.
           </p>
           <form className="own-form" onSubmit={(e) => e.preventDefault()} autoComplete="off" noValidate>
             <div className="field">
@@ -269,19 +277,25 @@ export default function DeployOwn() {
 
           <ol className="own-steps">
             <li>
-              <b>Get the installer</b>
-              <CopyBlock label="On your computer" text={clone} />
-            </li>
-            <li>
               <b>Check first.</b> Read-only: it changes nothing on the hypervisor.
               <CopyBlock label="Check (safe)" text={cmds.check} />
               <p className="small weak own-p">It asks for the root password once, in your terminal, and uses it only to install a fresh SSH key for this deploy. Give <code>--key</code> to skip the password.</p>
             </li>
             <li>
-              <b>Deploy.</b> It prints a plan (what it will install, create and use) and waits for you to type yes. Boot takes 5 to 10 minutes.
+              <b>Deploy.</b> It prints a plan (what it will install, create and use) and waits for you to type the host address to agree. Boot takes 5 to 10 minutes.
               <CopyBlock label="Deploy" text={cmds.deploy} />
             </li>
+            <li>
+              <b>Or run it on the hypervisor itself</b> (signed in there as root or a sudo user): no SSH and no password; the image paths are paths on that machine.
+              <CopyBlock label="On the hypervisor" text={cmds.local} />
+            </li>
           </ol>
+          <details className="own-adv">
+            <summary>Read the script before you run it, or use a clone instead</summary>
+            <CopyBlock label="Read it first" text={`curl -fsSL ${INSTALL_URL} | less`} />
+            <CopyBlock label="From a clone" text={clone} />
+            <p className="small weak own-p">The script only downloads Shimpaku at a pinned commit from GitHub and starts <code>deploy/own/install.sh</code> with your options.</p>
+          </details>
         </section>
 
         <section className="card" aria-labelledby="own-pre">
@@ -321,7 +335,7 @@ export default function DeployOwn() {
             </div>
             <div>
               <p className="own-p">Everything it creates is written to a manifest on the hypervisor, <code>/var/lib/shimpaku-own/manifest.json</code>. To remove it:</p>
-              <CopyBlock label="Uninstall" text={`./deploy/own/install.sh --host ${hostKind(f.host) ? q(f.host.trim()) : "<hypervisor-address>"}${/^[a-z_][a-z0-9_-]{0,31}$/i.test(f.user.trim()) && f.user.trim() !== "root" ? ` --user ${f.user.trim()}` : ""} --uninstall`} />
+              <CopyBlock label="Uninstall" text={`${PIPE} --host ${hostKind(f.host) ? q(f.host.trim()) : "<hypervisor-address>"}${/^[a-z_][a-z0-9_-]{0,31}$/i.test(f.user.trim()) && f.user.trim() !== "root" ? ` --user ${f.user.trim()}` : ""} --uninstall`} />
               <p className="small weak own-p">
                 <code>--uninstall</code> removes exactly what the manifest lists and nothing else: it never touches a domain, network, bridge, firewall table or
                 user it did not create. Add <code>--remove-key</code> to take the deploy's SSH key off the host as well. Packages that were already
