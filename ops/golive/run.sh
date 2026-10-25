@@ -10,8 +10,9 @@
 #   ops/golive/run.sh verify         the public checks only
 #
 # Settings: .local/settings.env (copy ops/golive/settings.example.env). Logs: .local/golive.log.
-# `kuma` also needs KUMA_CREDS (default .local/kuma-admin.txt, git-ignored): line 1 the Kuma admin user,
-# line 2 its password. They are read into the environment of one node process; nothing prints them.
+# `kuma` also needs KUMA_CREDS (default .local/kuma-admin.txt, git-ignored, mode 600): `username: …` and
+# `password: …` lines, or the bare user on line 1 and password on line 2. They are read into the
+# environment of one node process; nothing prints them.
 # Out of scope here (ADR-0056: hosts are Ansible): the VPS baseline (users, firewall, NetBird, Docker),
 # which lives in infra-substrate. `check` tells you if it is missing.
 set -euo pipefail
@@ -134,11 +135,15 @@ step_kuma() {
   [[ -s "$creds" ]] || { echo "no Kuma admin credentials at $creds: line 1 the user, line 2 the password (git-ignored; a fresh Kuma gets this admin created)" >&2; exit 1; }
   local mode; mode=$(stat -f %Lp "$creds" 2>/dev/null || stat -c %a "$creds")   # BSD, then GNU
   (( (8#$mode & 8#077) == 0 )) || { echo "$creds is readable by others: chmod 600 it" >&2; exit 1; }
-  local u p; { IFS= read -r u; IFS= read -r p; } < "$creds"
-  [[ -n "$u" && -n "$p" ]] || { echo "$creds needs the user on line 1 and the password on line 2" >&2; exit 1; }
+  # either labelled lines (`username: …`, `password: …`) or the bare user on line 1 and password on line 2
+  local u p; u=$(sed -n 's/^username: *//p' "$creds" | head -1); p=$(sed -n 's/^password: *//p' "$creds" | head -1)
+  [[ -n "$u" ]] || { IFS= read -r u; IFS= read -r p; } < "$creds"
+  [[ -n "$u" && -n "$p" ]] || { echo "$creds needs 'username: …' and 'password: …' lines (or the user on line 1, the password on line 2)" >&2; exit 1; }
   [[ -d scripts/node_modules/socket.io-client ]] || (cd scripts && npm ci --omit=dev --ignore-scripts --no-audit --no-fund >/dev/null)
   local d slug="${KUMA_SLUG:-shimpaku}" sites=()
-  for d in $DOMAINS; do sites+=("https://$d/" "https://$(sib "$d" app)/" "https://$(sib "$d" status)/status/$slug"); done
+  # bare host URLs: the monitor names (the URL without scheme) match the ones already in Kuma; the status
+  # host's / redirects to /status/$slug, which the monitor follows
+  for d in $DOMAINS; do sites+=("https://$d" "https://$(sib "$d" app)" "https://$(sib "$d" status)"); done
   log "kuma: $url, website monitors for: $DOMAINS; Live lab on https://$(sib "${DOMAINS%% *}" app)"
   # the credentials live only in this one process's environment (never argv, never echoed)
   KUMA_URL="$url" KUMA_USER="$u" KUMA_PASS="$p" KUMA_SLUG="$slug" \
