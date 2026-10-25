@@ -920,6 +920,7 @@ def create_app(
 
     from shimpaku.api import routes_viz  # /api/viz/*: Overview, Topology, Device pages (read-only)
     app.include_router(routes_viz.router(call, reader))
+    from shimpaku.api import routes_ops; app.include_router(routes_ops.router(operator, app, is_demo))  # noqa: E702  /api/ops/*: operator-only
 
     @app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
     async def api_404(rest: str):

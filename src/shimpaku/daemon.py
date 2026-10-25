@@ -89,6 +89,11 @@ async def async_main() -> None:
         tasks.append(engine().start())
         # tester leases: timeouts, end-of-lease cleanup, queue promotion, daily retention purge
         tasks.append(asyncio.create_task(leases.run_forever(), name="leases"))
+        # lab host health: sysfs/proc + virsh, no root; rolling 24 h in <data>/host.db (/api/ops/host)
+        from shimpaku.hostmon import HostSampler, HostStore
+        rest_app.state.hostmon = HostStore(settings.data / "host.db")
+        tasks.append(asyncio.create_task(HostSampler(rest_app.state.hostmon, interval_s=settings.host_sample_s,
+                                                     guard=settings.thermal_guard).run(), name="hostmon"))
 
         config = uvicorn.Config(dispatcher, host=settings.bind, port=settings.port, log_level="info",
                             # behind the edge: trust its X-Forwarded-* so cookies are Secure/__Host- and
