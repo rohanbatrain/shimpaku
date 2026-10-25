@@ -1,6 +1,7 @@
 // Fault lab: the operator's Virga page. Everyone can watch (catalogue, the live trial, history);
 // only the operator's own session can inject, revert or recover, and the server decides that
 // (docs/build/virga-live.md D2). This page never infers what may run: it shows what the API offers.
+import Info from "../components/Info";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { api, ApiError, useApi } from "../api";
@@ -12,6 +13,7 @@ import {
   clock, isLive, PHASE_LABEL, secs, useServerNow, useVirga,
   type PhaseName, type VCatalogue, type VPhase, type VRecent, type VScenario, type VTrial,
 } from "../virga";
+import VirgaMark from "../components/VirgaMark";
 import "../virga.css";
 
 const FLOW: PhaseName[] = ["preflight", "inject", "verify_injected", "hold", "revert", "verify_reverted"];
@@ -264,8 +266,16 @@ export default function Virga() {
 
   return (
     <>
-      <TopBar title="Fault lab" crumbs="Virga: inject a real fault, watch the lab detect it, then revert" />
+      <TopBar title={<span className="vg-title"><VirgaMark size={22} /> Virga</span>} crumbs="Fault lab · inject a real fault, watch the lab detect it, then revert" />
       <div className="content vg-page">
+        <div className="vg-brand">
+          <VirgaMark size={34} />
+          <div>
+            <b>Virga</b> <span className="weak">· the fault injector</span>
+            <p>Virga breaks the lab on purpose, from a catalogue of realistic faults, then scores whether Shimpaku noticed, explained and fixed it.
+              Like the rain it is named after, every fault it drops is meant to vanish: each drill ends by reverting the fault and checking the revert took.</p>
+          </div>
+        </div>
         {unavailable && <div className="notice info"><b>The fault lab is not available on this server.</b> It is a feature of the live lab host.</div>}
         {!unavailable && conn === "connecting" && !state && <Loading label="Connecting to the fault lab" rows={2} />}
         {simulated && (
@@ -298,7 +308,7 @@ export default function Virga() {
         </div>
 
         {!unavailable && <section aria-labelledby="vg-cat-h">
-          <h2 id="vg-cat-h">Catalogue</h2>
+          <h2 id="vg-cat-h">Catalogue<Info k="virga" /></h2>
           {cat.loading && !c && <Loading rows={3} />}
           {cat.error && !c && !unavailable && <div className="notice crit" role="alert">Could not load the catalogue: {cat.error.message}</div>}
           {c && groups.length === 0 && <div className="small weak">The catalogue offers no scenarios.</div>}

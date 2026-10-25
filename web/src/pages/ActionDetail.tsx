@@ -1,3 +1,4 @@
+import Info from "../components/Info";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { Layer } from "grommet";
@@ -92,7 +93,7 @@ export default function ActionDetail() {
                     </dl>
                   </div>
                   <div className="card">
-                    <h2>Guardrails checked before commit</h2>
+                    <h2>Guardrails checked before commit<Info k="guardrails" /></h2>
                     {a.guardrails.length === 0 && <span className="small weak">No guardrail record.</span>}
                     {a.guardrails.map((g) => (
                       <div key={g.id} style={{ display: "flex", gap: 8, padding: "3px 0", fontSize: 13 }}>
@@ -124,7 +125,7 @@ export default function ActionDetail() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div className="card">
-                    <h2>Validation timeline</h2>
+                    <h2>Validation timeline<Info k="validation" /></h2>
                     <ul className="tl">
                       {a.validation.map((v, i) => (
                         <li key={i}>

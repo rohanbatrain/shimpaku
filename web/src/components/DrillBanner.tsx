@@ -17,7 +17,7 @@ export default function DrillBanner() {
         <span className="sr-only">, {PHASE_LABEL[t.phase]}</span>
       </span>
       <span className="drill-links">
-        Watch: <Link to="/topology">Topology</Link> · <Link to="/theatre">Theatre</Link> · <Link to="/virga">Fault lab</Link>
+        Watch: <Link to="/topology">Topology</Link> · <Link to="/theatre">Theatre</Link> · <Link to="/virga">Virga</Link>
       </span>
     </div>
   );

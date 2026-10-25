@@ -4,20 +4,27 @@ import { api } from "../api";
 import { useSession } from "../session";
 import "../console.css";
 import QuickLink from "./QuickLink";
+import Info from "./Info";
+import { useLocation } from "react-router";
+import { pageExplainer } from "../glossary";
 import { DemoBadge, ReplayBadge } from "./ui";
 
 // these titles repeat the mobile app bar, so they are visually hidden there (kept for screen readers)
-const SECTIONS = new Set(["Overview", "Topology", "Hardware", "Service levels", "Root cause", "Actions", "Benchmark", "Fault lab", "Connected agents", "Settings", "Lab host", "LLM gateway", "Probe heatmap", "Architecture"]);
+const SECTIONS = new Set(["Overview", "Topology", "Hardware", "Service levels", "Root cause", "Actions", "Benchmark", "Virga", "Connected agents", "Settings", "Lab host", "LLM gateway", "Probe heatmap", "Architecture"]);
 
 export default function TopBar({ title, crumbs, children }: { title: ReactNode; crumbs?: ReactNode; children?: ReactNode }) {
   const { who, openAssistant, refresh } = useSession();
   const present = (on: boolean) => { api("/api/console/presenting", { json: { on } }).then(refresh).catch(() => {}); };
+  const about = pageExplainer(useLocation().pathname);
   const mac = typeof navigator !== "undefined" && /Mac/.test(navigator.platform);
   return (
     <header className="topbar">
       <div>
         {crumbs && <div className="crumbs">{crumbs}</div>}
-        <h1 className={SECTIONS.has(title as string) ? "dup" : undefined}>{title}</h1>
+        <div className="topbar-t">
+          <h1 className={SECTIONS.has(title as string) ? "dup" : undefined}>{title}</h1>
+          {about && <Info e={about} label="About this page" />}
+        </div>
       </div>
       {children && <div className="topbar-ctl">{children}</div>}
       <span className="spacer" />

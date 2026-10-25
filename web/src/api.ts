@@ -99,13 +99,14 @@ export type AskEvent =
   | { type: "done" };
 
 /** POST /api/assistant/ask and parse the text/event-stream body incrementally. */
-export async function ask(question: string, context: unknown, onEvent: (e: AskEvent) => void, signal?: AbortSignal) {
+export async function ask(question: string, context: unknown, onEvent: (e: AskEvent) => void, signal?: AbortSignal,
+  history?: { q: string; a: string }[]) {
   const r = await fetch("/api/assistant/ask", {
     method: "POST",
     credentials: "same-origin",
     signal,
     headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-CSRF-Token": csrf() },
-    body: JSON.stringify({ question, context }),
+    body: JSON.stringify({ question, context, ...(history?.length ? { history } : {}) }),
   });
   if (!r.ok || !r.body) {
     let msg = r.statusText;

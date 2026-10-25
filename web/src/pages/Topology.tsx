@@ -1,3 +1,4 @@
+import Info from "../components/Info";
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Close } from "grommet-icons";
@@ -6,14 +7,15 @@ import TopoMap, { Legend, LinkTable, STATE_LABEL, STATE_TONE, type Topo, type TN
 import { usePoll } from "../components/poll";
 import { Load, Pill, Seg, StatusPill } from "../components/ui";
 import { ago, time } from "../format";
+import ZoomPan from "../components/ZoomPan";
 import Scrubber, { useTimeParam } from "../components/Scrubber";
 import { useFaultMarks } from "../virga";
 import { fmtBps, useAsOf, useTraffic, type AsOf, type TrafficLink } from "../live";
 
-const Topo3D = lazy(() => import("../components/Topo3D"));
+export const Topo3D = lazy(() => import("../components/Topo3D"));
 
 /** The 3D view is optional: if it fails to load or draw, the 2D map shows instead. */
-class Fallback extends Component<{ to: ReactNode; children: ReactNode }, { failed: boolean }> {
+export class Fallback extends Component<{ to: ReactNode; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
   render() { return this.state.failed ? this.props.to : this.props.children; }
@@ -167,7 +169,6 @@ export default function Topology() {
     <>
       <TopBar title="Topology" crumbs="Both sites, intended links with live state">
         <Freshness t={q.data?.generated_at} />
-        <Seg label="Map view" value={view} options={[{ value: "2d", label: "2D" }, { value: "3d", label: "3D" }]} onChange={setView} />
       </TopBar>
       <div className="content">
         <div className="card"><Scrubber t={t} onChange={setT} label="Topology time travel" /></div>
@@ -181,6 +182,12 @@ export default function Topology() {
               <>
                 <div className={`topo-wrap${node ? " has-panel" : ""}`}>
                   <div className="card topo-card">
+                    <div className="map-h">
+                      <Seg label="Map view" value={view} onChange={setView}
+                        options={[{ value: "2d", label: "2D map" }, { value: "3d", label: "3D · the real devices" }]} />
+                      <span className="small weak">{view === "3d" ? "each box is the vJunos VM itself, with its live CPU and port LEDs" : "click a device for details · click a link for its traffic"}</span>
+                    </div>
+                    <ZoomPan label="topology map">
                     {(() => {
                       const faults = t == null ? fm : null; // a live drill says nothing about a past minute
                       const flat = <TopoMap data={d} faults={faults} selected={sel} onSelect={(n) => select(n === sel ? null : n)}
@@ -189,6 +196,7 @@ export default function Topology() {
                         ? <Fallback to={flat}><Suspense fallback={flat}><Topo3D data={d} selected={sel} onSelect={(n) => select(n === sel ? null : n)} /></Suspense></Fallback>
                         : flat;
                     })()}
+                    </ZoomPan>
                     <Legend faults={!!(t == null && fm)} />
                     <TrafficLegend live={t == null} speedReason={t == null ? live?.speed_reason : "not collected"} at={trafficAt} />
                     {t == null && live?.available === false && <div className="small weak">Traffic not available: {live.reason}</div>}
@@ -202,7 +210,7 @@ export default function Topology() {
                   {node && <NodePanel n={node} data={d0} past={t != null} faulted={!!fm?.nodes.includes(node.name)} onClose={() => select(null)} />}
                 </div>
                 <div className="card flush">
-                  <div className="card-h"><h2>Links</h2><span className="small weak">the same data as the map</span></div>
+                  <div className="card-h"><h2>Links<Info k="topology" /></h2><span className="small weak">the same data as the map</span></div>
                   <LinkTable data={d} />
                 </div>
               </>

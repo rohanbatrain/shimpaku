@@ -1,5 +1,7 @@
 // Blast radius on the map: the incident's root-cause and blast-radius entities mapped to devices
 // and intended links (server-side, /api/explain/incidents/:id/blast-map); everything else dims.
+import Info from "./Info";
+import ZoomPan from "./ZoomPan";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { useApi } from "../api";
@@ -21,7 +23,7 @@ export default function BlastMap({ id }: { id: string }) {
   return (
     <div className="card" id="blast-map" ref={ref}>
       <div className="ex-head">
-        <h2 style={{ margin: 0 }}>Blast radius on the map</h2>
+        <h2 style={{ margin: 0 }}>Blast radius on the map<Info k="blast" /></h2>
         <span className="small weak">devices and links named by the incident's root causes and blast radius; the rest dimmed</span>
         <span style={{ flex: 1 }} />
         {bm.data && (bm.data.nodes.length > 0 || bm.data.links.length > 0) && (
@@ -38,7 +40,7 @@ export default function BlastMap({ id }: { id: string }) {
               return (
                 <>
                   {none && <div className="notice">No root-cause or blast-radius entity of this incident names a lab device or link{b.unmapped.length ? ` (entities: ${b.unmapped.join(", ")})` : ""}.</div>}
-                  <TopoMap data={d} compact focus={focus} />
+                  <ZoomPan label="blast radius map"><TopoMap data={d} compact focus={focus} /></ZoomPan>
                   <div className="topo-legend bm-legend" aria-label="Blast radius legend">
                     <span><i className="bm-sw focus" aria-hidden />in the blast radius</span>
                     <span><i className="bm-sw dim" aria-hidden />not named by this incident</span>

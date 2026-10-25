@@ -94,3 +94,10 @@
   .vg-hist td > * { min-width: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .s-running .vg-pin { animation: none; } .vg-bar i { transition: none; } }
+.vg-title { display: inline-flex; align-items: center; gap: 8px; }
+.vg-title .virga-mark { color: #3E7FA8; }
+.vg-brand { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; color: #1f4f6e;
+  background: linear-gradient(135deg, #eaf3f9 0%, #f4f9fb 60%, #fff 100%); border: 1px solid #cfe2ee; }
+.vg-brand .virga-mark { color: #3E7FA8; flex: none; margin-top: 2px; }
+.vg-brand b { font-size: 16px; color: #173d55; }
+.vg-brand p { margin: 4px 0 0; font-size: 13.5px; color: #2c4d61; max-width: 900px; }

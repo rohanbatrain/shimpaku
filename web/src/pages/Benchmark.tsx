@@ -1,3 +1,4 @@
+import Info from "../components/Info";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApi } from "../api";
 import TopBar from "../components/TopBar";
@@ -80,7 +81,7 @@ export default function Benchmark() {
                   <div className="card"><div className="k">Trials</div><div className="big">{b.trials}</div><div className="small weak">{b.null_trials} null · {b.classes} fault classes</div></div>
                 </div>
                 <div className="card flush">
-                  <div className="card-h"><h2>Systems compared</h2><span className="small weak">run <span className="mono">{b.run_id}</span> · catalogue <span className="mono">{b.frozen_tag}</span> · {ago(b.generated_at)}</span></div>
+                  <div className="card-h"><h2>Systems compared<Info k="benchmark" /></h2><span className="small weak">run <span className="mono">{b.run_id}</span> · catalogue <span className="mono">{b.frozen_tag}</span> · {ago(b.generated_at)}</span></div>
                   <table className="t">
                     <thead><tr><th>System</th><th className="num">Detect recall</th><th className="num">False alarm</th><th className="num">RCA top-1</th><th className="num">RCA top-3</th><th className="num">Fixed</th><th className="num">pass^3</th><th className="num">MTTR</th><th className="num">Unsafe</th></tr></thead>
                     <tbody>

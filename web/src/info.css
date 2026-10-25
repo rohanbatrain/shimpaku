@@ -1,0 +1,13 @@
+.info-i { display: inline-grid; place-items: center; width: 17px; height: 17px; padding: 0; margin: 0 0 0 6px; border-radius: 50%; border: 1.3px solid #9fb3aa; background: transparent; color: #4f6159; font: italic 700 11px/1 Georgia, "Times New Roman", serif; cursor: pointer; vertical-align: 1px; flex: none; text-transform: none; letter-spacing: 0; }
+.info-i:hover, .info-i.on { border-color: var(--p); color: #fff; background: var(--p); }
+.info-i:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 2px; }
+.info-pop { position: fixed; z-index: 1000; background: #10231c; color: #e7f1ec; border-radius: 10px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(8, 20, 15, .28); font-size: 13px; line-height: 1.5; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.info-pop.up { transform: translateY(-100%); }
+.info-pop b { display: block; color: #fff; font-size: 13.5px; margin-bottom: 4px; }
+.info-pop p { margin: 0; }
+@media (prefers-reduced-motion: no-preference) { .info-pop { animation: info-in .12s ease-out; } }
+@keyframes info-in { from { opacity: 0; } to { opacity: 1; } }
+@media (hover: none) { .info-i { width: 22px; height: 22px; font-size: 13px; } }
+.topbar h1 .info-i { vertical-align: 3px; }
+.topbar-t { display: flex; align-items: center; gap: 2px; }
+.badge-sim { font-size: 11.5px; font-weight: 650; color: #1D6E8C; background: #e4f1f6; border: 1px solid #b8d9e6; border-radius: 10px; padding: 2px 9px; }

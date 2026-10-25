@@ -1,3 +1,5 @@
+import Info from "../components/Info";
+import type { Term } from "../glossary";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import TopBar from "../components/TopBar";
@@ -5,7 +7,10 @@ import TopoMap, { Legend, LinkTable, type Topo } from "../components/TopoMap";
 import { usePoll } from "../components/poll";
 import { Load, StatusPill } from "../components/ui";
 import { statusLabel, STATUS_TONE, time } from "../format";
-import { applyAsOf, Freshness } from "./Topology";
+import { applyAsOf, Fallback, Freshness, Topo3D } from "./Topology";
+import ZoomPan from "../components/ZoomPan";
+import { Suspense } from "react";
+import { Seg } from "../components/ui";
 import EventTicker from "../components/EventTicker";
 import { TwinStrip } from "../components/twin";
 import Scrubber, { useTimeParam } from "../components/Scrubber";
@@ -36,10 +41,10 @@ function Spark({ s }: { s: { t: number; value: number }[] }) {
   return <svg width={w} height={h} aria-hidden className="spark"><polyline points={pts} fill="none" stroke="#01A982" strokeWidth="2" strokeLinejoin="round" /></svg>;
 }
 
-function Tile({ k, children, foot, to }: { k: string; children: React.ReactNode; foot?: React.ReactNode; to?: string }) {
+function Tile({ k, children, foot, to, info }: { k: string; children: React.ReactNode; foot?: React.ReactNode; to?: string; info?: Term }) {
   const body = (
     <>
-      <div className="k">{k}</div>
+      <div className="k">{k}{info && <Info k={info} />}</div>
       <div className="kpi-v">{children}</div>
       {foot && <div className="small weak">{foot}</div>}
     </>
@@ -90,6 +95,7 @@ function useFeedFit() {
 }
 
 export default function Overview() {
+  const [view, setView] = useState<"2d" | "3d">("2d");
   const { map: mapRef, feed: feedRef, fit } = useFeedFit();
   const ov = usePoll<Ov>("/api/viz/overview");
   const topo = usePoll<Topo>("/api/viz/topology");
@@ -110,21 +116,21 @@ export default function Overview() {
         <Load q={ov} rows={3}>
           {(o) => (
             <div className="kpis">
-              <Tile k="Devices reachable" to="/topology" foot={o.devices.degraded ? `${o.devices.degraded} with a bad device-minute just now` : "live read of each device"}>
+              <Tile k="Devices reachable" info="lab" to="/topology" foot={o.devices.degraded ? `${o.devices.degraded} with a bad device-minute just now` : "live read of each device"}>
                 <span className={o.devices.reachable === o.devices.total ? "tone-ok" : "tone-crit"}>{o.devices.reachable}</span>
                 <span className="kpi-of">/ {o.devices.total}</span>
               </Tile>
-              <Tile k="Links up" to="/topology" foot={[o.links.degraded && `${o.links.degraded} degraded`, o.links.down && `${o.links.down} down`, o.links.unknown && `${o.links.unknown} no evidence`].filter(Boolean).join(" · ") || "every intended link"}>
+              <Tile k="Links up" info="topology" to="/topology" foot={[o.links.degraded && `${o.links.degraded} degraded`, o.links.down && `${o.links.down} down`, o.links.unknown && `${o.links.unknown} no evidence`].filter(Boolean).join(" · ") || "every intended link"}>
                 {o.links.up}<span className="kpi-of">/ {o.links.total}</span>
               </Tile>
-              <Tile k="Open incidents" to="/root-cause" foot={o.incidents.available ? `${o.incidents.total} recorded in total` : "not collected"}>
+              <Tile k="Open incidents" info="incident" to="/root-cause" foot={o.incidents.available ? `${o.incidents.total} recorded in total` : "not collected"}>
                 <span className={o.incidents.open ? "tone-crit" : "tone-ok"}>{o.incidents.available ? o.incidents.open : "—"}</span>
               </Tile>
-              <Tile k="Audit chain" to="/agents" foot={o.audit ? `hash chain recomputed over ${o.audit.rows ?? "—"} rows` : "audit log not available"}>
+              <Tile k="Audit chain" info="audit" to="/audit" foot={o.audit ? `hash chain recomputed over ${o.audit.rows ?? "—"} rows` : "audit log not available"}>
                 {o.audit ? (o.audit.ok ? <span className="tone-ok">✓ Verified</span> : <span className="tone-crit">✗ Broken</span>) : "—"}
               </Tile>
               <div className="card kpi kpi-wide">
-                <div className="k">Service levels · {t == null ? "last hour" : `hour ending ${time(t)}`}</div>
+                <div className="k">Service levels · {t == null ? "last hour" : `hour ending ${time(t)}`}<Info k="sle" /></div>
                 {t != null && past?.available === false ? <span className="small weak">History not available: {past.reason}</span> :
                   (t != null ? past?.sles ?? [] : o.sles).length === 0 ? <span className="small weak">{t != null && asOf.loading ? "Reading stored minutes…" : "Not collected yet."}</span> : (
                   <div className="sle-mini">
@@ -140,7 +146,7 @@ export default function Overview() {
                 <div style={{ marginTop: 8 }}><Scrubber t={t} onChange={setT} label="Service level time travel" /></div>
               </div>
               <Link className="card kpi kpi-wide link" to="/actions">
-                <div className="k">Actions today <span style={{ textTransform: "none", letterSpacing: 0 }}>(since {time(o.actions_today.since)})</span></div>
+                <div className="k">Actions today <span style={{ textTransform: "none", letterSpacing: 0 }}>(since {time(o.actions_today.since)})</span><Info k="actions" /></div>
                 <div className="kpi-v">{o.actions_today.total}{o.actions_today.blocked > 0 && <span className="kpi-of"> · {o.actions_today.blocked} blocked by guardrails</span>}</div>
                 {o.actions_today.total ? <ActionsBar by={o.actions_today.by_status} /> : <span className="small weak">No actions proposed today.</span>}
               </Link>
@@ -152,7 +158,8 @@ export default function Overview() {
         <div className="ov-grid">
           <div className="card" ref={mapRef}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
-              <h2 style={{ margin: 0 }}>Topology</h2>
+              <h2 style={{ margin: 0 }}>Topology<Info k="topology" /></h2>
+              <Seg label="Map view" value={view} onChange={setView} options={[{ value: "2d", label: "2D" }, { value: "3d", label: "3D devices" }]} />
               <span style={{ flex: 1 }} />
               <Link className="small" to="/topology">Open map →</Link>
             </div>
@@ -160,8 +167,15 @@ export default function Overview() {
               {(d) => (
                 <>
                   {t != null && <div className="small" style={{ color: "#8a5a00", marginBottom: 4 }}>As of {time(t)} · stored state</div>}
-                  <TopoMap data={t == null ? d : applyAsOf(d, past)} faults={t == null ? fm : null} compact layout={fit.tall ? "tall" : undefined} maxHeight={fit.h} onSelect={(n) => nav(`/topology?n=${n}${t != null ? `&t=${Math.floor(t)}` : ""}`)}
-                    traffic={t == null ? (traffic?.available === false ? null : traffic?.links) : past?.traffic?.links} />
+                  <ZoomPan label="topology map">
+                    {(() => {
+                      const shown = t == null ? d : applyAsOf(d, past);
+                      const go = (n: string) => nav(`/topology?n=${n}${t != null ? `&t=${Math.floor(t)}` : ""}`);
+                      const flat = <TopoMap data={shown} faults={t == null ? fm : null} compact layout={fit.tall ? "tall" : undefined} maxHeight={fit.h} onSelect={go}
+                        traffic={t == null ? (traffic?.available === false ? null : traffic?.links) : past?.traffic?.links} />;
+                      return view === "3d" ? <Fallback to={flat}><Suspense fallback={flat}><Topo3D data={shown} onSelect={go} /></Suspense></Fallback> : flat;
+                    })()}
+                  </ZoomPan>
                   <Legend faults={!!(t == null && fm)} />
                   <div className="sr-only"><LinkTable data={d} /></div>
                 </>
@@ -169,7 +183,7 @@ export default function Overview() {
             </Load>
           </div>
           <div className="card" ref={feedRef}>
-            <h2>Live feed</h2>
+            <h2>Live feed<Info k="live_feed" /></h2>
             <Load q={ov} rows={6}>
               {(o) => o.feed.length === 0 ? <span className="small weak">Nothing recorded yet.</span> : (
                 <ul className="feed">
@@ -190,7 +204,7 @@ export default function Overview() {
         </div>
         <div className="card ov-funnel">
           <div className="ex-head">
-            <h2 style={{ margin: 0 }}>Guardrail funnel · last 7 days</h2>
+            <h2 style={{ margin: 0 }}>Guardrail funnel · last 7 days<Info k="guardrails" /></h2>
             <span style={{ flex: 1 }} />
             <Link className="small" to="/guardrails">Open funnel →</Link>
           </div>

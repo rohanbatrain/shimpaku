@@ -1,5 +1,6 @@
 // Probe heatmap: probe path (device → RPM test) × time bucket, coloured by loss / RTT / jitter,
 // faults (SLE-bad probe-minutes) as diagonal stripes. Data: GET /api/probes/heatmap (stored RPM results).
+import Info from "./Info";
 import { useState, type MouseEvent } from "react";
 import { Link } from "react-router";
 import { useApi } from "../api";
@@ -149,7 +150,7 @@ export default function ProbeHeatmapCard({ site, window }: { site: string; windo
   return (
     <div className="card">
       <div className="hm-head">
-        <h2>Probe heatmap</h2>
+        <h2>Probe heatmap<Info k="probes" /></h2>
         <span className="small weak">RPM paths × time, from stored results</span>
         <span className="spacer" />
         <Seg label="Colour by" value={metric} onChange={setMetric} options={METRICS} />

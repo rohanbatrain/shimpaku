@@ -1,3 +1,4 @@
+import Info from "../components/Info";
 import { useState } from "react";
 import { api, useApi } from "../api";
 import TopBar from "../components/TopBar";
@@ -37,7 +38,7 @@ function BlockCard({ b, edited, broken, onTamper }: { b: Block; edited?: boolean
       <div className="chain-r">
         <span className="small weak">{time(epoch(b.ts))}</span>
         <span className={ok ? "tone-ok" : "tone-crit"} aria-label={ok ? "hash and link verified" : "broken"}>{ok ? "✓" : "✗"}</span>
-        {onTamper && <button className="btn chain-tbtn" onClick={onTamper}>Tamper test</button>}
+        {onTamper && <button className="btn chain-tbtn" onClick={onTamper} title="Simulate a forgery on an in-memory copy; the real log is never changed">Simulate tampering</button>}
       </div>
     </div>
   );
@@ -77,9 +78,11 @@ export default function Audit() {
               {t && (
                 <div className="card ex-tamper" aria-live="polite">
                   <div className="ex-head">
-                    <h2 style={{ margin: 0 }}>Tamper test · row #{t.seq}</h2>
+                    <h2 style={{ margin: 0 }}>Tamper test · row #{t.seq}<Info k="tamper" /></h2>
+                    <span className="badge-sim">Simulation · the real log is never changed</span>
                     <Seg label="Forger" value={t.rehash ? "rehash" : "edit"} onChange={(v) => runTamper(t.seq, v === "rehash")}
-                      options={[{ value: "edit", label: "Edit the row" }, { value: "rehash", label: "Edit and re-hash it" }]} />
+                      options={[{ value: "edit", label: "Forger edits the row" }, { value: "rehash", label: "…and re-hashes it" }]} />
+                    <Info k="rehash" />
                     <span style={{ flex: 1 }} />
                     <button className="btn" onClick={() => setT(null)}>Close</button>
                   </div>
@@ -104,7 +107,7 @@ export default function Audit() {
               )}
               <div className="card">
                 <div className="ex-head">
-                  <h2 style={{ margin: 0 }}>Blocks</h2>
+                  <h2 style={{ margin: 0 }}>Blocks<Info k="audit" /></h2>
                   <span className="small weak">newest first · {c.total ?? "—"} rows in total · role only, no identities or arguments</span>
                 </div>
                 <div className="chain">

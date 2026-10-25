@@ -1,10 +1,13 @@
 import AccessBanner from "./components/AccessBanner";
+import VirgaMark from "./components/VirgaMark";
 import { warmUp } from "./prefetch";
+import { busyIn, useShim } from "./shim";
+import "./shim.css";
 import DrillBanner from "./components/DrillBanner";
 import { VirgaProvider } from "./virga";
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers, Bug } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -39,6 +42,7 @@ const Audit = lazy(() => import("./pages/Audit"));
 const AssistantTrace = lazy(() => import("./pages/AssistantTrace"));
 const Theatre = lazy(() => import("./pages/Theatre"));
 const Hardware = lazy(() => import("./pages/Hardware"));
+const ShimPage = lazy(() => import("./pages/Shim"));
 const Virga = lazy(() => import("./pages/Virga"));
 
 export function Mark({ size = 26 }: { size?: number }) {
@@ -53,7 +57,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/hardware", "Hardware"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/virga", "Fault lab"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/hardware", "Hardware"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/theatre", "Theatre"], ["/virga", "Virga"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -147,7 +151,7 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
         <Play {...ic} /> Theatre
       </NavLink>
       <NavLink to="/virga">
-        <Bug {...ic} /> Fault lab
+        <VirgaMark /> Virga · fault lab
       </NavLink>
       <div className="sect">Explain</div>
       <NavLink to="/guardrails">
@@ -207,9 +211,11 @@ const MAC = typeof navigator !== "undefined" && /Mac/.test(navigator.platform);
 // Hidden while the panel is open (the panel has its own close control).
 function AskBubble({ onOpen }: { onOpen: () => void }) {
   const tip = `Ask Shim ${MAC ? "⌘" : "Ctrl+"}K`;
+  const answering = useShim().convos.some((c) => busyIn(c));
   return (
-    <button type="button" className="ask-bubble" onClick={onOpen} aria-label="Ask Shim" title={tip} aria-keyshortcuts="Control+K Meta+K">
+    <button type="button" className="ask-bubble" onClick={onOpen} aria-label={answering ? "Ask Shim (an answer is in progress)" : "Ask Shim"} title={tip} aria-keyshortcuts="Control+K Meta+K">
       <Chat size="24px" color="currentColor" aria-hidden />
+      {answering && <span className="ask-bubble-dot" aria-hidden />}
       <span className="ask-bubble-tip" aria-hidden>{tip}</span>
     </button>
   );
@@ -293,7 +299,7 @@ export default function App() {
     <SessionCtx.Provider value={{ who, refresh, openAssistant }}>
       <VirgaProvider live={!who.replay}>
       <a href="#main" className="sr-only">Skip to content</a>
-      <div className={`shell${panel.open ? " with-panel" : ""}${drawer ? " drawer-open" : ""}`}>
+      <div className={`shell${drawer ? " drawer-open" : ""}`}>
         <AppBar open={drawer} onToggle={() => (drawer ? closeDrawer() : setDrawer(true))} btn={menuBtn}
           onSignOut={who.mode === "local" && who.role === "operator" ? signOut : undefined} />
         <Nav who={who} onSignOut={signOut} drawer={drawer} onClose={closeDrawer} />
@@ -330,11 +336,12 @@ export default function App() {
             <Route path="/guardrails" element={<Guardrails />} />
             <Route path="/audit" element={<Audit />} />
             <Route path="/assistant/trace" element={<AssistantTrace />} />
+            <Route path="/shim" element={<ShimPage />} />
             <Route path="*" element={<div className="content"><h1>Not found</h1><p className="weak">No page at {loc.pathname}.</p></div>} />
           </Routes>
           </Suspense>
         </main>
-        {!panel.open && <AskBubble onOpen={() => openAssistant()} />}
+        {!panel.open && loc.pathname !== "/shim" && <AskBubble onOpen={() => openAssistant()} />}
         {panel.open && <Suspense fallback={null}><AssistantPanel key={panel.n} seed={panel.seed} onClose={() => setPanel((p) => ({ ...p, open: false, seed: undefined }))} /></Suspense>}
       </div>
       </VirgaProvider>

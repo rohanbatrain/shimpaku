@@ -13,7 +13,7 @@ export default function VirgaTile() {
   if (!state.enabled && !last && !live) return null;
   return (
     <Link className={`card vg-tile${live ? " live" : ""}`} to="/virga">
-      <div className="k">Fault lab · Virga{state.simulated ? " · simulated" : ""}</div>
+      <div className="k">Virga · fault lab{state.simulated ? " · simulated" : ""}</div>
       {live && t ? (
         <div className="vg-tile-b">
           <b className="kpi-s tone-warn">Fault drill running</b>

@@ -9,7 +9,7 @@ const PAGES = [
   () => import("./pages/RootCause"), () => import("./pages/Actions"), () => import("./pages/ActionDetail"),
   () => import("./pages/Theatre"), () => import("./pages/Guardrails"), () => import("./pages/Audit"),
   () => import("./pages/AssistantTrace"), () => import("./pages/Benchmark"), () => import("./pages/Architecture"),
-  () => import("./pages/Probes"), () => import("./components/AssistantPanel"), () => import("./components/Topo3D"),
+  () => import("./pages/Probes"), () => import("./components/AssistantPanel"), () => import("./pages/Shim"), () => import("./components/Topo3D"),
 ];
 
 const DEVICES = ["r1", "r2", "sw1", "spine1", "spine2", "leaf1", "leaf2"];

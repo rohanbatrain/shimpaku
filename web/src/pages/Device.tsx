@@ -1,3 +1,4 @@
+import Info from "../components/Info";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import TopBar from "../components/TopBar";
@@ -52,8 +53,8 @@ export default function Device() {
                 <div className="kpis">
                   <div className="card kpi"><div className="k">Role · site</div><div className="kpi-v kpi-s">{d.device.role} · {d.device.site}</div><div className="small weak mono">{d.device.kind ?? "—"} · Junos version {d.device.version ?? "not collected"}</div></div>
                   <div className="card kpi"><div className="k">CPU / memory</div><div className="kpi-v">{h.available === false || h.cpu_pct == null ? "—" : `${h.cpu_pct}%`}<span className="kpi-of"> / {h.mem_pct == null ? "—" : `${h.mem_pct}%`}</span></div><div className="small weak">{h.sampled_at ? `sampled ${ago(h.sampled_at)} (gNMI)` : "no sample in the last 10 min"}</div></div>
-                  <div className="card kpi"><div className="k">Device-minutes · {d.window_min >= 60 ? `${d.window_min / 60} h` : `${d.window_min} min`}</div><div className="kpi-v">{h.available === false || !h.minutes.n ? "—" : <><span className={h.minutes.bad ? "tone-warn" : "tone-ok"}>{h.minutes.good}</span><span className="kpi-of"> good / n = {h.minutes.n}</span></>}</div><div className="small weak">{h.classifiers?.length ? h.classifiers.map((c) => `${c.classifier}${c.sub_classifier ? " · " + c.sub_classifier : ""} ${c.minutes} min`).join(", ") : "no bad minutes"}</div></div>
-                  <div className="card kpi"><div className="k">Reachable</div><div className="kpi-v">{d.device.reachable == null ? "—" : d.device.reachable ? <span className="tone-ok">Yes</span> : <span className="tone-crit">No</span>}</div><div className="small weak">live NETCONF read</div></div>
+                  <div className="card kpi"><div className="k">Device-minutes · {d.window_min >= 60 ? `${d.window_min / 60} h` : `${d.window_min} min`}<Info k="device_minutes" /></div><div className="kpi-v">{h.available === false || !h.minutes.n ? "—" : <><span className={h.minutes.bad ? "tone-warn" : "tone-ok"}>{h.minutes.good}</span><span className="kpi-of"> good / n = {h.minutes.n}</span></>}</div><div className="small weak">{h.classifiers?.length ? h.classifiers.map((c) => `${c.classifier}${c.sub_classifier ? " · " + c.sub_classifier : ""} ${c.minutes} min`).join(", ") : "no bad minutes"}</div></div>
+                  <div className="card kpi"><div className="k">Reachable<Info k="netconf" /></div><div className="kpi-v">{d.device.reachable == null ? "—" : d.device.reachable ? <span className="tone-ok">Yes</span> : <span className="tone-crit">No</span>}</div><div className="small weak">live NETCONF read</div></div>
                 </div>
                 {hw && twin && (
                   <section aria-label={`${name} hardware twin`} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -69,7 +70,7 @@ export default function Device() {
                 )}
                 <div className="card">
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                    <h2 style={{ margin: 0 }}>Traffic</h2>
+                    <h2 style={{ margin: 0 }}>Traffic<Info k="traffic" /></h2>
                     <span className="small weak">
                       {d.history.available === false ? "" : `${d.history.source}; rate per ${(d.history.step_s ?? 60) / 60} min between consecutive counter samples · data since ${time(d.history.first_sample)}`}
                     </span>
@@ -110,7 +111,7 @@ export default function Device() {
                 </div>
                 <div className="grid2">
                   <div className="card">
-                    <h2>Routing adjacencies</h2>
+                    <h2>Routing adjacencies<Info k="ospf" /></h2>
                     {d.routing.available === false ? <span className="small weak">{d.routing.reason}</span> : (
                       <ul className="plain">
                         {(d.routing.ospf ?? []).map((o, i) => <li key={"o" + i}><Pill tone={o.state === "Full" ? "ok" : "warn"}>OSPF {o.state}</Pill> <span className="mono">{o.interface}</span> <span className="weak small">router-id {o.neighbor_id}</span></li>)}

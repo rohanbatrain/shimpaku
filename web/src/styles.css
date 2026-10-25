@@ -19,8 +19,7 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 :focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.shell { display: grid; grid-template-columns: 224px 1fr; height: 100vh; }
-.shell.with-panel { grid-template-columns: 224px 1fr 440px; }
+.shell { display: grid; grid-template-columns: 224px 1fr; grid-template-rows: minmax(0, 1fr); height: 100vh; }
 .nav { background: var(--nav); color: #c9d8d1; display: flex; flex-direction: column; padding: 16px 0 12px; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 18px 18px; color: #fff; font-weight: 700; font-size: 16px; letter-spacing: .02em; }
 .brand small { display: block; font-size: 11px; font-weight: 500; color: #8fa79c; letter-spacing: 0; }
@@ -35,7 +34,10 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .nav .who button.sign-out { background: #c9d8d1; color: var(--nav); border-color: #c9d8d1; font-weight: 650; }
 .nav .who button { margin-left: auto; background: none; border: 1px solid #2c4339; color: #c9d8d1; border-radius: 5px; font: inherit; font-size: 11px; padding: 2px 8px; cursor: pointer; }
 
-.main { overflow: auto; display: flex; flex-direction: column; min-width: 0; }
+.main { overflow: auto; display: flex; flex-direction: column; min-width: 0; overscroll-behavior: contain; }
+/* desktop: the shell is exactly the viewport and .main scrolls; the page itself never does, so a
+   transient overflow while a page loads cannot scroll the shell away and leave a blank band */
+@media (min-width: 901px) { html, body { overflow: hidden; } .nav { overflow-y: auto; scrollbar-width: thin; } }
 .topbar { display: flex; align-items: center; gap: 10px; padding: 14px 24px; background: var(--front); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
 .topbar .spacer { flex: 1; }
 .content { padding: 18px 24px 28px; display: flex; flex-direction: column; gap: 14px; }

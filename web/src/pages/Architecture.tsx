@@ -2,6 +2,7 @@
 // this repository; nothing here is fetched from the lab.
 import type { KeyboardEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import ZoomPan from "../components/ZoomPan";
 import TopBar from "../components/TopBar";
 import "../public.css";
 
@@ -99,7 +100,7 @@ export default function Architecture() {
         </div>
         <div className="arch">
           <div className="card arch-card">
-            <div className="arch-scroll">
+            <div className="arch-scroll"><ZoomPan label="architecture diagram">
               <svg className="arch-svg" viewBox="0 0 960 500" role="group" aria-label="Architecture diagram">
                 <defs>
                   <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8a9a93" /></marker>
@@ -129,7 +130,7 @@ export default function Architecture() {
                   </g>
                 ))}
               </svg>
-            </div>
+            </ZoomPan></div>
           </div>
           <aside className="card arch-panel" aria-live="polite">
             <h3>{sel.title}</h3>

@@ -1,4 +1,5 @@
 // Live Junos event stream (gNMI /junos/events as the collector stores them): filters, pause, newest first.
+import Info from "../components/Info";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import TopBar from "../components/TopBar";
@@ -131,7 +132,7 @@ export default function Events() {
           </div>
         </div>
         <div className="card flush">
-          <div className="card-h"><h2>Events</h2><span className="small weak">{rows.length} shown · the collector keeps link, commit, routing, BFD, LLDP and chassis events; session noise is dropped</span></div>
+          <div className="card-h"><h2>Events<Info k="junos_events" /></h2><span className="small weak">{rows.length} shown · the collector keeps link, commit, routing, BFD, LLDP and chassis events; session noise is dropped</span></div>
           {rows.length === 0 ? (
             <div style={{ padding: 16 }} className="small weak">{meta.available === false ? "The event table is not available." : "No events match."}</div>
           ) : (
