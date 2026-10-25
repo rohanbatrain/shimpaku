@@ -1,151 +1,53 @@
+// Ask Shim as a floating chat window. Expand opens the same conversation full screen (/shim);
+// closing the window never stops an answer (the conversation lives in shim.ts).
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router";
-import { Close, Send, Robot } from "grommet-icons";
-import { ask, type AskEvent } from "../api";
-import { Busy, Rich } from "./ui";
+import { useLocation, useNavigate } from "react-router";
+import { Close, Robot, Expand, History, Add, Split } from "grommet-icons";
 import { useSession } from "../session";
-import TraceDiagram from "./TraceDiagram";
-import { argsOf, nextTraceId, putTrace, type Trace } from "../traces";
+import { activeConvo, claim, newChat, send, setGuide, useShim } from "../shim";
+import { Composer, Conversation, ConvoList, GuideBanner, GuideWelcome, Welcome } from "./ShimChat";
 import "../explain.css";
 
-type Turn = {
-  id: number;
-  q: string;
-  at: number;
-  page: string;
-  model?: string;
-  tools: Extract<AskEvent, { type: "tool" }>[];
-  evidence: Extract<AskEvent, { type: "evidence" }>[];
-  text: string;
-  done: boolean;
-  error?: string;
-};
-
-const SUGGEST = ["What's the fabric looking like?", "Why did campus connect drop?", "What is waiting for my approval?"];
-
-function traceOf(t: Turn): Trace {
-  return {
-    id: t.id, q: t.q, at: t.at, page: t.page, model: t.model, text: t.text, done: t.done, error: t.error, evidence: t.evidence,
-    steps: t.tools.map((c) => ({ name: c.name, call: c.call, args: argsOf(c), ms: c.ms, ok: c.ok, ids: c.ids ?? [] })),
-  };
-}
-
 export default function AssistantPanel({ seed, onClose }: { seed?: string; onClose: () => void }) {
-  const [turns, setTurns] = useState<Turn[]>([]);
-  const [q, setQ] = useState("");
-  const input = useRef<HTMLInputElement>(null);
-  const body = useRef<HTMLDivElement>(null);
-  const abort = useRef<AbortController | null>(null);
-  const seeded = useRef(false);
+  const { who } = useSession();
+  const visitor = who.role === "visitor";
+  const s = useShim();
+  const c = activeConvo(s);
   const loc = useLocation();
-  const busy = turns.length > 0 && !turns[turns.length - 1].done;
-  // public viewers do not spend the LLM budget: Shim needs an operator or a live session
-  const visitor = useSession()?.who.role === "visitor";
-
-  const send = (question: string) => {
-    if (!question.trim() || busy || visitor) return;
-    setQ("");
-    const id = nextTraceId();
-    setTurns((t) => [...t, { id, q: question, at: Date.now() / 1000, page: loc.pathname, tools: [], evidence: [], text: "", done: false }]);
-    const upd = (f: (t: Turn) => Turn) => setTurns((all) => all.map((t) => (t.id === id ? f(t) : t)));
-    abort.current = new AbortController();
-    ask(question, { page: loc.pathname }, (e) => {
-      if (e.type === "meta") upd((t) => ({ ...t, model: e.model }));
-      else if (e.type === "tool") upd((t) => ({ ...t, tools: [...t.tools, e] }));
-      else if (e.type === "evidence") upd((t) => ({ ...t, evidence: [...t.evidence, e] }));
-      else if (e.type === "token") upd((t) => ({ ...t, text: t.text + e.text }));
-      else if (e.type === "error") upd((t) => ({ ...t, error: e.message, done: true }));
-      else if (e.type === "done") upd((t) => ({ ...t, done: true }));
-    }, abort.current.signal)
-      .then(() => upd((t) => ({ ...t, done: true })))
-      .catch((err) => upd((t) => ({ ...t, error: err.message, done: true })));
-  };
-
+  const nav = useNavigate();
+  const [hist, setHist] = useState(false);
+  const [wide, setWide] = useState(() => { try { return localStorage.getItem("shimpaku.shim.wide") === "1"; } catch { return false; } });
+  const toggleWide = () => setWide((w) => { try { localStorage.setItem("shimpaku.shim.wide", w ? "0" : "1"); } catch {} return !w; });
+  const seeded = useRef(false);
+  useEffect(() => { claim(who.user); setGuide(visitor); }, [who.user, visitor]);
   useEffect(() => {
-    input.current?.focus();
     if (seed && !seeded.current) {
+      setGuide(visitor);
       seeded.current = true; // refs survive StrictMode's effect replay, so the seed is sent once
-      send(seed);
+      newChat();
+      send(seed, loc.pathname);
     }
-  }, []);
-  useEffect(() => {
-    body.current?.scrollTo({ top: body.current.scrollHeight });
-    turns.forEach((t) => putTrace(traceOf(t))); // in-memory only (traces.ts)
-  }, [turns]);
-
+  }, []); // eslint-disable-line
   return (
-    <aside className="panel" aria-label="Ask Shim assistant">
-      <div className="panel-h">
+    <aside className={`sc-win${wide ? " wide" : ""}`} aria-label="Ask Shim assistant">
+      <div className="sc-h">
         <Robot color="#00785C" size="18px" aria-hidden />
-        <b>Ask Shim</b>
-        <span className="small weak">answers cite tool calls</span>
+        <b className="sc-h-t" title={c?.title}>{c?.title ?? "Ask Shim"}</b>
         <span style={{ flex: 1 }} />
-        <button className="icon-btn" onClick={onClose} aria-label="Close assistant (Esc)">
-          <Close size="14px" />
-        </button>
+        {<>
+          <button className="icon-btn" onClick={() => setHist((h) => !h)} aria-pressed={hist} aria-label="Conversations" title="Conversations"><History size="15px" /></button>
+          <button className="icon-btn" onClick={() => { newChat(); setHist(false); }} aria-label="New chat" title="New chat"><Add size="15px" /></button>
+        </>}
+        <button className="icon-btn sc-wide-btn" onClick={toggleWide} aria-pressed={wide} aria-label={wide ? "Narrower window" : "Wider window"} title={wide ? "Narrower" : "Wider (for tables and charts)"}><Split size="14px" /></button>
+        <button className="icon-btn" onClick={() => { onClose(); nav("/shim"); }} aria-label="Open full screen" title="Open full screen"><Expand size="14px" /></button>
+        <button className="icon-btn" onClick={onClose} aria-label="Close (Esc). An answer in progress keeps going." title="Close (Esc)"><Close size="14px" /></button>
       </div>
-      <div className="panel-b" ref={body} aria-live="polite">
-        {visitor && (
-          <div className="msg-a">
-            <b>Request a live session to use Shim</b>
-            <span className="weak">You are viewing read-only. During a live session Shim answers with the lab's own tools and can propose the fix for you to approve.</span>
-            <a className="btn primary" href="/request" style={{ alignSelf: "flex-start" }}>Request a live session</a>
-          </div>
-        )}
-        {!visitor && turns.length === 0 && (
-          <div className="msg-a">
-            <span className="weak">Shim reads the same service layer as this dashboard and can propose, never approve, a change.</span>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {SUGGEST.map((s) => (
-                <button key={s} className="btn" style={{ justifyContent: "flex-start" }} onClick={() => send(s)}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {turns.map((t) => (
-          <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div className="msg-u">{t.q}</div>
-            <div className="msg-a">
-              {(t.tools.length > 0 || t.done) && (
-                <div className="trace-wrap">
-                  <TraceDiagram t={traceOf(t)} compact />
-                  <Link to="/assistant/trace" className="small">Open reasoning trace →</Link>
-                </div>
-              )}
-              {t.text ? <p style={{ margin: 0 }}><Rich text={t.text} /></p> : !t.done && <Busy />}
-              {t.evidence.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {t.evidence.map((e, j) =>
-                    e.href ? (
-                      <Link key={j} to={e.href} className="ev">
-                        <b>Evidence {j + 1} · {e.title}</b>
-                        <div className="weak small">{e.text} →</div>
-                      </Link>
-                    ) : (
-                      <div key={j} className="ev">
-                        <b>Evidence {j + 1} · {e.title}</b>
-                        <div className="weak small">{e.text}</div>
-                      </div>
-                    ),
-                  )}
-                </div>
-              )}
-              {t.error && <div className="notice crit">Shim could not answer: {t.error}</div>}
-            </div>
-          </div>
-        ))}
-      </div>
-      {!visitor && <div className="panel-f">
-        <form onSubmit={(e) => { e.preventDefault(); send(q); }}>
-          <label htmlFor="ask" className="sr-only">Ask Shim</label>
-          <input id="ask" ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about the lab…" autoComplete="off" />
-          <button className="btn primary" type="submit" disabled={busy || !q.trim()} aria-label="Send">
-            <Send size="14px" color="#04261B" />
-          </button>
-        </form>
-      </div>}
+      {visitor && !hist && <GuideBanner />}
+      {hist
+        ? <div className="sc-hist"><ConvoList onPick={() => setHist(false)} /></div>
+        : <Conversation convo={c} guide={visitor}
+            empty={visitor ? <GuideWelcome onPick={(q) => send(q, loc.pathname)} /> : <Welcome onPick={(q) => send(q, loc.pathname)} />} />}
+      {!hist && <Composer autoFocus />}
     </aside>
   );
 }

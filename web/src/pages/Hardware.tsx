@@ -1,5 +1,7 @@
 // The hardware twin page: seven real Junos devices, as VMs on one hypervisor, live.
+import Info from "../components/Info";
 import { useEffect, useState } from "react";
+import ZoomPan from "../components/ZoomPan";
 import { Link, useSearchParams } from "react-router";
 import TopBar from "../components/TopBar";
 import { usePoll } from "../components/poll";
@@ -16,9 +18,9 @@ function HypervisorCard({ hw, sel, onSelect, now }: { hw: Hardware; sel: string 
   return (
     <section className="card" aria-labelledby="hv-h">
       <div className="hv">
-        <HypervisorFigure hw={hw} selected={sel} onSelect={onSelect} />
+        <ZoomPan label="hypervisor figure"><HypervisorFigure hw={hw} selected={sel} onSelect={onSelect} /></ZoomPan>
         <div className="hv-text">
-          <h2 id="hv-h">The hypervisor</h2>
+          <h2 id="hv-h">The hypervisor<Info k="hypervisor" /></h2>
           <p className="hv-lede">
             <b>Seven real Junos devices</b> run as virtual machines on <b>one {hv.kind} host</b>: the same Junos OS
             Juniper ships on EX9214-class switches and MX Series routers, on an x86 forwarding plane. Every LED and number
@@ -161,7 +163,7 @@ export default function HardwarePage() {
               <Equivalents hw={hw} />
               <section aria-labelledby="fp-h" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                  <h2 id="fp-h" style={{ margin: 0 }}>Front panels · live</h2>
+                  <h2 id="fp-h" style={{ margin: 0 }}>Front panels · live<Info k="vjunos" /></h2>
                   <span className="small weak">Each port as the device reports it; hover or tap one for its counters.</span>
                 </div>
                 <TwinLegend />

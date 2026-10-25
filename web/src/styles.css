@@ -19,8 +19,7 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 :focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.shell { display: grid; grid-template-columns: 224px 1fr; height: 100vh; }
-.shell.with-panel { grid-template-columns: 224px 1fr 440px; }
+.shell { display: grid; grid-template-columns: 224px 1fr; grid-template-rows: minmax(0, 1fr); height: 100vh; }
 .nav { background: var(--nav); color: #c9d8d1; display: flex; flex-direction: column; padding: 16px 0 12px; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 18px 18px; color: #fff; font-weight: 700; font-size: 16px; letter-spacing: .02em; }
 .brand small { display: block; font-size: 11px; font-weight: 500; color: #8fa79c; letter-spacing: 0; }
@@ -35,7 +34,10 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .nav .who button.sign-out { background: #c9d8d1; color: var(--nav); border-color: #c9d8d1; font-weight: 650; }
 .nav .who button { margin-left: auto; background: none; border: 1px solid #2c4339; color: #c9d8d1; border-radius: 5px; font: inherit; font-size: 11px; padding: 2px 8px; cursor: pointer; }
 
-.main { overflow: auto; display: flex; flex-direction: column; min-width: 0; }
+.main { overflow: auto; display: flex; flex-direction: column; min-width: 0; overscroll-behavior: contain; position: relative; }
+/* desktop: the shell is exactly the viewport and .main scrolls; the page itself never does, so a
+   transient overflow while a page loads cannot scroll the shell away and leave a blank band */
+@media (min-width: 901px) { html, body { overflow: hidden; } .nav { overflow-y: auto; scrollbar-width: thin; } }
 .topbar { display: flex; align-items: center; gap: 10px; padding: 14px 24px; background: var(--front); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
 .topbar .spacer { flex: 1; }
 .content { padding: 18px 24px 28px; display: flex; flex-direction: column; gap: 14px; }
@@ -367,3 +369,19 @@ ul.tl.commits li > * { min-width: 0; overflow-wrap: anywhere; }
   .access-banner .access-actions { margin-left: 0; width: 100%; }
   .access-banner .access-actions .btn { flex: 1; justify-content: center; min-height: 44px; }
 }
+
+/* Virga live: drill banner (every page) and the Overview tile */
+.drill-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 16px; padding: 12px 16px; border-radius: 8px;
+  background: var(--warn-bg); border: 1px solid #e2b84f; color: #4a3400; font-size: 14px; }
+.drill-banner .drill-msg { flex: 1 1 280px; min-width: 0; overflow-wrap: anywhere; }
+.drill-banner .drill-links { white-space: normal; }
+.drill-banner a { color: #5c3d00; font-weight: 600; text-decoration: underline; }
+.drill-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #d99a06; animation: drillpulse 1.6s ease-in-out infinite; }
+@keyframes drillpulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .drill-dot { animation: none; } }
+@media (max-width: 600px) { .drill-banner { padding: 12px 16px; } .drill-banner a { display: inline-block; min-height: 32px; line-height: 32px; } }
+a.vg-tile { display: flex; flex-direction: column; gap: 4px; color: var(--t); }
+a.vg-tile:hover { text-decoration: none; border-color: var(--line2); box-shadow: 0 2px 8px rgba(14, 26, 22, .06); }
+a.vg-tile.live { border-color: #e2b84f; }
+.vg-tile-b { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.nav .foot a { color: #c9d8d1; text-decoration: underline; text-underline-offset: 2px; }

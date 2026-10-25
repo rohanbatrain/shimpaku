@@ -1,0 +1,15 @@
+.zp { position: relative; overflow: hidden; touch-action: pan-y; }
+.zp.zoomed { cursor: grab; touch-action: none; }
+.zp.zoomed:active { cursor: grabbing; }
+.zp-in { transform-origin: 0 0; will-change: transform; }
+.zp-ctl { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 2px; opacity: .55; transition: opacity .15s; z-index: 2; }
+.zp:hover .zp-ctl, .zp:focus-within .zp-ctl, .zp.zoomed .zp-ctl { opacity: 1; }
+.zp-ctl button { width: 28px; height: 28px; border: 1px solid var(--line2); background: var(--front); color: var(--t); border-radius: 6px; font: 600 15px/1 Inter, system-ui, sans-serif; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.zp-ctl button:disabled { opacity: .4; cursor: default; }
+.zp-ctl button:not(:disabled):hover { background: #eaf6f1; }
+.zp-hint { position: absolute; left: 10px; bottom: 8px; font-size: 11px; color: var(--tw); background: var(--front); border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px; pointer-events: none; }
+@media (hover: none) { .zp-ctl { opacity: 1; } .zp-ctl button { width: 36px; height: 36px; } }
+@media (prefers-reduced-motion: no-preference) { .zp-in { transition: transform .08s ease-out; } .zp.zoomed:active .zp-in { transition: none; } }
+.map-h { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.map-h .seg button[aria-pressed="true"] { font-weight: 650; }
+@media (max-width: 600px) { .arch-scroll .zp { min-width: 620px; } }

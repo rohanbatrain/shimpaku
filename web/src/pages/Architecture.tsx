@@ -2,6 +2,7 @@
 // this repository; nothing here is fetched from the lab.
 import type { KeyboardEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import ZoomPan from "../components/ZoomPan";
 import TopBar from "../components/TopBar";
 import "../public.css";
 
@@ -58,7 +59,7 @@ const PARTS: Part[] = [
     what: ["Bring their own model; connect over stdio-over-ssh or HTTP with a bearer token.", "Same tools, same guardrails, same audit as the dashboard."],
     files: ["src/shimpaku/mcp/serve.py", "src/shimpaku/mcp/proxy.py", "src/shimpaku/api/auth.py"], evidence: [{ label: "Integration notes", path: "docs/build/integration.md" }] },
   { id: "bench", title: "Virga bench", sub: "own ground truth", x: 806, y: 252, w: 140, h: 52,
-    what: ["A separate process injecting faults over its own NETCONF, under the same device lock.", "Reads only the audit; the system under test cannot read its catalogue."],
+    what: ["A separate process injecting faults over its own NETCONF, under the same device lock.", "Reads only the audit; the system under test cannot read its catalogue.", "The operator can now run it live from the Fault lab (/virga): one fault at a time, held for a few minutes, then reverted and verified."],
     files: ["bench/virga/runner.py", "bench/virga/scoring.py", "bench/catalogue.yaml"], evidence: [{ label: "Bench notes", path: "docs/build/bench.md" }] },
   { id: "edge", title: "VPS gateway", sub: "Cloudflare → Caddy", x: 612, y: 428, w: 150, h: 52,
     what: ["TLS, per-address rate limits, security headers; reads go to the live lab over NetBird first, the replay second.", "Writes and MCP go to the live lab only; never replayed."],
@@ -99,7 +100,7 @@ export default function Architecture() {
         </div>
         <div className="arch">
           <div className="card arch-card">
-            <div className="arch-scroll">
+            <div className="arch-scroll"><ZoomPan label="architecture diagram">
               <svg className="arch-svg" viewBox="0 0 960 500" role="group" aria-label="Architecture diagram">
                 <defs>
                   <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8a9a93" /></marker>
@@ -129,18 +130,26 @@ export default function Architecture() {
                   </g>
                 ))}
               </svg>
-            </div>
+            </ZoomPan></div>
           </div>
           <aside className="card arch-panel" aria-live="polite">
             <h3>{sel.title}</h3>
             <div className="small weak">{sel.sub}</div>
-            <h2 style={{ marginTop: 12 }}>What it does</h2>
-            <ul>{sel.what.map((w) => <li key={w}>{w}</li>)}</ul>
-            {sel.live && <p style={{ margin: "4px 0 0" }}><Link className="btn primary" to="/hardware">See the seven devices live on Hardware →</Link></p>}
-            <h2 style={{ marginTop: 12 }}>Code</h2>
-            <ul>{sel.files.map((f) => <li key={f}>{link(f)}</li>)}</ul>
-            <h2 style={{ marginTop: 12 }}>Evidence</h2>
-            <ul>{sel.evidence.map((e) => <li key={e.path}>{e.label}: {link(e.path)}</li>)}</ul>
+            <div className="arch-cols">
+              <section>
+                <h2 style={{ marginTop: 12 }}>What it does</h2>
+                <ul>{sel.what.map((w) => <li key={w}>{w}</li>)}</ul>
+                {sel.live && <p style={{ margin: "4px 0 0" }}><Link className="btn primary" to="/hardware">See the seven devices live on Hardware →</Link></p>}
+              </section>
+              <section>
+                <h2 style={{ marginTop: 12 }}>Code</h2>
+                <ul>{sel.files.map((f) => <li key={f}>{link(f)}</li>)}</ul>
+              </section>
+              <section>
+                <h2 style={{ marginTop: 12 }}>Evidence</h2>
+                <ul>{sel.evidence.map((e) => <li key={e.path}>{e.label}: {link(e.path)}</li>)}</ul>
+              </section>
+            </div>
           </aside>
         </div>
       </div>

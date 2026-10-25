@@ -146,6 +146,27 @@ vJunos fabric and campus devices. A full scored benchmark run (≥85 fault trial
 trials) is a three-week v2 item (see `docs/build/*` and the lab book's `PLAN.md`); this MVP
 proves the harness itself works, repeatably, on the real lab.
 
+## Virga fault lab
+
+The same harness, live. In the dashboard's **Fault lab** (`/virga`) the operator picks a catalogued fault, say
+FAB-01 on leaf1, and Virga injects it into the real devices; the system under test then finds out the way it
+would find out about any fault. Design and API: [`docs/build/virga-live.md`](docs/build/virga-live.md).
+
+- **What a viewer can watch**, with no sign-in: the catalogue, the running trial as a phase timeline (inject,
+  verified, hold, revert, verified reverted) with the runner's log, and the history. While a drill runs a banner
+  says so on every page, Topology marks the nodes and links it touches, Theatre follows it, the landing page's
+  live strip says "fault drill running", and the public status page's **Live lab** group (campus, fabric, no
+  drill running) turns red within a minute, on purpose, and green again after the revert.
+- **Who can inject:** only the operator's own dashboard session (password and TOTP). Never a token, an agent, a
+  tester or a visitor. Every inject, revert and recover, allowed or refused, is one hash-chained audit row.
+- **Safety:** one trial at a time, under the same per-device lease and journal as the self-test. Every inject is
+  a `commit confirmed` whose rollback timer outlives the hold, so if the daemon dies mid-drill the device rolls
+  itself back (the dead man's switch); the journal is the second way back, and an unfinished trial at start-up
+  blocks new injects until the operator presses **Recover**. A fault that would blind the daemon (management
+  lockout, CAM-06) is not offered. It is off unless `SHIMPAKU_VIRGA_LIVE=1`, and the public replay never injects.
+
+Setup: [`docs/GO-LIVE.md`](docs/GO-LIVE.md) (Live fault drills). Presenter's script: [`DEMO.md`](DEMO.md).
+
 ## Evidence (everything below was run on the live lab)
 
 | Claim | Proof | Where |
@@ -158,6 +179,25 @@ proves the harness itself works, repeatably, on the real lab.
 | 506 tests pass, 2 correctly skipped (they need live devices), including a 122-attack red team of the guest-tester surfaces | `pytest -q`; CI runs it on every push | `.github/workflows/ci.yml` |
 | Eight defects were found only by running it live, including one false "verified" from our own validation | Each has a fix and, where it could recur, a test that fails on the old code. The false verification is left unedited in the audit history and corrected in writing | [`docs/INCIDENTS.md`](docs/INCIDENTS.md) |
 | The audit trail holds | `GET /api/audit/verify` recomputes the hash chain over every row: `{"ok": true}` | `src/shimpaku/mcp/audit.py` |
+
+## Deploy your own
+
+Run the whole lab (seven vJunos devices, Shimpaku and Virga) on your own hypervisor. You need a spare bare-metal x86_64
+Linux machine with nested KVM (about 40 GiB of free RAM for all seven devices; `--profile fabric` or `campus` need
+less) and Juniper's free vJunos lab images, which you download yourself. An installer on your own computer checks the
+machine (`--check` is read-only), shows a plan, builds the lab over SSH, and `--uninstall` removes exactly what it made.
+
+```bash
+curl -fsSL https://<landing-domain>/install.sh | bash                      # from your computer: asks for the host
+curl -fsSL https://<landing-domain>/install.sh | sudo bash -s -- --local   # or on the hypervisor itself
+```
+
+The script (`deploy/own/get.sh`, published as `install.sh`) only downloads Shimpaku at a pinned commit and starts
+`deploy/own/install.sh`; read it first with `curl -fsSL https://<landing-domain>/install.sh | less`.
+
+Full guide: [`docs/DEPLOY-YOUR-OWN.md`](docs/DEPLOY-YOUR-OWN.md). The dashboard's **Deploy your own** page (`/deploy`) writes the
+command for you in your browser; it never takes a password and sends nothing anywhere. Design:
+[`docs/build/deploy-your-own.md`](docs/build/deploy-your-own.md).
 
 ## Run it
 
@@ -187,7 +227,8 @@ The live demo script is [`DEMO.md`](DEMO.md) (`shimpaku demo seed | break | stat
 
 | | |
 |---|---|
-| [`DEMO.md`](DEMO.md) | 10-minute live walkthrough |
+| [`docs/DEPLOY-YOUR-OWN.md`](docs/DEPLOY-YOUR-OWN.md) | run the whole lab on your own hypervisor: requirements, images, check, deploy, uninstall |
+| [`DEMO.md`](DEMO.md) | 10-minute live walkthrough, and the script for a live fault drill |
 | [`SECURITY.md`](SECURITY.md) | threat model and controls |
 | [`docs/INCIDENTS.md`](docs/INCIDENTS.md) | defects found by running it, with fixes and tests |
 | [`docs/RESEARCH.md`](docs/RESEARCH.md) | what each cited research report (R1–R9, REVIEW) established |

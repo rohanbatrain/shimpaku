@@ -44,6 +44,14 @@ done
 echo "== landing page"
 cp -R "$HERE/site/." "$HERE/site-built/"   # images and any other static files
 sed -e "s#__REPO__#$REPO#g" "$HERE/site/index.html" > "$HERE/site-built/index.html"
+# the one-liner (`curl -fsSL https://<landing>/install.sh | bash`): deploy/own/get.sh, pinned to the commit the
+# public repository's main has right now, so it downloads exactly what is published
+if [[ -f deploy/own/get.sh ]]; then
+  PIN=$(git ls-remote "$REPO" refs/heads/main | cut -f1)
+  [[ "$PIN" =~ ^[0-9a-f]{40}$ ]] || { echo "cannot read the public repository's main commit from $REPO" >&2; exit 1; }
+  sed -e "s#__SHIMPAKU_PIN__#$PIN#g" deploy/own/get.sh > "$HERE/site-built/install.sh"
+  echo "install.sh pinned to $PIN"
+fi
 
 echo "== ship"
 ssh "$VPS" 'mkdir -p ~/shimpaku'
@@ -74,6 +82,13 @@ if w.get("replay"):
 else:
     print("live")')
 echo "api/whoami: $mode"
+# Virga live: the anonymous health read that Uptime Kuma's "Live lab" monitors use. Soft check: the lab
+# daemon may not run the Virga build yet (ops/golive/run.sh lab-config), so a miss warns, never fails.
+if h=$(curl -fsS "$APP/api/public/health" 2>/dev/null | python3 -c 'import json,sys; h=json.load(sys.stdin); print(" ".join(f"{k}={h[k]}" for k in ("campus", "fabric", "drill", "lab")))' 2>/dev/null); then
+  echo "api/public/health: $h"
+else
+  echo "note: /api/public/health is not answering yet (the lab daemon needs the Virga live build); the Live lab monitors stay red until it does" >&2
+fi
 mcp=$(code -X POST "$APP/mcp")
 wbody=$(mktemp)
 write=$(curl -s -o "$wbody" -w "%{http_code}" -X POST "$APP/api/actions/x/approve")

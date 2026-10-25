@@ -4,11 +4,15 @@
 #   ops/golive/run.sh check          what is ready and what is missing (changes nothing)
 #   ops/golive/run.sh vps-key        install your agent's public key on the VPS (asks the root password once)
 #   ops/golive/run.sh lab-secrets    on the lab host: set the operator password, enable TOTP
-#   ops/golive/run.sh lab-config     on the lab host: sign-in on, public view, NetBird bind, trusted edge
+#   ops/golive/run.sh lab-config     on the lab host: sign-in on, public view, NetBird bind, trusted edge, Virga live drills
 #   ops/golive/run.sh deploy         snapshot → landing page → ship the edge to the VPS → checks
+#   ops/golive/run.sh kuma           Uptime Kuma: monitors + the public status page (Website, Live lab) via its admin URL
 #   ops/golive/run.sh verify         the public checks only
 #
 # Settings: .local/settings.env (copy ops/golive/settings.example.env). Logs: .local/golive.log.
+# `kuma` also needs KUMA_CREDS (default .local/kuma-admin.txt, git-ignored, mode 600): `username: …` and
+# `password: …` lines, or the bare user on line 1 and password on line 2. They are read into the
+# environment of one node process; nothing prints them.
 # Out of scope here (ADR-0056: hosts are Ansible): the VPS baseline (users, firewall, NetBird, Docker),
 # which lives in infra-substrate. `check` tells you if it is missing.
 set -euo pipefail
@@ -47,6 +51,7 @@ step_check() {
     ok "ssh"
     st=$(ssh "$LAB_HOST" 'f=~/.config/shimpaku/env; d=~/.local/share/shimpaku
       echo "auth=$(grep -s ^SHIMPAKU_AUTH_MODE= $f | cut -d= -f2)"; echo "view=$(grep -s ^SHIMPAKU_PUBLIC_VIEW= $f | cut -d= -f2)"
+      echo "virga=$(grep -s ^SHIMPAKU_VIRGA_LIVE= $f | cut -d= -f2)"
       echo "contact=$(grep -sc ^SHIMPAKU_PRIVACY_CONTACT= $f)"; echo "pw=$([ -s $d/admin.hash ] && echo 1 || echo 0)"
       echo "totp=$([ -s $d/totp.json ] && echo 1 || echo 0)"; echo "svc=$(systemctl --user is-active shimpakud)"')
     eval "$st"
@@ -55,6 +60,8 @@ step_check() {
     [[ $totp == 1 ]] && ok "TOTP enabled" || no "TOTP (run: lab-secrets)"
     [[ $auth == local ]] && ok "auth mode local" || no "auth mode is '${auth:-off}' (run: lab-config)"
     [[ $view == 1 ]] && ok "public read-only view on" || no "public view off (run: lab-config)"
+    # optional feature: reported, never counted as missing
+    [[ $virga == 1 ]] && ok "Virga live drills on" || echo "  --   Virga live drills off (run: lab-config to enable)"
   else no "cannot ssh to $LAB_HOST"; fi
   echo "VPS ($VPS_HOST)"
   if ssh -o ConnectTimeout=10 -o BatchMode=yes "$VPS_HOST" true 2>/dev/null; then
@@ -102,19 +109,51 @@ step_lab_config() {
   lab_env_set SHIMPAKU_AUTH_MODE local SHIMPAKU_PUBLIC_VIEW 1 SHIMPAKU_BIND "$LAB_NETBIRD_IP" \
     SHIMPAKU_PORT "$LAB_PORT" SHIMPAKU_PUBLIC_URL "https://$(sib "${DOMAINS%% *}" app)" \
     SHIMPAKU_PUBLIC_CORS_ORIGINS "$(printf "https://%s," $DOMAINS | sed "s/,$//")" \
-    SHIMPAKU_TRUSTED_PROXIES "$VPS_NETBIRD_IP" FORWARDED_ALLOW_IPS "$VPS_NETBIRD_IP"
+    SHIMPAKU_TRUSTED_PROXIES "$VPS_NETBIRD_IP" FORWARDED_ALLOW_IPS "$VPS_NETBIRD_IP" \
+    SHIMPAKU_VIRGA_LIVE 1
   ssh "$LAB_HOST" '[ -s ~/.local/share/shimpaku/admin.hash ] && [ -s ~/.local/share/shimpaku/totp.json ]' \
     || { echo "run lab-secrets first: public view refuses operator sign-in without a password and TOTP" >&2; exit 1; }
   ssh "$LAB_HOST" 'cd ~/src/shimpaku && bash deploy/systemd/install.sh >/dev/null && systemctl --user restart shimpakud
     for i in $(seq 30); do curl -sf "http://'"$LAB_NETBIRD_IP:$LAB_PORT"'/api/whoami" >/dev/null && break; sleep 2; done
     curl -s "http://'"$LAB_NETBIRD_IP:$LAB_PORT"'/api/whoami"'
-  echo; log "lab-config: lab serves on $LAB_NETBIRD_IP:$LAB_PORT, auth local, public view on"
+  echo; log "lab-config: lab serves on $LAB_NETBIRD_IP:$LAB_PORT, auth local, public view on, Virga live drills on"
 }
 
 step_deploy() {
   need DOMAINS REPO_URL LAB_NETBIRD_IP
   SHIMPAKU_LAB_HOST="$LAB_HOST" SHIMPAKU_VPS_HOST="$VPS_HOST" SHIMPAKU_DOMAINS="$DOMAINS" SHIMPAKU_REPO_URL="$REPO_URL" \
     SHIMPAKU_LAB_UPSTREAM="$LAB_NETBIRD_IP:$LAB_PORT" SHIMPAKU_VPS_SUDO_SECRETS="${VPS_SUDO_SECRETS/#\~/$HOME}" deploy/vps/deploy.sh "$@" 2>&1 | tee -a "$LOG"
+}
+
+step_kuma() {
+  # Monitors and the public status page, through Kuma's admin socket.io API (scripts/kuma_setup.mjs,
+  # idempotent). The admin UI answers on the VPS's NetBird address, so this Mac must be on NetBird.
+  need DOMAINS VPS_NETBIRD_IP
+  command -v node >/dev/null || { echo "node is needed on this machine (scripts/kuma_setup.mjs)" >&2; exit 1; }
+  local url="${KUMA_URL:-http://$VPS_NETBIRD_IP:3001}" creds="${KUMA_CREDS:-.local/kuma-admin.txt}"
+  [[ "$creds" = /* ]] || creds="$ROOT/${creds#./}"
+  [[ -s "$creds" ]] || { echo "no Kuma admin credentials at $creds: line 1 the user, line 2 the password (git-ignored; a fresh Kuma gets this admin created)" >&2; exit 1; }
+  local mode; mode=$(stat -f %Lp "$creds" 2>/dev/null || stat -c %a "$creds")   # BSD, then GNU
+  (( (8#$mode & 8#077) == 0 )) || { echo "$creds is readable by others: chmod 600 it" >&2; exit 1; }
+  # either labelled lines (`username: …`, `password: …`) or the bare user on line 1 and password on line 2
+  local u p; u=$(sed -n 's/^username: *//p' "$creds" | head -1); p=$(sed -n 's/^password: *//p' "$creds" | head -1)
+  [[ -n "$u" ]] || { IFS= read -r u; IFS= read -r p; } < "$creds"
+  [[ -n "$u" && -n "$p" ]] || { echo "$creds needs 'username: …' and 'password: …' lines (or the user on line 1, the password on line 2)" >&2; exit 1; }
+  [[ -d scripts/node_modules/socket.io-client ]] || (cd scripts && npm ci --omit=dev --ignore-scripts --no-audit --no-fund >/dev/null)
+  local d slug="${KUMA_SLUG:-shimpaku}" sites=()
+  # bare host URLs: the monitor names (the URL without scheme) match the ones already in Kuma; the status
+  # host's / redirects to /status/$slug, which the monitor follows
+  # one status-page group per domain, named from DOMAIN_LABELS ("A (host)|B (host)", same order as DOMAINS)
+  local labels=() i=0; IFS='|' read -r -a labels <<< "${DOMAIN_LABELS:-}"
+  for d in $DOMAINS; do
+    sites+=(--group "${labels[$i]:-$d}" --status-host "$(sib "$d" status)" "https://$d" "https://$(sib "$d" app)" "https://$(sib "$d" status)"); i=$((i+1))
+  done
+  log "kuma: $url, website monitors for: $DOMAINS; Live lab on https://$(sib "${DOMAINS%% *}" app)"
+  # the credentials live only in this one process's environment (never argv, never echoed)
+  KUMA_URL="$url" KUMA_USER="$u" KUMA_PASS="$p" KUMA_SLUG="$slug" \
+    node scripts/kuma_setup.mjs --app "https://$(sib "${DOMAINS%% *}" app)" "${sites[@]}" 2>&1 | tee -a "$LOG"
+  [[ ${PIPESTATUS[0]} -eq 0 ]] || { echo "kuma setup failed (is this machine on NetBird, and is $url the Kuma admin address?)" >&2; exit 1; }
+  log "kuma: done; status page https://$(sib "${DOMAINS%% *}" status)/"
 }
 
 step_verify() {
@@ -124,11 +163,15 @@ step_verify() {
   curl -fsS "$a/api/whoami" | python3 -c 'import json,sys; w=json.load(sys.stdin); print("whoami:", w.get("role") or w.get("kind"), "replay" if w.get("replay") else "live")' | tee -a "$LOG"
   echo "mcp without token: $(curl -s -o /dev/null -w '%{http_code}' -X POST "$a/mcp")" | tee -a "$LOG"
   echo "anonymous approve: $(curl -s -o /dev/null -w '%{http_code}' -X POST "$a/api/actions/x/approve")" | tee -a "$LOG"
+  # Virga live: the anonymous health read Kuma's Live lab monitors use, and that nobody anonymous can inject
+  curl -fsS "$a/api/public/health" | python3 -c 'import json,sys; h=json.load(sys.stdin); print("health:", " ".join(f"{k}={h.get(k)}" for k in ("campus", "fabric", "drill", "lab")))' | tee -a "$LOG" \
+    || echo "health: /api/public/health not answering (the lab daemon needs the Virga live build: run lab-config)" | tee -a "$LOG"
+  echo "anonymous virga inject: $(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{}' "$a/api/virga/trials") (want 401/403; 503 = lab offline, 404 = daemon without Virga live)" | tee -a "$LOG"
   done
 }
 
 case "${1:-}" in
   check) step_check ;; vps-key) step_vps_key ;; lab-secrets) step_lab_secrets ;; lab-config) step_lab_config ;;
-  deploy) shift; step_deploy "$@" ;; verify) step_verify ;;
-  *) sed -n 2,12p "$0"; exit 2 ;;
+  deploy) shift; step_deploy "$@" ;; kuma) step_kuma ;; verify) step_verify ;;
+  *) sed -n 2,16p "$0"; exit 2 ;;
 esac

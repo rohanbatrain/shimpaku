@@ -37,7 +37,7 @@ TIERS: dict[str, str] = {
     **{t: "T0" for t in ("inventory_list", "sle_get_summary", "sle_get_blast_radius", "iface_get_errors",
                          "port_get_config", "topo_get_neighbors", "routing_get_health", "config_get_commits",
                          "config_get_diff", "probe_run", "incident_list", "incident_get", "audit_query",
-                         "junos_show")},
+                         "junos_show", "kb_search", "kb_read", "device_get_health")},
     "action_propose_bounce_port": "T1", "action_propose_rerun_deploy": "T1",
     "action_propose_add_vlan_to_trunk": "T1",
     "action_propose_rollback": "T2", "action_propose_disable_port": "T2",
@@ -347,6 +347,26 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
             return _read(await junos_raw.run_show(device, command))
         except Exception as e:  # noqa: BLE001
             return _read({"error": {"code": "failed", "message": type(e).__name__}})
+
+    @mcp.tool(annotations=RO)
+    async def device_get_health(device: str | None = None, window_min: int = 60) -> ReadResult:
+        """CPU and memory (gNMI, sampled every 10 s), the device-minute verdicts (good / bad and why) and
+        port oper state, per device or for the whole lab. Use it for 'how busy / healthy is X'."""
+        return _read(await service.device_get_health(device, max(1, min(int(window_min), 1440))))
+
+    @mcp.tool(annotations=RO)
+    async def kb_search(query: str, k: int = 5) -> ReadResult:
+        """Search Shimpaku's own engineering documents (README, SECURITY, DEMO, design and build notes,
+        research, module docstrings) for how the system is built, why, and how to use it. Returns the
+        best-matching sections with their file path. Not live lab state: use the other tools for that."""
+        from shimpaku import kb
+        return _read(kb.search(query[:300], k))
+
+    @mcp.tool(annotations=RO)
+    async def kb_read(path: str, section: str | None = None) -> ReadResult:
+        """Read one knowledge-base document (a path kb_search returned), or one section of it."""
+        from shimpaku import kb
+        return _read(kb.read(path[:200], section[:120] if section else None))
 
     # ------------------------------------------------------------------ T1 / T2 (propose only)
     async def _propose(kind: str, args: dict, reason: str) -> ActionResult:

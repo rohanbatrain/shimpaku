@@ -1,3 +1,4 @@
+import Info from "../components/Info";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import TopBar from "../components/TopBar";
@@ -48,7 +49,7 @@ export default function Guardrails() {
               <>
                 <div className="card">
                   <div className="ex-head">
-                    <h2 style={{ margin: 0 }}>Funnel</h2>
+                    <h2 style={{ margin: 0 }}>Funnel<Info k="guardrails" /></h2>
                     <span className="small weak">height = number of proposals · click a band or a stage to open those actions</span>
                   </div>
                   <div className="funnel-scroll"><Funnel data={d} /></div>
@@ -76,7 +77,7 @@ export default function Guardrails() {
                     </div>
                   </div>
                   <div className="card">
-                    <h2>After the guardrails</h2>
+                    <h2>After the guardrails<Info k="approval" /></h2>
                     <table className="t">
                       <thead><tr><th>Stage</th><th className="num">Actions</th><th className="num">Share</th></tr></thead>
                       <tbody>

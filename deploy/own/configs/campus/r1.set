@@ -1,0 +1,52 @@
+# r1 (campus): OSPF to r2, router-on-a-stick for VLAN 10 users / VLAN 20 servers toward sw1,
+# the users filter (day 3) and the routing-engine filter (day 4).
+# Merged on top of the lab's boot config (lab/nodes/init.conf.tmpl). Lab addressing only.
+set interfaces ge-0/0/0 unit 0 family inet address 10.0.12.1/30
+set interfaces ge-0/0/1 vlan-tagging
+set interfaces ge-0/0/1 unit 10 vlan-id 10
+set interfaces ge-0/0/1 unit 10 family inet filter input F-USERS-IN
+set interfaces ge-0/0/1 unit 10 family inet address 10.10.0.1/24
+set interfaces ge-0/0/1 unit 20 vlan-id 20
+set interfaces ge-0/0/1 unit 20 family inet address 10.20.0.1/24
+set interfaces lo0 unit 0 family inet filter input PROTECT-RE
+set interfaces lo0 unit 0 family inet address 10.255.0.1/32
+set firewall family inet filter F-USERS-IN term dns from destination-address 10.20.0.0/24
+set firewall family inet filter F-USERS-IN term dns from protocol udp
+set firewall family inet filter F-USERS-IN term dns from protocol tcp
+set firewall family inet filter F-USERS-IN term dns from destination-port 53
+set firewall family inet filter F-USERS-IN term dns then accept
+set firewall family inet filter F-USERS-IN term web from destination-address 10.20.0.0/24
+set firewall family inet filter F-USERS-IN term web from protocol tcp
+set firewall family inet filter F-USERS-IN term web from destination-port 80
+set firewall family inet filter F-USERS-IN term web from destination-port 443
+set firewall family inet filter F-USERS-IN term web then count users-web
+set firewall family inet filter F-USERS-IN term web then accept
+set firewall family inet filter F-USERS-IN term icmp from destination-address 10.20.0.0/24
+set firewall family inet filter F-USERS-IN term icmp from protocol icmp
+set firewall family inet filter F-USERS-IN term icmp then count users-icmp
+set firewall family inet filter F-USERS-IN term icmp then accept
+set firewall family inet filter F-USERS-IN term deny-servers from destination-address 10.20.0.0/24
+set firewall family inet filter F-USERS-IN term deny-servers then count users-denied
+set firewall family inet filter F-USERS-IN term deny-servers then log
+set firewall family inet filter F-USERS-IN term deny-servers then syslog
+set firewall family inet filter F-USERS-IN term deny-servers then discard
+set firewall family inet filter F-USERS-IN term rest then accept
+set firewall family inet filter PROTECT-RE term ospf from protocol ospf
+set firewall family inet filter PROTECT-RE term ospf then accept
+set firewall family inet filter PROTECT-RE term mgmt from source-address 10.99.0.0/24
+set firewall family inet filter PROTECT-RE term mgmt from protocol tcp
+set firewall family inet filter PROTECT-RE term mgmt from destination-port 22
+set firewall family inet filter PROTECT-RE term mgmt from destination-port 830
+set firewall family inet filter PROTECT-RE term mgmt then accept
+set firewall family inet filter PROTECT-RE term icmp from protocol icmp
+set firewall family inet filter PROTECT-RE term icmp then accept
+set firewall family inet filter PROTECT-RE term established from protocol tcp
+set firewall family inet filter PROTECT-RE term established from tcp-established
+set firewall family inet filter PROTECT-RE term established then accept
+set firewall family inet filter PROTECT-RE term deny then count re-denied
+set firewall family inet filter PROTECT-RE term deny then log
+set firewall family inet filter PROTECT-RE term deny then discard
+set protocols ospf area 0.0.0.0 interface ge-0/0/0.0
+set protocols ospf area 0.0.0.0 interface lo0.0
+set protocols ospf area 0.0.0.0 interface ge-0/0/1.10
+set protocols ospf area 0.0.0.0 interface ge-0/0/1.20

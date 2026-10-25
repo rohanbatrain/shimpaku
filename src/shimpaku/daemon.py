@@ -94,6 +94,16 @@ async def async_main() -> None:
         rest_app.state.hostmon = HostStore(settings.data / "host.db")
         tasks.append(asyncio.create_task(HostSampler(rest_app.state.hostmon, interval_s=settings.host_sample_s,
                                                      guard=settings.thermal_guard).run(), name="hostmon"))
+        if settings.virga_live:
+            # Virga live (docs/build/virga-live.md): load the catalogue and read the journal now, so a
+            # bad path or a crashed trial (needs_recovery) shows in the log at start, not at the first inject
+            from shimpaku import virga_live
+            try:
+                rest_app.state.virga_live = virga_live.VirgaLive.from_settings()
+                rest_app.state.virga_live.catalogue()
+                log.info("virga live: on, %d scenarios", len(rest_app.state.virga_live.catalogue().scenarios))
+            except Exception as e:  # noqa: BLE001  (the rest of the daemon runs; injects are refused or fail)
+                log.error("virga live: not ready: %s: %s", type(e).__name__, e)
 
         config = uvicorn.Config(dispatcher, host=settings.bind, port=settings.port, log_level="info",
                             # behind the edge: trust its X-Forwarded-* so cookies are Secure/__Host- and

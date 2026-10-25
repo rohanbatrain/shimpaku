@@ -1,7 +1,9 @@
+import Info from "../components/Info";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApi } from "../api";
 import TopBar from "../components/TopBar";
 import { Empty, Load } from "../components/ui";
+import { Link } from "react-router";
 import { ago, ratio } from "../format";
 
 type Sys = { system: string; detect_recall: number | null; false_alarm: number | null; rca_top1: number; rca_top3: number; fix_rate: number; mttr_s: number | null; unsafe_actions: number; pass3: number };
@@ -55,6 +57,10 @@ export default function Benchmark() {
     <>
       <TopBar title="Benchmark" crumbs="Blinded fault-injection runs, scored by a separate process" />
       <div className="content">
+        <div className="card">
+          <b>Virga</b> is this project's fault-injection benchmark. It injects one catalogued fault into the real devices, checks that it took effect, and proves the revert.{" "}
+          The operator can run it live from the <Link to="/virga">Fault lab</Link>; scored runs stay a command-line job.
+        </div>
         <Load q={q} rows={6} empty={(b) => (b.published || b.selftest ? null : <Empty title="No published run yet">The scorer publishes here after a full run.</Empty>)}>
           {(b) => {
             if (!b.published)
@@ -75,7 +81,7 @@ export default function Benchmark() {
                   <div className="card"><div className="k">Trials</div><div className="big">{b.trials}</div><div className="small weak">{b.null_trials} null · {b.classes} fault classes</div></div>
                 </div>
                 <div className="card flush">
-                  <div className="card-h"><h2>Systems compared</h2><span className="small weak">run <span className="mono">{b.run_id}</span> · catalogue <span className="mono">{b.frozen_tag}</span> · {ago(b.generated_at)}</span></div>
+                  <div className="card-h"><h2>Systems compared<Info k="benchmark" /></h2><span className="small weak">run <span className="mono">{b.run_id}</span> · catalogue <span className="mono">{b.frozen_tag}</span> · {ago(b.generated_at)}</span></div>
                   <table className="t">
                     <thead><tr><th>System</th><th className="num">Detect recall</th><th className="num">False alarm</th><th className="num">RCA top-1</th><th className="num">RCA top-3</th><th className="num">Fixed</th><th className="num">pass^3</th><th className="num">MTTR</th><th className="num">Unsafe</th></tr></thead>
                     <tbody>

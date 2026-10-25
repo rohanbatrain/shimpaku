@@ -124,6 +124,15 @@ their own screen; mind what is shared.
   guessing is infeasible); redemption is.
 - Action records and audit rows name every principal (`tester:<invite id>`, token names) to every reader;
   no note, display name or secret is in them.
+- Testers' Shim without an admin key: by default a tester's ask is refused (503) when no per-lease
+  key can be minted. `SHIMPAKU_TESTER_SHIM_SHARED_KEY=1` opts in to the operator's key instead, capped
+  at `SHIMPAKU_TESTER_SHIM_QUESTIONS` (default 25) questions per lease on top of the `ask` rate limit.
+  The cap is Shimpaku's own (in memory, reset by a daemon restart), not a gateway budget: set
+  `SHIMPAKU_LLM_ADMIN_KEY` for per-lease keys with a gateway-enforced budget instead.
+- Shim's knowledge base (`kb_search`, `kb_read`; `src/shimpaku/kb.py`) indexes only an allow-list of
+  repository documents (README, SECURITY, DEMO, CONTRACT, `docs/`, module docstrings), each passed
+  through address and key-like-string redaction; it never reads `.local/`, the environment, the store
+  or a device, and its calls are audited like every T0 read.
 - The live daemon's service layer has no `assistant_ask`, so Ask Shim answers 503 there for everyone;
   the per-lease key is minted and passed only where an assistant accepts `llm_key`.
 - Red team (build step 6): `tests/redteam/test_tester_redteam.py` attacks tester sessions, tokens, Shim

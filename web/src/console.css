@@ -37,3 +37,13 @@
   .con-meta { margin-left: 0; }
   .con-clear { padding: 4px 12px; min-height: 30px; }
 }
+
+/* Quick link (operator): a one-click invite, from the top bar */
+.quicklink { position: relative; }
+.quicklink .btn { display: inline-flex; align-items: center; gap: 5px; }
+.quicklink-panel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; width: 320px; max-width: calc(100vw - 32px);
+  background: var(--front); border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .14); }
+.quicklink-panel select { width: 100%; }
+.quicklink-url { width: 100%; margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+@media (max-width: 640px) { .quicklink-panel { position: fixed; left: 16px; right: 16px; top: 64px; width: auto; } }

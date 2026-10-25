@@ -26,6 +26,7 @@ import asyncio
 import hmac
 import inspect
 import json
+import time
 import logging
 import os
 import secrets
@@ -125,9 +126,16 @@ class DeclineBody(BaseModel):
 VISITOR_ASK = "Request a live session to use Shim"
 
 
+class AskTurn(BaseModel):
+    q: str = Field(max_length=2000)
+    a: str = Field(max_length=2000)
+
+
 class AskBody(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
     context: dict[str, Any] | None = None
+    # the browser's last few turns of this conversation, so Shim can follow up (never stored here)
+    history: list[AskTurn] = Field(default_factory=list, max_length=8)
 
 
 def _cookie_names(secure: bool) -> tuple[str, str]:
@@ -579,6 +587,69 @@ def create_app(
     async def reject(action_id: str, p: Principal = Depends(writer)):
         return await call("action_reject", action_id, p.caller())
 
+    tester_asks: dict[str, int] = {}  # lease id -> Shim questions asked on the shared key
+    public_asks: dict[str, list[float]] = {}  # client IP -> times of guide-mode questions (10 min)
+    public_day: dict[str, int] = {}  # "YYYY-MM-DD" -> guide-mode questions that day
+
+    @app.options("/api/assistant/public")
+    async def ask_public_preflight(request: Request):
+        from shimpaku.api.routes_public import cors_origins
+        origin = request.headers.get("origin", "")
+        h = {"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Methods": "POST",
+             "Access-Control-Allow-Headers": "content-type", "Access-Control-Max-Age": "600"} if origin in cors_origins() else {}
+        return Response(status_code=204, headers=h)
+
+    @app.post("/api/assistant/public")
+    async def ask_public(request: Request):
+        """Shim's guide mode for anyone, signed in or not, including the static landing page (CORS
+        for SHIMPAKU_PUBLIC_CORS_ORIGINS). It reads only Shimpaku's documents: no device, incident or
+        action tool is offered, nothing is proposed. No cookie is used, so there is no CSRF surface;
+        the body may be sent as text/plain to stay a simple (preflight-free) request."""
+        from shimpaku.api.routes_public import cors_origins
+        origin = request.headers.get("origin", "")
+        cors = {"Access-Control-Allow-Origin": origin, "Vary": "Origin"} if origin in cors_origins() else {}
+
+        def fail(code: int, msg: str) -> JSONResponse:  # errors carry CORS too, so the landing page can show them
+            return JSONResponse({"detail": msg}, status_code=code, headers=cors)
+
+        if origin and not cors and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return fail(403, "cross-origin request refused")
+        if not settings.public_shim or ask_fn is None or "guide" not in inspect.signature(ask_fn).parameters:
+            return fail(503, "Shim's public guide is not enabled on this server")
+        raw = await request.body()
+        if len(raw) > 32_000:
+            return fail(413, "request too large")
+        try:
+            body = AskBody.model_validate_json(raw)
+        except Exception:  # noqa: BLE001
+            return fail(422, "send {question, history?}")
+        if len(body.question) > 600:
+            return fail(422, "Questions are limited to 600 characters here")
+        ip, now = client_ip(request), time.time()
+        recent = [t for t in public_asks.get(ip, []) if now - t < 600]
+        day = time.strftime("%Y-%m-%d")
+        if len(recent) >= settings.public_shim_per_ip:
+            return fail(429, "That's a lot of questions! Shim's public guide takes a short break; try again in a few minutes, or request a live session for the full assistant.")
+        if public_day.get(day, 0) >= settings.public_shim_daily:
+            return fail(429, "Shim's public guide has answered all it can today. Request a live session for the full assistant.")
+        public_asks[ip] = recent + [now]
+        if day not in public_day:
+            public_day.clear()
+        public_day[day] = public_day.get(day, 0) + 1
+        hist = [t.model_dump() for t in body.history][-4:]
+
+        async def gen():
+            try:
+                async for ev in ask_fn(body.question, "public", {"page": "public"}, guide=True, history=hist):
+                    if await request.is_disconnected():
+                        break
+                    yield {"event": ev.get("type", "message"), "data": json.dumps(ev)}
+            except Exception:  # noqa: BLE001
+                log.exception("public guide failed")
+                yield {"event": "error", "data": json.dumps({"type": "error", "message": "Shim could not answer"})}
+
+        return EventSourceResponse(gen(), ping=15, headers=cors)
+
     @app.post("/api/assistant/ask")
     async def ask(body: AskBody, request: Request, p: Principal = Depends(reader)):
         if p.effective_role == "visitor" and p.kind == "anonymous":
@@ -595,12 +666,21 @@ def create_app(
                 key = await leases.llm_key(p.lease_id or "")
             except LLMKeyError:
                 raise HTTPException(503, "Ask Shim is unavailable: the LLM gateway refused a key for this lease") from None
-            if key is None:
+            if key is not None:
+                extra["llm_key"] = key
+            elif settings.tester_shim_shared_key:
+                # opt-in: no per-lease key, so the operator's key with a per-lease question cap
+                used = tester_asks.get(p.lease_id or "", 0)
+                if used >= settings.tester_shim_questions:
+                    raise HTTPException(429, f"This session's {settings.tester_shim_questions} Shim questions are used up")
+                tester_asks[p.lease_id or ""] = used + 1
+            else:
                 raise HTTPException(503, "Ask Shim is not enabled for testers on this server "
                                          "(no LLM admin key is configured)")
-            extra["llm_key"] = key
         rate("ask", p)
         params = inspect.signature(ask_fn).parameters
+        if "history" in params and body.history:
+            extra["history"] = [t.model_dump() for t in body.history]
         if "role" in params:
             # Shim proposes as the asker: a principal that may not propose (a `read` token) gets a
             # visitor's Shim, which the engine refuses to propose or cancel for
@@ -654,8 +734,8 @@ def create_app(
     @app.get("/api/lease")
     async def get_lease(p: Principal = Depends(reader)) -> dict:
         role = p.effective_role
-        assistant_ok = bool(leases.keys and leases.keys.enabled and ask_fn is not None
-                            and "llm_key" in inspect.signature(ask_fn).parameters)
+        assistant_ok = bool(ask_fn is not None and "llm_key" in inspect.signature(ask_fn).parameters
+                            and ((leases.keys and leases.keys.enabled) or settings.tester_shim_shared_key))
         if role == "tester":
             return {"role": role, "lease": _public_lease(leases.lease(p.lease_id)), "assistant": assistant_ok,
                     "demo_ops": leases.demo_ops}
@@ -929,6 +1009,7 @@ def create_app(
     app.include_router(routes_live.router(call, reader, service))
     from shimpaku.api import routes_explain; app.include_router(routes_explain.router(call, reader))  # noqa: E702
     from shimpaku.api import routes_theatre; app.include_router(routes_theatre.router(call, reader))  # noqa: E702  /api/theatre*
+    from shimpaku.api import routes_virga; app.include_router(routes_virga.router(call, reader, rate))  # noqa: E702  /api/virga/*
 
     @app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
     async def api_404(rest: str):

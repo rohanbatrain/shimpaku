@@ -452,7 +452,8 @@ def _args_summary(args: Any) -> str:
 
 async def assistant_ask(question: str, principal: str, context: dict | None = None, *,
                         llm_key: str | None = None, role: str | None = None,
-                        lease_id: str | None = None):
+                        lease_id: str | None = None, history: list[dict] | None = None,
+                        guide: bool = False):
     """Run Shim for a dashboard user and translate its events into the panel's contract
     (meta, tool, token, error, done). Shim acts as `shim:<principal>` with the asker's role and
     lease, so a tester's assistant is held to the tester gate; it can propose, never approve.
@@ -468,15 +469,24 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
         yield {"type": "error", "message": "the assistant is not wired into this daemon"}
         return
     caller = Caller(kind="assistant", name=f"shim:{principal}", transport="inproc",
-                    role=role if role in ("tester", "visitor") else "agent", lease_id=lease_id)
+                    role="visitor" if guide else role if role in ("tester", "visitor") else "agent", lease_id=lease_id)
     token = mcp_mod._caller.set(caller)
     factory = (lambda name: LLM(name, key=llm_key)) if llm_key else None
     started: dict[str, float] = {}
     arg_s: dict[str, str] = {}
     streamed = False
     try:
-        bot = Assistant(_mcp_server, llm_factory=factory)
-        async for ev in bot.ask(question):
+        from shimpaku.assistant import prompts
+        bot = (Assistant(_mcp_server, llm_factory=factory, model="triage", max_steps=3, system=prompts.GUIDE,
+                         allow_tools={"kb_search", "kb_read"}) if guide
+               else Assistant(_mcp_server, llm_factory=factory))
+        # earlier turns as plain chat messages: Shim follows up, but its tools still read live state
+        past: list[dict] = []
+        for h in (history or [])[-8:]:
+            if h.get("q") and h.get("a"):
+                past += [{"role": "user", "content": str(h["q"])[:2000]},
+                         {"role": "assistant", "content": str(h["a"])[:2000]}]
+        async for ev in (bot.ask(question, history=past) if past else bot.ask(question)):
             t = ev.get("type")
             if t == "route":
                 yield {"type": "meta", "model": ev.get("model", "?")}

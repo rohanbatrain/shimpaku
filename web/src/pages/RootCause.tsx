@@ -1,3 +1,4 @@
+import Info from "../components/Info";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Chat } from "grommet-icons";
@@ -137,7 +138,7 @@ export default function RootCause() {
                 <p style={{ margin: "4px 0 0" }}>{i.summary ?? "—"}</p>
               </div>
               <div><div className="k">Site</div><b>{i.site}</b></div>
-              <div><div className="k">Service level</div><b>{i.sle}</b></div>
+              <div><div className="k">Service level<Info k="sle" /></div><b>{i.sle}</b></div>
               <div><div className="k">Impact</div><b>{impactText(i.impact)}</b></div>
               <div><div className="k">Opened</div><b>{time(i.opened_at)}</b> <span className="small weak">({ago(i.opened_at)})</span></div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -154,7 +155,7 @@ export default function RootCause() {
               {b.tree.length > 0 && (
                 <div className="card">
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                    <h2 style={{ margin: 0 }}>Blast radius</h2>
+                    <h2 style={{ margin: 0 }}>Blast radius<Info k="blast" /></h2>
                     <span className="small weak">share of bad units per classifier → sub-classifier; band width = share</span>
                   </div>
                   <div className="blast-scroll"><BlastTree b={b} /></div>

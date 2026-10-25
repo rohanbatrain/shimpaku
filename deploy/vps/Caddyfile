@@ -4,6 +4,9 @@
 #   <label>-app.<parent>/api/*   the LIVE daemon on the lab host over NetBird ({$SHIMPAKU_LAB_UPSTREAM}),
 #                        falling back to the local read-only replay for reads when the lab is down
 #   <label>-app.<parent>/mcp     the live daemon only (never the replay); 503 JSON when the lab is down
+#                        Virga live (docs/build/virga-live.md): POST /api/virga/* = a write, live only, limited
+#                        per client IP (zone virga); GET /api/virga/* (incl. the SSE stream) and the anonymous
+#                        GET /api/public/health (Uptime Kuma's keyword monitors) are reads, live first then replay
 #   <label>-status.<parent>      Uptime Kuma's PUBLIC status page only (never its admin UI)
 # Env: SHIMPAKU_SITE_HOSTS ("a.example, b.example"), SHIMPAKU_APP_HOSTS ("app.a.example, app.b.example"),
 #      SHIMPAKU_STATUS_HOSTS ("status.a.example, ..."), SHIMPAKU_STATUS_SLUG (the Kuma status page slug),
@@ -60,8 +63,17 @@
 {$SHIMPAKU_SITE_HOSTS} {
 	import common
 	root * /srv/site
-	# the dashboard link follows the host the visitor used ({{.Host}}), so every domain serves itself
-	templates
+	# short cache for the page's own files (Cloudflare's default would keep a .js 4 h after a deploy);
+	# index.html references them with a ?v= so a deploy can also bust it at once
+	header Cache-Control "public, max-age=300"
+	# the dashboard link follows the host the visitor used ({{.Host}}), so every domain serves itself.
+	# HTML only: install.sh (the deploy-your-own one-liner) must reach the shell byte for byte.
+	templates {
+		mime text/html
+	}
+	@install path /install.sh
+	header @install Content-Type "text/plain; charset=utf-8"
+	header @install Cache-Control "no-cache"
 	file_server
 }
 
@@ -81,7 +93,7 @@
 	}
 	@kuma_public {
 		method GET HEAD
-		path /status /status/* /api/status-page/* /assets/* /upload/* /icon.svg /icon-192x192.png /icon-512x512.png /favicon.ico /apple-touch-icon.png /manifest.json
+		path /status /status/* /api/status-page/* /api/entry-page /assets/* /upload/* /icon.svg /icon-192x192.png /icon-512x512.png /favicon.ico /apple-touch-icon.png /manifest.json
 	}
 	handle @kuma_public {
 		reverse_proxy {$SHIMPAKU_KUMA_UPSTREAM:uptime-kuma:3001} {
@@ -89,8 +101,18 @@
 			header_up X-Real-IP {client_ip}
 		}
 	}
+	# `/`: Kuma serves the status page whose domain list holds this host (one page per domain,
+	# scripts/kuma_setup.mjs --status-host). A host no page claims gets Kuma's redirect to its admin
+	# dashboard, which is turned into the default page here instead.
 	handle / {
-		redir * /status/{$SHIMPAKU_STATUS_SLUG:shimpaku} 302   # `*`: a first argument starting with / would be read as a matcher
+		reverse_proxy {$SHIMPAKU_KUMA_UPSTREAM:uptime-kuma:3001} {
+			header_up X-Forwarded-For {client_ip}
+			header_up X-Real-IP {client_ip}
+			@admin header Location /dashboard*
+			handle_response @admin {
+				redir * /status/{$SHIMPAKU_STATUS_SLUG:shimpaku} 302   # `*`: a first argument starting with / would be read as a matcher
+			}
+		}
 	}
 	handle {
 		header Cache-Control no-store
@@ -152,6 +174,20 @@
 			key {client_ip}
 			events 20
 			window 1m
+		}
+	}
+	# Virga fault lab: an inject, revert or recover writes to the real devices (operator session only, the
+	# daemon decides; this just stops floods early). 10 / 10 min per client IP, POST only: the reads
+	# (catalogue, state, the SSE stream) stay under the general api zone. A refused 403 counts too.
+	@virga_write {
+		method POST
+		path /api/virga /api/virga/*
+	}
+	rate_limit @virga_write {
+		zone virga {
+			key {client_ip}
+			events 10
+			window 10m
 		}
 	}
 	@assistant path /api/assistant /api/assistant/*
@@ -218,6 +254,9 @@
 	}
 
 	# ---- Reads: live first, replay when the lab's health check fails.
+	# Anonymous reads included: /api/public/summary (landing strip, CORS by the app) and /api/public/health
+	# (Uptime Kuma). /api/virga/stream is SSE: flush_interval -1 comes from upstream_opts, and with the lab
+	# down the replay answers it as "disabled" (it never injects). Writes under /api/virga never get here.
 	handle @api {
 		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {$SHIMPAKU_REPLAY_UPSTREAM:replay:8780} {
 			lb_policy first

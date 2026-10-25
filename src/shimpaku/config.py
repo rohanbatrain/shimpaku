@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     llm_models: str = "triage=nvidia-nemotron-lightning,diagnose=nvidia-nemotron-ultra,escalate=nvidia-nemotron-ultra"
 
     # ---- guest testers (docs/DEPLOY-DESIGN.md build steps 4-5) ----
+    repo_url: str = "https://github.com/rohanbatrain/shimpaku"  # named by Shim and the about facts
     public_url: str | None = None          # fixed base for invite links; never taken from a Host header
     invite_ttl_hours: float = 72.0         # time to redeem an invite
     lease_minutes: float = 30.0            # one tester lease
@@ -53,6 +54,15 @@ class Settings(BaseSettings):
     llm_admin_key: str | None = Field(default=None, repr=False)
     tester_llm_budget_usd: float = 0.50
     tester_llm_rpm: int = 10
+    # Without an admin key no per-lease key can be minted. Opt in to let testers' Shim spend the
+    # operator's key instead, capped at tester_shim_questions per lease (SECURITY.md, testers).
+    # Public guide mode: anonymous visitors (website and read-only dashboard) can chat with Shim, but
+    # only about Shimpaku's documents (kb tools), on the triage model, capped per IP and per day.
+    public_shim: bool = False
+    public_shim_per_ip: int = 6          # questions per IP per 10 minutes
+    public_shim_daily: int = 200         # questions per day, everyone together
+    tester_shim_shared_key: bool = False
+    tester_shim_questions: int = 25
     tester_llm_models: str = ""            # comma list; empty = the models in llm_models
     # per-principal/global requests per minute: category=per_principal/global
     # read (anonymous visitors, per address) and request (session requests, per address) were added
@@ -61,6 +71,9 @@ class Settings(BaseSettings):
     # >= 97 C for 60 s; never stops VMs). Off by default.
     host_sample_s: float = 15.0
     thermal_guard: bool = False
+    # Virga live (docs/build/virga-live.md D7): the operator may inject catalogued faults into the real
+    # devices from the dashboard. Off unless SHIMPAKU_VIRGA_LIVE=1 on the lab; the replay never injects.
+    virga_live: bool = False
     rate_limits: str = "write=30/300,demo=6/30,ask=10/60,mcp=60/600,redeem=10/60,read=120/1200,request=3/20,erase=10/100"
 
     def require_device_password(self) -> str:

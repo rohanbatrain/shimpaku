@@ -42,6 +42,21 @@ function clock(s: number) {
   s = Math.max(0, Math.ceil(s));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
+// what each stage means, for someone new to networks (shown under each stage)
+const STAGE_HELP: Record<string, string> = {
+  break: "Someone breaks the lab on purpose: here VLAN 999 is removed from one switch port.",
+  dip: "The first minute a service score drops below its goal: the first sign anyone would notice.",
+  incident: "The system groups the bad minutes into an incident with a likely cause.",
+  propose: "A fix is suggested (by Shim, an outside agent or a person). Nothing changes yet.",
+  guardrails: "Ten automatic safety checks run on the proposal. Any failure blocks it.",
+  approve: "A signed-in human reads the proposal and approves it. AI can never do this step.",
+  commit: "The change is applied with 'commit confirmed': the device undoes it by itself unless confirmed.",
+  health: "A fresh check that the device is still healthy after the change.",
+  confirm: "Healthy, so the change is confirmed and kept.",
+  validate: "A few minutes of watching to be sure the problem stays fixed.",
+  outcome: "Verified (fixed and stayed fixed) or Recurred (the problem came back).",
+};
+
 // words for the gap into a stage, from the stage before it that has a time
 const GAP_WORD: Record<string, string> = {
   dip: "first dip", incident: "opened", propose: "proposed", guardrails: "checked", approve: "approved",
@@ -239,6 +254,7 @@ function StepList({ stages, at, now }: { stages: Stage[]; at: number | null; now
                 )}
                 <span className="th-row-t mono">{shown ? hms(x.t) : st === "current" ? "in progress" : st === "skipped" ? "" : "waiting"}</span>
               </div>
+              {STAGE_HELP[x.id] && <div className="th-row-help">{STAGE_HELP[x.id]}</div>}
               {(shown || st === "skipped") && x.detail && <div className="th-row-d">{x.detail}</div>}
               {shown && x.by && <div className="th-row-d">by <b className="mono">{x.by.name}</b>{x.by.kind ? ` · ${x.by.kind}` : ""}{x.by.role ? ` (${x.by.role})` : ""}</div>}
               {shown && x.junos_time && <div className="th-row-d">Junos commit time <span className="mono">{x.junos_time}</span></div>}
@@ -301,24 +317,69 @@ function Controls({ run, reload }: { run: Run; reload: () => void }) {
     await api(`/api/actions/${run.action!.id}/approve`, { method: "POST" });
     return `Approved as ${who.user}. The executor takes the sw1 lease and commits.`;
   });
+  const reject = () => go("reject", async () => {
+    setSure(false);
+    await api(`/api/actions/${run.action!.id}/reject`, { method: "POST" });
+    return "Rejected. Nothing was sent to the device.";
+  });
   return (
+    <>
+    {st === "awaiting_approval" && run.action && (
+      <ApprovalCard run={run} canApprove={who.can_approve && active} user={who.user} busy={busy} sure={sure} setSure={setSure} approve={approve} reject={reject} />
+    )}
     <div className="th-ctl" role="group" aria-label="Presenter controls">
       <button className="th-btn bad" disabled={!active || !!busy || live} onClick={brk} title={live ? "A run is in progress" : "A real Junos commit on the lab"}>{busy === "break" && <Busy />} Break VLAN 999</button>
       <button className="th-btn" disabled={!active || !!busy || run.mode !== "pending"} onClick={viaShim} title="Ask Shim (the built-in agent) to propose; it cannot approve">{busy === "propose" && <Busy />} Propose via Shim</button>
       {(fallback || (msg?.tone === "crit" && busy == null && run.mode === "pending")) && run.mode === "pending" && (
         <button className="th-btn" disabled={!active || !!busy} onClick={direct}>{busy === "direct" && <Busy />} Propose directly</button>
       )}
-      {st === "awaiting_approval" && who.can_approve && (sure ? (
-        <span className="th-sure">
-          Approve {run.action!.id} as <b>{who.user}</b>?
-          <button className="th-btn ok" disabled={!!busy} onClick={approve}>{busy === "approve" && <Busy />} Approve and commit</button>
-          <button className="th-btn ghost" onClick={() => setSure(false)}>Back</button>
-        </span>
-      ) : (
-        <button className="th-btn ok" disabled={!active || !!busy} onClick={() => setSure(true)}>Approve…</button>
-      ))}
       {msg && <span className={`th-msg ${msg.tone}`} role="status">{msg.text}</span>}
     </div>
+    </>
+  );
+}
+
+/** The decision a human must take, laid out so anyone can read it: what changes, who asked, what the
+ * safety checks said, what happens next. Only a signed-in operator gets the buttons. */
+function ApprovalCard({ run, canApprove, user, busy, sure, setSure, approve, reject }: {
+  run: Run; canApprove: boolean; user: string | null; busy: string | null; sure: boolean;
+  setSure: (b: boolean) => void; approve: () => void; reject: () => void;
+}) {
+  const g = run.stages.find((x) => x.id === "guardrails");
+  const checks = Array.isArray(g?.checks) ? g!.checks : [];
+  const failed = checks.filter((c) => !c.passed);
+  const by = run.action!.proposed_by;
+  return (
+    <section className="th-approve" aria-label="Approval needed">
+      <div className="th-approve-h">
+        <span className="th-approve-badge">Approval needed</span>
+        <span className="th-dim">action <Link to={`/actions/${run.action!.id}`} className="mono">{run.action!.id}</Link></span>
+      </div>
+      <dl className="th-approve-kv">
+        <div><dt>The change</dt><dd>Add VLAN 999 back to the trunk port <b className="mono">ge-0/0/5</b> on switch <b className="mono">sw1</b></dd></div>
+        <div><dt>Proposed by</dt><dd><b className="mono">{by.name}</b>{by.kind ? ` · ${by.kind === "assistant" ? "AI assistant" : by.kind}` : ""}</dd></div>
+        <div><dt>Safety checks</dt><dd>{checks.length
+          ? failed.length ? <span className="th-bad-t">{failed.length} of {checks.length} failed: {failed.map((c) => c.id).join(", ")}</span>
+            : <span className="th-ok-t">all {checks.length} passed</span>
+          : "not recorded"}</dd></div>
+        <div><dt>If approved</dt><dd>sw1 is locked for this change, the commit is applied with an automatic undo timer, the device's health is re-checked, then the change is confirmed and watched for a few minutes.</dd></div>
+      </dl>
+      {canApprove ? (sure ? (
+        <div className="th-approve-go">
+          <span>Approve and commit to <b className="mono">sw1</b> as <b>{user}</b>?</span>
+          <button className="th-btn ok" disabled={!!busy} onClick={approve}>{busy === "approve" && <Busy />} Yes, approve and commit</button>
+          <button className="th-btn ghost" onClick={() => setSure(false)}>Back</button>
+        </div>
+      ) : (
+        <div className="th-approve-go">
+          <button className="th-btn ok" disabled={!!busy || failed.length > 0} onClick={() => setSure(true)}>Approve…</button>
+          <button className="th-btn bad" disabled={!!busy} onClick={reject}>{busy === "reject" && <Busy />} Reject</button>
+          {failed.length > 0 && <span className="th-dim">A failed safety check blocks approval.</span>}
+        </div>
+      )) : (
+        <div className="th-dim">Waiting for a signed-in operator to approve or reject. AI agents can propose, never approve.</div>
+      )}
+    </section>
   );
 }
 

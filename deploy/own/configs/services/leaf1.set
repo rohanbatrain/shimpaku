@@ -1,0 +1,12 @@
+# What Shimpaku needs on every device: gNMI in clear text on 32767 in the management instance
+# (docs/RESEARCH.md R2; the collector dials in with the lab credentials). Lab-only: no TLS.
+set system services http servers server shimpaku-gnmi port 32767
+set system services http servers server shimpaku-gnmi routing-instance mgmt_junos
+set system services http servers server shimpaku-gnmi grpc gnmi
+# RPM probe owner shimpaku (docs/build/rpm-config.set): VLAN 100 across the EVPN-VXLAN overlay
+set services rpm probe shimpaku test vxlan-l2 probe-type icmp-ping
+set services rpm probe shimpaku test vxlan-l2 target address 10.100.0.42
+set services rpm probe shimpaku test vxlan-l2 routing-instance HOST
+set services rpm probe shimpaku test vxlan-l2 probe-count 5
+set services rpm probe shimpaku test vxlan-l2 probe-interval 1
+set services rpm probe shimpaku test vxlan-l2 test-interval 10

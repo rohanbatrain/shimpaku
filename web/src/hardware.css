@@ -130,7 +130,11 @@
 .pd-grid dd { margin: 0; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .twin-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--tw); align-items: center; }
 .twin-legend i { display: inline-block; width: 10px; height: 6px; border-radius: 2px; margin-right: 6px; vertical-align: 1px; }
-.twin-strip { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); gap: 16px; align-items: center; }
+.twin-strip { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.twin-strip .twin-iso { max-height: 46vh; }
+.twin-strip-t { display: grid; grid-template-columns: minmax(0, 1.5fr) auto; gap: 8px 24px; align-items: center; border-top: 1px solid var(--line); padding-top: 12px; }
+.twin-strip-t .twin-strip-go { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+@media (max-width: 900px) { .twin-strip-t { grid-template-columns: 1fr; } .twin-strip-t .twin-strip-go { align-items: flex-start; } }
 .twin-strip h2 { margin: 0 0 6px; }
 .twin-strip p { margin: 0 0 8px; font-size: 13.5px; }
 @media (max-width: 1100px) { .hv-text, .twin-strip { grid-template-columns: 1fr; } .hv-text .hv-stats { grid-template-columns: 1fr 1fr; } .hv, .twin-strip { grid-template-columns: 1fr; } .eq-grid { grid-template-columns: 1fr; } }
@@ -140,3 +144,4 @@
   .pd-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hv-stats dd { font-size: 15px; }
 }
+.twin-iso.topo3d { max-height: 68vh; }

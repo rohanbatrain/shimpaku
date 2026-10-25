@@ -111,7 +111,13 @@ class Assistant:
         tool_timeout_s: float = 30.0,
         deadline_s: float = 300.0,
         seed: int | None = None,
+        kb: bool = True,
+        system: str | None = None,
+        allow_tools: set[str] | None = None,
     ) -> None:
+        self.kb = kb
+        self.system = system
+        self.allow_tools = allow_tools
         self.mcp_target = mcp_target if mcp_target is not None else default_mcp_url()
         self.model = model
         self.llm_factory = llm_factory or (lambda name: LLM(name, seed=seed))
@@ -142,8 +148,20 @@ class Assistant:
             async with Client(self.mcp_target, read_timeout_seconds=self.tool_timeout_s) as mcp:
                 listed = await mcp.list_tools()
                 tools = mcp_tools_to_openai(listed.tools)
+                if self.allow_tools is not None:  # guide mode: the model is not even offered the rest
+                    tools = [t for t in tools if t["function"]["name"] in self.allow_tools]
                 known = {t["function"]["name"] for t in tools}
-                messages: list[dict[str, Any]] = [{"role": "system", "content": prompts.SYSTEM}]
+                from shimpaku import about
+                system = f"{self.system or prompts.SYSTEM}\n\n{about.facts()}"
+                if self.kb:
+                    try:
+                        from shimpaku import kb
+                        bg = kb.grounding(question)
+                    except Exception:  # noqa: BLE001 — the knowledge base is an aid, never a blocker
+                        bg = None
+                    if bg:
+                        system = f"{system}\n\n{bg}"
+                messages: list[dict[str, Any]] = [{"role": "system", "content": system}]
                 messages += list(history or [])
                 messages.append({"role": "user", "content": question})
                 while True:

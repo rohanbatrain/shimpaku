@@ -1,37 +1,24 @@
-// Shim's reasoning traces: the last N answers of this browser tab, in memory only (no storage,
-// nothing sent anywhere). A reload or a new tab starts empty.
-import { useSyncExternalStore } from "react";
+// Shim's reasoning traces: every answer in this browser's saved Shim conversations (shim.ts), as
+// steps. Nothing is sent anywhere; signing out clears them.
+import { useMemo } from "react";
+import { useShim, type Turn } from "./shim";
 
 export type TraceStep = { name: string; call: string; args: string; ms?: number; ok?: boolean; ids: string[] };
 export type TraceEvidence = { title: string; text: string; href?: string };
-export type Trace = { id: number; q: string; at: number; page: string; model?: string; steps: TraceStep[]; evidence: TraceEvidence[]; text: string; done: boolean; error?: string };
+export type Trace = { id: number; q: string; at: number; page: string; model?: string; steps: TraceStep[]; evidence: TraceEvidence[]; text: string; done: boolean; error?: string; convo?: string };
 
-export const MAX_TRACES = 20;
-let traces: Trace[] = [];
-const subs = new Set<() => void>();
-const emit = () => subs.forEach((f) => f());
+export const MAX_TRACES = 30;
 
-export function putTrace(t: Trace) {
-  const i = traces.findIndex((x) => x.id === t.id);
-  traces = i >= 0 ? traces.map((x) => (x.id === t.id ? t : x)) : [...traces, t].slice(-MAX_TRACES);
-  emit();
+export function traceOf(t: Turn, convo?: string): Trace {
+  return {
+    id: t.id, q: t.q, at: t.at, page: t.page, model: t.model, text: t.text, done: t.done, error: t.error, evidence: t.evidence, convo,
+    steps: t.tools.map((c) => ({ name: c.name, call: c.call, args: argsOf(c), ms: c.ms, ok: c.ok, ids: c.ids ?? [] })),
+  };
 }
-export function clearTraces() {
-  traces = [];
-  emit();
-}
-let seq = 0;
-export const nextTraceId = () => ++seq;
 
 export function useTraces(): Trace[] {
-  return useSyncExternalStore(
-    (f) => {
-      subs.add(f);
-      return () => subs.delete(f);
-    },
-    () => traces,
-    () => traces,
-  );
+  const s = useShim();
+  return useMemo(() => s.convos.flatMap((c) => c.turns.map((t) => traceOf(t, c.id))).sort((a, b) => a.at - b.at).slice(-MAX_TRACES), [s]);
 }
 
 /** Where a tool's data lives in the dashboard. */
@@ -42,6 +29,7 @@ export function toolHref(name: string): string | null {
   if (name.startsWith("audit")) return "/audit";
   if (/^(topo_|routing_|device_|iface_|port_|inventory|config_)/.test(name)) return "/topology";
   if (name.startsWith("bench")) return "/benchmark";
+  if (name.startsWith("kb_")) return "/architecture";
   return null;
 }
 

@@ -1,8 +1,10 @@
 // The hardware twin: the KVM host and its seven vJunos guests as an isometric figure (drawn with
 // primitives vendored from anatomy, MIT), and each guest as an original, generic front panel.
 // Every LED, port and number comes from GET /api/hardware; nothing collected = shown as such.
+import Info from "./Info";
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
+import ZoomPan from "./ZoomPan";
 import { usePoll } from "./poll";
 import { fitProjection, insetPlan, iso, planOutline, sideMatrix, slabOf, topMatrix, type Plan, type Point3 } from "../vendor/anatomy/iso-kit";
 import { Solid } from "../vendor/anatomy/Solid";
@@ -381,15 +383,19 @@ export function TwinStrip() {
   const running = hw.hypervisor.guest_counts.running;
   return (
     <section className="card twin-strip" aria-labelledby="twin-h">
-      <div><HypervisorFigure hw={hw} compact onSelect={(n) => nav(`/hardware?d=${encodeURIComponent(n)}`)} /></div>
-      <div>
-        <h2 id="twin-h">Seven real Junos devices, live</h2>
-        <p>
-          {hw.devices.length} vJunos VMs on one {hw.hypervisor.kind} host{running != null ? `, ${running} running` : ""}: the Junos of
-          EX9214-class switches and MX Series routers, streaming gNMI every {hw.telemetry.interval_s} s. The LEDs are their live port state.
-        </p>
-        <div style={{ marginBottom: 8 }}><LiveClock hw={hw} now={now} /></div>
-        <Link className="btn primary" to="/hardware">Open the hardware view →</Link>
+      <ZoomPan label="hypervisor figure"><HypervisorFigure hw={hw} compact onSelect={(n) => nav(`/hardware?d=${encodeURIComponent(n)}`)} /></ZoomPan>
+      <div className="twin-strip-t">
+        <div>
+          <h2 id="twin-h">Seven real Junos devices, live<Info k="lab" /></h2>
+          <p>
+            {hw.devices.length} vJunos VMs on one {hw.hypervisor.kind} host{running != null ? `, ${running} running` : ""}: the Junos of
+            EX9214-class switches and MX Series routers, streaming gNMI every {hw.telemetry.interval_s} s. The LEDs are their live port state.
+          </p>
+        </div>
+        <div className="twin-strip-go">
+          <LiveClock hw={hw} now={now} />
+          <Link className="btn primary" to="/hardware">Open the hardware view →</Link>
+        </div>
       </div>
     </section>
   );
