@@ -1,17 +1,52 @@
 // Set up Uptime Kuma (v2) for the Shimpaku status page, over its own socket.io protocol (Kuma has no
-// REST API for this). Idempotent: creates the admin only on a fresh instance, skips monitors and the
-// status page that already exist.
+// REST API for this). Idempotent: creates the admin only on a fresh instance, and for everything else
+// creates what is missing and brings what exists to the desired settings (only when they differ).
 //
-//   KUMA_URL=http://127.0.0.1:3001 KUMA_USER=... KUMA_PASS=... node kuma_setup.mjs <url> [<url> ...]
+//   KUMA_URL=http://127.0.0.1:3001 KUMA_USER=... KUMA_PASS=... \
+//     node kuma_setup.mjs [--app <app-url>] <url> [<url> ...]
+//
+//   <url> ...     the website monitors (HTTP, status 2xx): landing page, dashboard, status page.
+//                 They go in the group "Website" on the status page.
+//   --app <url>   the dashboard's base URL (or KUMA_APP_URL). Adds the group "Live lab": three keyword
+//                 monitors on <url>/api/public/health (docs/build/virga-live.md §2) that turn red while
+//                 a Virga fault drill is running, and green again after the revert:
+//                   Campus network          "campus":"healthy"
+//                   Fabric network          "fabric":"healthy"
+//                   No fault drill running  "drill":"idle"
+//                 Without --app the Live lab group is not created or changed (today's usage).
 //
 // Credentials come from the environment (never argv), and nothing secret is printed.
+//
+// The keyword is a plain substring of the response body. The daemon's JSON is compact (FastAPI's
+// default: {"campus":"healthy",...}), and Kuma re-serialises a body it parsed as JSON compactly before
+// matching, so spacing in the backend's output does not matter; a non-JSON body (an HTML error page
+// from the edge) never contains the keyword, which is the red you want.
 import { io } from "socket.io-client";
 
 const URL = process.env.KUMA_URL || "http://127.0.0.1:3001";
 const USER = process.env.KUMA_USER, PASS = process.env.KUMA_PASS;
 const SLUG = process.env.KUMA_SLUG || "shimpaku";
-const targets = process.argv.slice(2);
-if (!USER || !PASS || targets.length === 0) { console.error("need KUMA_USER, KUMA_PASS and at least one URL"); process.exit(2); }
+
+const targets = [];
+let appUrl = process.env.KUMA_APP_URL || "";
+const argv = process.argv.slice(2);
+for (let i = 0; i < argv.length; i++) {
+  if (argv[i] === "--app") appUrl = argv[++i] || "";
+  else if (argv[i].startsWith("--app=")) appUrl = argv[i].slice(6);
+  else targets.push(argv[i]);
+}
+appUrl = appUrl.replace(/\/+$/, "");
+if (!USER || !PASS || targets.length === 0) {
+  console.error("need KUMA_USER, KUMA_PASS and at least one URL (optionally --app <dashboard url>)");
+  process.exit(2);
+}
+
+const GROUP_WEBSITE = "Website", GROUP_LIVE = "Live lab";
+const LIVE = [
+  { name: "Campus network", keyword: '"campus":"healthy"' },
+  { name: "Fabric network", keyword: '"fabric":"healthy"' },
+  { name: "No fault drill running", keyword: '"drill":"idle"' },
+];
 
 const s = io(URL, { transports: ["websocket"], reconnection: false, timeout: 15000 });
 const call = (ev, ...args) => new Promise((res, rej) => {
@@ -21,6 +56,34 @@ const call = (ev, ...args) => new Promise((res, rej) => {
 let monitors = {};
 s.on("monitorList", (m) => { monitors = m || {}; });
 const fail = (m) => { console.error("FAILED:", m); s.close(); process.exit(1); };
+
+// What a new monitor of each kind starts from (the fields Kuma 2's `add` expects).
+const base = (extra) => ({
+  method: "GET", interval: 60, retryInterval: 60, resendInterval: 0, maxretries: 2, timeout: 48, maxredirects: 10,
+  accepted_statuscodes: ["200-299"], ignoreTls: false, upsideDown: false, expiryNotification: true,
+  notificationIDList: {}, active: true, conditions: [], kafkaProducerBrokers: [], kafkaProducerSaslOptions: {},
+  ...extra,
+});
+const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+// Create `want` if no monitor has its name; else bring the fields in `want` to their values with
+// `editMonitor`, sending the monitor as Kuma listed it plus the changes (what the admin UI does, so no
+// field is reset). Nothing is sent when nothing differs. A refused edit is reported and skipped.
+async function ensure(want, defaults) {
+  const have = Object.values(monitors).find((m) => m.name === want.name);
+  if (!have) {
+    const r = await call("add", { ...defaults, ...want });
+    if (!r?.ok) fail(`add ${want.name}: ${r?.msg}`);
+    console.log(`monitor added: ${want.name}`);
+    return r.monitorID;
+  }
+  const diff = Object.keys(want).filter((k) => !same(have[k], want[k]));
+  if (diff.length === 0) { console.log(`monitor ok: ${want.name}`); return have.id; }
+  const r = await call("editMonitor", { ...have, ...want });
+  if (r?.ok) console.log(`monitor updated: ${want.name} (${diff.join(", ")})`);
+  else console.log(`monitor skipped: ${want.name} differs in ${diff.join(", ")} but Kuma refused the edit (${r?.msg}); change it in the admin UI`);
+  return have.id;
+}
 
 s.on("connect_error", (e) => fail(`cannot reach Kuma at ${URL}: ${e.message}`));
 s.on("connect", async () => {
@@ -36,19 +99,39 @@ s.on("connect", async () => {
     console.log("signed in");
     await new Promise((r) => setTimeout(r, 1500)); // monitorList arrives after login
 
-    const ids = [];
+    const group = async (name) => {
+      const have = Object.values(monitors).find((m) => m.name === name && m.type === "group");
+      if (have) { console.log(`group ok: ${name}`); return have.id; }
+      const r = await call("add", base({ type: "group", name, maxretries: 0, expiryNotification: false }));
+      if (!r?.ok) fail(`add group ${name}: ${r?.msg}`);
+      console.log(`group added: ${name}`);
+      return r.monitorID;
+    };
+
+    // Website: the HTTP monitors, named by their host.
+    const websiteId = await group(GROUP_WEBSITE);
+    const website = [];
     for (const url of targets) {
       const name = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
-      const have = Object.values(monitors).find((m) => m.name === name);
-      if (have) { console.log(`monitor exists: ${name}`); ids.push(have.id); continue; }
-      const r = await call("add", {
-        type: "http", name, url, method: "GET", interval: 60, retryInterval: 60, resendInterval: 0,
-        maxretries: 2, timeout: 48, maxredirects: 10, accepted_statuscodes: ["200-299"],
-        ignoreTls: false, upsideDown: false, expiryNotification: true, notificationIDList: {},
-        active: true, conditions: [], kafkaProducerBrokers: [], kafkaProducerSaslOptions: {},
-      });
-      if (!r?.ok) fail(`add ${name}: ${r?.msg}`);
-      console.log(`monitor added: ${name}`); ids.push(r.monitorID);
+      website.push(await ensure({ name, parent: websiteId }, base({ type: "http", url })));
+    }
+    const groups = [{ name: GROUP_WEBSITE, monitorList: website.map((id) => ({ id })) }];
+
+    // Live lab: keyword monitors on the daemon's anonymous health endpoint, via the public edge.
+    if (appUrl) {
+      const liveId = await group(GROUP_LIVE);
+      const live = [];
+      for (const m of LIVE) {
+        live.push(await ensure({
+          name: m.name, type: "keyword", url: `${appUrl}/api/public/health`, keyword: m.keyword, invertKeyword: false,
+          interval: 20, retryInterval: 20, maxretries: 0, timeout: 10, parent: liveId,
+        }, base({ expiryNotification: false })));
+      }
+      groups.push({ name: GROUP_LIVE, monitorList: live.map((id) => ({ id })) });
+    } else {
+      console.log("no --app given: the Live lab group is left as it is");
+      const have = Object.values(monitors).filter((m) => LIVE.some((x) => x.name === m.name)).map((m) => ({ id: m.id }));
+      if (have.length) groups.push({ name: GROUP_LIVE, monitorList: have });
     }
 
     const add = await call("addStatusPage", "Shimpaku", SLUG);
@@ -57,15 +140,16 @@ s.on("connect", async () => {
     else console.log(`status page exists: /status/${SLUG}`);
 
     const config = {
-      slug: SLUG, title: "Shimpaku", description: "Live status of the Shimpaku site and its lab.",
+      slug: SLUG, title: "Shimpaku",
+      description: "Live status of the Shimpaku site and its lab. The \"Live lab\" group goes red on purpose " +
+        "while the operator injects a real fault into the lab with Virga, and green again once it is reverted and verified.",
       icon: "/icon.svg", theme: "auto", published: true, showTags: false, showPoweredBy: false,
       showCertificateExpiry: true, footerText: "Independent project. Not affiliated with HPE or Juniper Networks.",
       customCSS: "", analyticsType: null, analyticsId: null, analyticsScriptUrl: null, domainNameList: [], autoRefreshInterval: 300,
     };
-    const save = await call("saveStatusPage", SLUG, config, "/icon.svg",
-      [{ name: "Shimpaku", monitorList: ids.map((id) => ({ id })) }]);
+    const save = await call("saveStatusPage", SLUG, config, "/icon.svg", groups);
     if (!save?.ok) fail(`saveStatusPage: ${save?.msg}`);
-    console.log(`status page published with ${ids.length} monitors`);
+    console.log(`status page published: ${groups.map((g) => `${g.name} (${g.monitorList.length})`).join(", ")}`);
     s.close(); process.exit(0);
   } catch (e) { fail(e.message); }
 });
