@@ -8,7 +8,7 @@
   var src = live && live.getAttribute("data-src");
   if (!src || !window.fetch || !window.TextDecoder) return;
   var APP = new URL(src, location.href).origin;
-  var DASH = (live.getAttribute("data-lab") || APP + "/").replace(/\/$/, "");
+  var DASH = APP; // the dashboard is the app host's root (data-lab points at a page inside it)
   var KEY = "shimw.v1";
 
   var css = "" +

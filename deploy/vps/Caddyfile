@@ -63,6 +63,9 @@
 {$SHIMPAKU_SITE_HOSTS} {
 	import common
 	root * /srv/site
+	# short cache for the page's own files (Cloudflare's default would keep a .js 4 h after a deploy);
+	# index.html references them with a ?v= so a deploy can also bust it at once
+	header Cache-Control "public, max-age=300"
 	# the dashboard link follows the host the visitor used ({{.Host}}), so every domain serves itself
 	templates
 	file_server
