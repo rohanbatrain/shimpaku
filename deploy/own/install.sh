@@ -125,8 +125,8 @@ LOG=$STATE_DIR/$LABEL.log
 # Nothing secret is ever printed on fds 1/2: the root password is read from /dev/tty and kept in
 # one shell variable, which is cleared after its single use.
 exec 3>&1
-exec > >(tee -a "$LOG") 2>&1
-printf '\n---- %s  install.sh %s\n' "$(date '+%F %T')" "$(printf '%q ' ${ORIG_ARGS[@]+"${ORIG_ARGS[@]}"})"
+exec > >(tee -a "$LOG") 2> >(tee -a "$LOG" >&2)
+printf '\n---- %s  install.sh %s\n' "$(date '+%F %T')" "$(printf '%q ' ${ORIG_ARGS[@]+"${ORIG_ARGS[@]}"})" >&2
 
 # ---- transport ------------------------------------------------------------------------------------
 KNOWN=$STATE_DIR/known_hosts

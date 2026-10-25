@@ -397,7 +397,9 @@ def evaluate(facts, profile, allow_vm=False, enable_nested=False, owned=None):
     given = {f("image_%s_path" % k, "") for k in ("router", "switch")}
     given |= {os.path.join(f("data_dir", "/home/lab"), "images", canonical_image(k, f("image_%s_path" % k, "")))
               for k in ("router", "switch") if f("image_%s_path" % k)}
-    other = [p for p in _list(f("other_images")) if p not in given and ("image", p) not in owned]
+    kinds = images_needed(profile)
+    other = [p for p in _list(f("other_images")) if p not in given and ("image", p) not in owned
+             and any(os.path.basename(p).startswith("vJunos-%s-" % k) for k in kinds)]
     if other:
         rep.add("Images dir", "WARN", "other vJunos images in the lab image dir (%s): lab-gen.py picks the last by name"
                 % ",".join(other))
