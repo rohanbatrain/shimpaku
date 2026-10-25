@@ -336,3 +336,13 @@ def test_remote_deploy_checks_its_own_arguments(args):
     p = subprocess.run(["bash", str(OWN / "remote" / "deploy.sh"), "--stage", "rest", "--dry-run", *args],
                        capture_output=True, text=True, env={**os.environ, "LC_ALL": "C"})
     assert p.returncode == 64, (args, p.stdout[-300:], p.stderr[-300:])
+
+
+def test_uninstall_never_removes_through_dot_dot():
+    fn = re.search(r"^safe_path\(\) \{.*?^\}", (OWN / "remote" / "uninstall.sh").read_text(), re.S | re.M).group(0)
+    for path, ok in (("/home/lab", True), ("/home/shimpaku/src/shimpaku", True), ("/var/lib/shimpaku-own/x", True),
+                     ("/home/../etc", False), ("/home/x/../../etc", False), ("/var/lib/shimpaku-own/../../../etc", False),
+                     ("/home/lab/./../../root", False), ("/etc", False), ("/home", False)):
+        rc = subprocess.run(["bash", "-c", f'{fn}\nsafe_path "$1"', "_", path], capture_output=True).returncode
+        assert (rc == 0) == ok, path
+
