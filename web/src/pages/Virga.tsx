@@ -178,7 +178,15 @@ function Card({ s, live, blocked, operator, hold, confirm, setConfirm, setHold, 
             It is a confirmed commit, so a device rolls itself back if the daemon dies mid-drill.
           </p>
           <label htmlFor={sid} className="vg-hold-l">Hold the fault for <b className="mono">{clock(hold)}</b></label>
-          <input id={sid} type="range" min={30} max={Math.max(30, max)} step={10} value={Math.min(hold, max)} onChange={(e) => setHold(Number(e.target.value))} />
+          <input id={sid} type="range" min={30} max={Math.max(30, max)} step={10} value={Math.min(hold, max)} onChange={(e) => setHold(Number(e.target.value))}
+            aria-describedby={s.impact === "user" && hold < 150 ? `${sid}-short` : undefined} />
+          {/* analytics/incidents.py: an incident opens after two bad minutes in a row (PERSIST_MIN) */}
+          {s.impact === "user" && hold < 150 && (
+            <p id={`${sid}-short`} className="small weak" style={{ margin: "4px 0 0" }}>
+              Short hold: Shimpaku opens an incident only after two bad minutes in a row, so it will likely revert before one opens.
+              Hold 3 minutes to watch the detection too.
+            </p>
+          )}
           <div className="vg-confirm-a">
             <button type="button" className="btn primary" disabled={submitting} onClick={onGo}>{submitting ? "Starting…" : `Inject ${s.id} on ${(s.nodes ?? []).join(", ")}`}</button>
             <button type="button" className="btn" disabled={submitting} onClick={() => setConfirm(false)}>Cancel</button>
