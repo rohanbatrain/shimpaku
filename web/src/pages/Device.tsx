@@ -6,6 +6,7 @@ import { STATE_LABEL, STATE_TONE, type LinkState, type TLink, type Fixture } fro
 import { usePoll } from "../components/poll";
 import { Load, Pill, Seg, StatusPill } from "../components/ui";
 import { ago, time } from "../format";
+import "../vizfix.css";
 
 type Iface = { ifname: string; admin: string | null; oper: string | null; description: string | null; input_errors: number | null; input_drops: number | null; fcs_errors: number | null; output_errors: number | null; output_drops: number | null; carrier_transitions: number | null; input_packets: number | null; output_packets: number | null; mtu: string | null };
 type Hist = { available?: false; reason?: string; step_s?: number; first_sample?: number; last_sample?: number; source?: string; interfaces?: { ifname: string; series: { t: number; in_bps?: number; out_bps?: number }[] }[] };
@@ -78,18 +79,18 @@ export default function Device() {
                 <div className="card flush">
                   <div className="card-h"><h2>Interfaces</h2><span className="small weak">live counters since the last clear (show interfaces extensive)</span></div>
                   {d.interfaces == null ? <div className="state small">{d.interfaces_reason ?? "Not read."}</div> : (
-                    <table className="t">
+                    <table className="t ifcards">
                       <thead><tr><th>Port</th><th>Admin / oper</th><th className="num">In pkts</th><th className="num">Out pkts</th><th className="num">In errors</th><th className="num">In drops</th><th className="num">Out errors</th><th className="num">Out drops</th><th className="num">FCS</th><th className="num">Carrier transitions</th></tr></thead>
                       <tbody>
                         {d.interfaces.map((i) => (
                           <tr key={i.ifname}>
-                            <td className="mono">{i.ifname}{i.description ? <span className="weak"> · {i.description}</span> : null}</td>
-                            <td><Pill tone={i.oper === "up" ? "ok" : i.admin === "up" ? "crit" : "neutral"}>{i.admin ?? "—"} / {i.oper ?? "—"}</Pill></td>
-                            <td className="num">{num(i.input_packets)}</td><td className="num">{num(i.output_packets)}</td>
-                            <td className="num">{num(i.input_errors)}</td><td className="num">{num(i.input_drops)}</td>
-                            <td className="num">{num(i.output_errors)}</td><td className="num">{num(i.output_drops)}</td>
-                            <td className="num" title={i.fcs_errors == null ? "not reported on virtio ports" : undefined}>{num(i.fcs_errors)}</td>
-                            <td className="num">{num(i.carrier_transitions)}</td>
+                            <td className="mono if-name">{i.ifname}{i.description ? <span className="weak"> · {i.description}</span> : null}</td>
+                            <td data-label="Admin / oper"><Pill tone={i.oper === "up" ? "ok" : i.admin === "up" ? "crit" : "neutral"}>{i.admin ?? "—"} / {i.oper ?? "—"}</Pill></td>
+                            <td className="num" data-label="In pkts">{num(i.input_packets)}</td><td className="num" data-label="Out pkts">{num(i.output_packets)}</td>
+                            <td className="num" data-label="In errors">{num(i.input_errors)}</td><td className="num" data-label="In drops">{num(i.input_drops)}</td>
+                            <td className="num" data-label="Out errors">{num(i.output_errors)}</td><td className="num" data-label="Out drops">{num(i.output_drops)}</td>
+                            <td className="num" data-label="FCS" title={i.fcs_errors == null ? "not reported on virtio ports" : undefined}>{num(i.fcs_errors)}</td>
+                            <td className="num" data-label="Carrier transitions">{num(i.carrier_transitions)}</td>
                           </tr>
                         ))}
                       </tbody>

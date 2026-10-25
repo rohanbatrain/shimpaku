@@ -3,6 +3,7 @@
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { fmtBps, type TrafficLink } from "../live";
 import "../live.css";
+import "../vizfix.css";
 
 export type LinkState = "up" | "degraded" | "down" | "unknown";
 export type TNode = {
@@ -115,13 +116,15 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
   const POS = tall ? POS_TALL : POS_WIDE;
   const SITES = (tall ? SITES_TALL : SITES_WIDE) as { id: string; label: string; sub: string; x: number; w: number; y?: number }[];
   const nodes = data.nodes.filter((n) => POS[n.name]);
+  // the top row of each site names itself above the glyph: its links run downward through the usual label spot
+  const topY = (n: TNode) => Math.min(...nodes.filter((m) => FABRIC.has(m.name) === FABRIC.has(n.name)).map((m) => POS[m.name][1]));
   const fx = data.fixture;
   const fxColor = fx.present == null ? STATE_COLOR.unknown : fx.present ? STATE_COLOR.up : STATE_COLOR.down;
   const key = (n: string) => (e: KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect?.(n); }
   };
   return (
-    <svg className={`topo${compact ? " compact" : ""}`} viewBox={tall ? "0 0 544 784" : "0 0 1040 400"} role="group" aria-label="Lab topology: campus and fabric">
+    <svg className={`topo${compact ? " compact" : ""}${tall ? " tall" : ""}`} viewBox={tall ? "0 0 544 784" : "0 0 1040 400"} role="group" aria-label="Lab topology: campus and fabric">
       <defs>
         <filter id="tshadow" x="-30%" y="-30%" width="160%" height="160%">
           <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#0E1A16" floodOpacity=".14" />
@@ -130,8 +133,7 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
       {SITES.map((s) => (
         <g key={s.id} aria-hidden>
           <rect x={s.x} y={(s.y ?? 0) + 14} width={s.w} height="372" rx="12" className="topo-site" />
-          <text x={s.x + 16} y={(s.y ?? 0) + 40} className="topo-site-t">{s.label}</text>
-          {!compact && <text x={s.x + 16} y={(s.y ?? 0) + 58} className="topo-site-s">{s.sub}</text>}
+          <text x={s.x + 16} y={(s.y ?? 0) + 40} className="topo-site-t">{s.label}{!compact && <tspan className="topo-site-s" dx="12">{s.sub}</tspan>}</text>
         </g>
       ))}
       {/* links */}
@@ -146,10 +148,18 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
         const st = SITES.find((x) => x.id === l.site);
         const side = st && a[0] < st.x + st.w / 2 ? -1 : 1;
         const diag = !vert && Math.abs(b[1] - a[1]) > 20;
-        const off: [number, number] = vert ? [side * 12, 0] : [0, diag ? -8 : -9];
+        const off: [number, number] = vert ? [side * 14, 0] : [0, -16];
         const anchor = vert ? (side < 0 ? "end" : "start") : "middle";
-        const top = (p: [number, number], q: [number, number]) => (vert ? (p[1] < q[1] ? 92 : 56) : diag ? 96 : 62);
-        const la = along(a, b, top(a, b)), lb = along(b, a, top(b, a));
+        const top = (p: [number, number], q: [number, number]) => (vert ? (p[1] < q[1] ? 92 : 56) : 62);
+        // a diagonal's port labels sit beside the line, on the side it leaves: above a line that runs
+        // down from its node, below one that runs up; text extends the way the line goes, so the gap widens
+        const lab = (p: [number, number], q: [number, number]) => {
+          if (!diag) { const [x, y] = along(p, q, top(p, q)); return { x: x + off[0], y: y + off[1], anchor }; }
+          const [x, y] = along(p, q, tall ? 46 : 70);
+          const down = q[1] > p[1], right = q[0] > p[0];
+          return { x: x + (right ? 4 : -4), y: y + (down ? -9 : 17), anchor: right ? "start" : "end" };
+        };
+        const la = lab(a, b), lb = lab(b, a);
         const hl = (selected && (l.a === selected || l.b === selected)) || selectedLink === l.id;
         const tr = tmap.get(l.id);
         return (
@@ -175,8 +185,8 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
             )}
             {!compact && (
               <>
-                <text x={la[0] + off[0]} y={la[1] + off[1]} className="topo-if" textAnchor={anchor}>{l.a_if}</text>
-                <text x={lb[0] + off[0]} y={lb[1] + off[1]} className="topo-if" textAnchor={anchor}>{l.b_if}</text>
+                <text x={la.x} y={la.y} className="topo-if" textAnchor={la.anchor as "start" | "middle" | "end"}>{l.a_if}</text>
+                <text x={lb.x} y={lb.y} className="topo-if" textAnchor={lb.anchor as "start" | "middle" | "end"}>{l.b_if}</text>
               </>
             )}
           </g>
@@ -199,11 +209,12 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
         const [x, y] = POS[n.name];
         const c = STATE_COLOR[n.state];
         const sel = selected === n.name;
+        const above = y === topY(n);
         const label = `${n.name}, ${n.role}, ${n.site}: ${STATE_LABEL[n.state]}${n.incidents.length ? `, ${n.incidents.length} open incident` : ""}`;
         return (
           <g key={n.name} className={`topo-node${sel ? " sel" : ""}${fcls(!!focus?.nodes.includes(n.name))}`} transform={`translate(${x} ${y})`} role="button" tabIndex={onSelect ? 0 : -1}
             aria-label={label} aria-pressed={onSelect ? sel : undefined} onClick={() => onSelect?.(n.name)} onKeyDown={key(n.name)}>
-            <rect className="topo-hit" x="-44" y="-44" width="88" height="104" rx="10" />
+            <rect className="topo-hit" x="-50" y={above ? -66 : -44} width="100" height="120" rx="10" />
             {sel && <circle r="38" fill="none" stroke="#01A982" strokeWidth="3" opacity=".35" />}
             {focus?.nodes.includes(n.name) && <circle r="40" className="topo-focus-ring" />}
             <circle r="30" fill="#fff" stroke={c} strokeWidth="4" filter="url(#tshadow)" />
@@ -212,8 +223,14 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
               <circle r="8" fill={c} stroke="#fff" strokeWidth="2" />
               {n.state !== "up" && <text y="3.5" textAnchor="middle" className="topo-mark">{n.state === "unknown" ? "?" : "!"}</text>}
             </g>
-            <text y="50" textAnchor="middle" className="topo-name">{n.name}</text>
-            {!compact && <text y="66" textAnchor="middle" className="topo-role">{n.role}</text>}
+            {above ? (
+              <text y="-46" textAnchor="middle" className="topo-name">{n.name}{!compact && <tspan className="topo-role" dx="7">{n.role}</tspan>}</text>
+            ) : (
+              <>
+                <text y="54" textAnchor="middle" className="topo-name">{n.name}</text>
+                {!compact && <text y="70" textAnchor="middle" className="topo-role">{n.role}</text>}
+              </>
+            )}
           </g>
         );
       })}
@@ -235,27 +252,28 @@ export function Legend() {
   );
 }
 
-/** Screen-reader (and narrow-screen) fallback: every link and its evidence as a table. */
+/** Screen-reader fallback and the Links list: a table on wide screens, one card per link on phones. */
 export function LinkTable({ data, className }: { data: Topo; className?: string }) {
+  const fx = data.fixture;
   return (
-    <table className={`t ${className ?? ""}`}>
+    <table className={`t linkcards ${className ?? ""}`}>
       <caption className="sr-only">Topology links and their live state</caption>
       <thead><tr><th>Link</th><th>Site</th><th>Role</th><th>State</th><th>Evidence</th></tr></thead>
       <tbody>
         {data.links.map((l) => (
           <tr key={l.id}>
-            <td className="mono">{l.a} {l.a_if} ↔ {l.b} {l.b_if}</td>
-            <td>{l.site}</td>
-            <td>{l.role ?? "—"}</td>
-            <td><span className={`pill ${STATE_TONE[l.state]}`}><span className="dot" aria-hidden />{STATE_LABEL[l.state]}</span></td>
-            <td className="small" style={{ whiteSpace: "normal" }}>{[...l.bad, ...l.good].join(" · ") || "no evidence reported"}</td>
+            <td className="mono lc-link" data-label="Link">{l.a} {l.a_if} ↔ {l.b} {l.b_if}</td>
+            <td data-label="Site">{l.site}</td>
+            <td data-label="Role">{l.role ?? "—"}</td>
+            <td className="lc-state" data-label="State"><span className={`pill ${STATE_TONE[l.state]}`}><span className="dot" aria-hidden />{STATE_LABEL[l.state]}</span></td>
+            <td className="small lc-ev" data-label="Evidence">{[...l.bad, ...l.good].join(" · ") || "no evidence reported"}</td>
           </tr>
         ))}
         <tr>
-          <td className="mono">{data.fixture.device} {data.fixture.ifname}</td>
-          <td>campus</td><td>demo trunk</td>
-          <td><span className={`pill ${data.fixture.present == null ? "neutral" : data.fixture.present ? "ok" : "crit"}`}><span className="dot" aria-hidden />VLAN {data.fixture.vlan} {data.fixture.present == null ? "unknown" : data.fixture.present ? "present" : "missing"}</span></td>
-          <td className="small" style={{ whiteSpace: "normal" }}>{data.fixture.reason ?? `oper ${data.fixture.oper ?? "—"} (wired to nothing by design)`}</td>
+          <td className="mono lc-link" data-label="Link">{fx.device} {fx.ifname}</td>
+          <td data-label="Site">campus</td><td data-label="Role">demo trunk</td>
+          <td className="lc-state" data-label="State"><span className={`pill ${fx.present == null ? "neutral" : fx.present ? "ok" : "crit"}`}><span className="dot" aria-hidden />VLAN {fx.vlan} {fx.present == null ? "unknown" : fx.present ? "present" : "missing"}</span></td>
+          <td className="small lc-ev" data-label="Evidence">{fx.reason ?? `oper ${fx.oper ?? "—"} (wired to nothing by design)`}</td>
         </tr>
       </tbody>
     </table>
