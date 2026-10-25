@@ -14,6 +14,19 @@ bonsai juniper; no HPE/Juniper/Mist/Marvis trademark is used anywhere in this pr
 > The proof is a 35-scenario fault-injection benchmark and an agent-safety red team, both
 > runnable on demand, not a one-off demo recording.
 
+**The lab behind it.** Seven Junos devices run as VMs on one libvirt/KVM host: r1 and r2
+(vJunos-router), sw1, spine1, spine2, leaf1 and leaf2 (vJunos-switch, Junos 26.2), 4 vCPU and
+5 GiB each, streaming gNMI telemetry every 10 s and read over NETCONF. They run the same Junos OS
+as real hardware, per Juniper's documentation: vJunos-switch "is built using EX9214 as a reference
+Juniper switch" ([overview](https://www.juniper.net/documentation/us/en/software/vjunos/vjunos-switch-kvm/topics/vjunos-switch-overview-understanding.html)),
+and vJunos-router "is built using vMX as a reference Juniper router", with "feature consistency
+with the physical MX Series platforms" ([overview](https://www.juniper.net/documentation/us/en/software/vjunos-router/vjunos-router-kvm/topics/vjunos-router-overview-understanding.html)).
+They do not have that hardware's forwarding: the data plane is software in an x86 VM, "up to
+100 Mbps aggregated over all the interfaces", labs only. The dashboard's **Hardware** view
+(`/hardware`) draws the host and each device as a front panel whose port LEDs, traffic blinks,
+CPU and memory are read live; the drawings are original and generic, not product images
+(research: [`docs/research/2026-10-25-hardware-twin.md`](docs/research/2026-10-25-hardware-twin.md)).
+
 ## 30-second tour
 
 ```bash
