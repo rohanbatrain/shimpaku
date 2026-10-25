@@ -125,9 +125,16 @@ class DeclineBody(BaseModel):
 VISITOR_ASK = "Request a live session to use Shim"
 
 
+class AskTurn(BaseModel):
+    q: str = Field(max_length=2000)
+    a: str = Field(max_length=2000)
+
+
 class AskBody(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
     context: dict[str, Any] | None = None
+    # the browser's last few turns of this conversation, so Shim can follow up (never stored here)
+    history: list[AskTurn] = Field(default_factory=list, max_length=8)
 
 
 def _cookie_names(secure: bool) -> tuple[str, str]:
@@ -601,6 +608,8 @@ def create_app(
             extra["llm_key"] = key
         rate("ask", p)
         params = inspect.signature(ask_fn).parameters
+        if "history" in params and body.history:
+            extra["history"] = [t.model_dump() for t in body.history]
         if "role" in params:
             # Shim proposes as the asker: a principal that may not propose (a `read` token) gets a
             # visitor's Shim, which the engine refuses to propose or cancel for

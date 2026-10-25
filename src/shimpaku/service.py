@@ -452,7 +452,7 @@ def _args_summary(args: Any) -> str:
 
 async def assistant_ask(question: str, principal: str, context: dict | None = None, *,
                         llm_key: str | None = None, role: str | None = None,
-                        lease_id: str | None = None):
+                        lease_id: str | None = None, history: list[dict] | None = None):
     """Run Shim for a dashboard user and translate its events into the panel's contract
     (meta, tool, token, error, done). Shim acts as `shim:<principal>` with the asker's role and
     lease, so a tester's assistant is held to the tester gate; it can propose, never approve.
@@ -476,7 +476,13 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
     streamed = False
     try:
         bot = Assistant(_mcp_server, llm_factory=factory)
-        async for ev in bot.ask(question):
+        # earlier turns as plain chat messages: Shim follows up, but its tools still read live state
+        past: list[dict] = []
+        for h in (history or [])[-8:]:
+            if h.get("q") and h.get("a"):
+                past += [{"role": "user", "content": str(h["q"])[:2000]},
+                         {"role": "assistant", "content": str(h["a"])[:2000]}]
+        async for ev in (bot.ask(question, history=past) if past else bot.ask(question)):
             t = ev.get("type")
             if t == "route":
                 yield {"type": "meta", "model": ev.get("model", "?")}

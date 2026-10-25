@@ -110,13 +110,19 @@ def break_rows(audit: dict) -> list[dict]:
     return sorted(out, key=lambda b: -b["t"])
 
 
-def first_dip(sle: Any, start: float, end: float) -> dict | None:
-    """The first SLE minute in ``[start, end]`` below the SLE's goal (100 % when none is set)."""
+DEVICE_SLES = frozenset({"fabric_health", "device_health"})
+
+
+def first_dip(sle: Any, start: float, end: float, skip: frozenset[str] = frozenset()) -> dict | None:
+    """The first SLE minute in ``[start, end]`` below the SLE's goal (100 % when none is set).
+    SLEs whose id is in ``skip`` are not looked at."""
     v = view.sle_summary(sle) if isinstance(sle, dict) else None
     if not isinstance(v, dict) or v.get("available") is False:
         return None
     best = None
     for s in v.get("sles") or []:
+        if s.get("id") in skip:
+            continue
         goal = s.get("goal_pct") if isinstance(s.get("goal_pct"), (int, float)) else 100
         for p in s.get("series") or []:
             t, val = view.ts(p.get("t")), p.get("value")
@@ -184,20 +190,26 @@ def build_run(a: dict | None, breaks: list[dict], prev_created: float | None, *,
 
     # probes / SLE dip and incident: only meaningful once there is a fault to look after
     if start is not None:
-        dip = first_dip(sle, start, end_t or now)
+        # The VLAN demo breaks a trunk wired to nothing: device health (CPU, memory, reachability of
+        # the box) cannot show it, so a device-health dip then is a coincidence, not the fault's
+        # effect. A Virga drill does hit traffic and devices, so it keeps every SLE.
+        virga = bool(brk and brk.get("virga"))
+        dip = first_dip(sle, start, end_t or now, frozenset() if virga else DEVICE_SLES)
         if dip:
             done("dip", dip["t"], f"first campus minute below goal after the fault: {dip['sle']} {dip['value']:g}%"
                                   f"{' (n = ' + str(dip['n']) + ')' if dip.get('n') is not None else ''}")
         elif sle is None or (isinstance(sle, dict) and sle.get("available") is False):
             st["dip"].update(state="skipped", detail="Service levels not collected")
         elif a is not None:
-            st["dip"].update(state="skipped", detail="No probe-minute below goal recorded in this run")
+            st["dip"].update(state="skipped", detail="No probe-minute below goal recorded in this run" + (
+                "" if virga else " (expected: the demo trunk carries no user traffic)"))
         inc = _incident(incidents, a, start, end_t or now)
         if inc:
             done("incident", view.ts(inc.get("opened_at")), f"{inc.get('id') or inc.get('incident_id')}: "
                                                              f"{_scrub(inc.get('title') or '', 120)}")
         elif a is not None:
-            st["incident"].update(state="skipped", detail="No incident opened for this fault")
+            st["incident"].update(state="skipped", detail="No incident opened for this fault" + (
+                "" if brk and brk.get("virga") else " (expected: with no traffic on the demo trunk, no service level crossed its threshold)"))
 
     if a is not None:
         c = _caller(a)

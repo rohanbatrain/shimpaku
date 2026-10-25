@@ -213,3 +213,15 @@ def test_stream_emits_a_theatre_event():
             if line.startswith("event:"):
                 assert line.split(":", 1)[1].strip() == "theatre"
                 break
+
+
+def test_vlan_demo_dip_ignores_device_health():
+    # a VLAN removed from an unconnected trunk cannot dent device health: a CPU blip then is not the fault
+    from shimpaku.api import routes_theatre as rt
+    sle = {"sles": [{"id": "fabric_health", "name": "Device health", "goal_pct": 95,
+                     "series": [{"t": T + 5, "value": 33.3, "n": 6}]},
+                    {"id": "app_reachability", "name": "App reachability", "goal_pct": 95,
+                     "series": [{"t": T + 40, "value": 80, "n": 10}]}]}
+    assert rt.first_dip(sle, T, T + 100)["t"] == T + 5
+    assert rt.first_dip(sle, T, T + 100, rt.DEVICE_SLES)["t"] == T + 40
+
