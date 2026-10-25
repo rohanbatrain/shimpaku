@@ -5,19 +5,7 @@ import TopBar from "../components/TopBar";
 import { usePoll } from "../components/poll";
 import { Load, Pill } from "../components/ui";
 import { STATE_TONE } from "../components/TopoMap";
-import { agoS, ChassisSketch, Faceplate, gib, HypervisorFigure, PortDetail, sortDevices, STATE_WORD, uptime, useNow, type Hardware, type HwDevice } from "../components/twin";
-
-export function LiveClock({ hw, now }: { hw: Hardware; now: number }) {
-  const t = hw.telemetry.last_sample_t;
-  const stale = !t || now - t > 60;
-  return (
-    <span className="small" aria-live="off">
-      <span className={`live-dot${stale ? " stale" : ""}`} aria-hidden />
-      {t ? <>Last gNMI sample <b>{agoS(t, now)}</b> · streamed every {hw.telemetry.interval_s} s · page read {agoS(hw.generated_at, now)}</>
-        : "No telemetry sample stored yet"}
-    </span>
-  );
-}
+import { agoS, ChassisSketch, Faceplate, gib, HypervisorFigure, LiveClock, PortDetail, sortDevices, STATE_WORD, uptime, useNow, type Hardware, type HwDevice } from "../components/twin";
 
 function HypervisorCard({ hw, sel, onSelect, now }: { hw: Hardware; sel: string | null; onSelect: (n: string) => void; now: number }) {
   const hv = hw.hypervisor;

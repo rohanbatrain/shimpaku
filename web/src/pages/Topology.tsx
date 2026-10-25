@@ -122,7 +122,10 @@ function NodePanel({ n, data, onClose, past }: { n: TNode; data: Topo; onClose: 
           </ul>
         )}
       </div>
-      <Link className="btn primary" to={`/devices/${n.name}`} style={{ alignSelf: "flex-start" }}>Open device page →</Link>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Link className="btn primary" to={`/devices/${n.name}`}>Open device page →</Link>
+        <Link className="btn" to={`/hardware?d=${encodeURIComponent(n.name)}`}>Front panel →</Link>
+      </div>
     </aside>
   );
 }

@@ -1,7 +1,7 @@
 // The README architecture as a clickable diagram. Every path and evidence item names a real file in
 // this repository; nothing here is fetched from the lab.
 import type { KeyboardEvent } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import TopBar from "../components/TopBar";
 import "../public.css";
 
@@ -9,14 +9,14 @@ const REPO: string = ((import.meta as any).env?.VITE_REPO_URL ?? "").replace(/\/
 
 type Part = {
   id: string; title: string; sub: string; x: number; y: number; w: number; h: number;
-  what: string[]; files: string[]; evidence: { label: string; path: string }[];
+  what: string[]; files: string[]; evidence: { label: string; path: string }[]; live?: boolean;
 };
 
 const PARTS: Part[] = [
-  { id: "fabric", title: "Fabric", sub: "spine1/2 · leaf1/2", x: 30, y: 82, w: 130, h: 52,
+  { id: "fabric", title: "Fabric", sub: "spine1/2 · leaf1/2", x: 30, y: 82, w: 130, h: 52, live: true,
     what: ["vJunos switches: OSPF + BFD underlay, EVPN-VXLAN.", "Reachable only from the lab host's management network; never from the internet."],
     files: ["src/shimpaku/devices.py", "src/shimpaku/topology.py"], evidence: [{ label: "Topology parsing tests", path: "tests/collector/test_topology.py" }] },
-  { id: "campus", title: "Campus", sub: "r1 · r2 · sw1", x: 30, y: 168, w: 130, h: 52,
+  { id: "campus", title: "Campus", sub: "r1 · r2 · sw1", x: 30, y: 168, w: 130, h: 52, live: true,
     what: ["The OSPF exercise (r1–r2) and the access switch sw1 with the demo fixture port.", "RPM probes run from these devices; their results feed app reachability and the probe heatmap."],
     files: ["src/shimpaku/devices.py", "src/shimpaku/actions/fixture.py", "docs/build/rpm-config.set"], evidence: [{ label: "RPM parsing tests", path: "tests/analytics/test_analytics.py" }] },
   { id: "collector", title: "Collector", sub: "gNMI dial-in · events · RPM", x: 220, y: 70, w: 132, h: 52,
@@ -84,6 +84,7 @@ const EDGES: { d: string; write?: boolean; dash?: boolean }[] = [
 
 export default function Architecture() {
   const [sp, setSp] = useSearchParams();
+  const nav = useNavigate();
   const sel = PARTS.find((p) => p.id === sp.get("c")) ?? PARTS.find((p) => p.id === "mcp")!;
   const pick = (id: string) => { sp.set("c", id); setSp(sp, { replace: true }); };
   const key = (e: KeyboardEvent, id: string) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(id); } };
@@ -104,7 +105,8 @@ export default function Architecture() {
                   <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8a9a93" /></marker>
                   <marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#00785c" /></marker>
                 </defs>
-                <rect className="zone-r" x="16" y="50" width="158" height="190" rx="8" /><text className="zone" x="26" y="68">Lab · libvirt</text>
+                <rect className="zone-r" x="16" y="50" width="158" height="190" rx="8" />
+                <a href="/hardware" onClick={(e) => { e.preventDefault(); nav("/hardware"); }}><text className="zone zone-link" x="26" y="68">Lab · libvirt · 7 VMs</text></a>
                 <rect className="zone-r" x="204" y="34" width="524" height="330" rx="8" /><text className="zone" x="214" y="52">shimpakud · one process, one port</text>
                 <rect className="zone-r" x="740" y="50" width="152" height="270" rx="8" /><text className="zone" x="750" y="68">Outside</text>
                 <rect className="zone-r" x="204" y="404" width="550" height="104" rx="8" /><text className="zone" x="214" y="424">VPS · public edge</text>
@@ -134,6 +136,7 @@ export default function Architecture() {
             <div className="small weak">{sel.sub}</div>
             <h2 style={{ marginTop: 12 }}>What it does</h2>
             <ul>{sel.what.map((w) => <li key={w}>{w}</li>)}</ul>
+            {sel.live && <p style={{ margin: "4px 0 0" }}><Link className="btn primary" to="/hardware">See the seven devices live on Hardware →</Link></p>}
             <h2 style={{ marginTop: 12 }}>Code</h2>
             <ul>{sel.files.map((f) => <li key={f}>{link(f)}</li>)}</ul>
             <h2 style={{ marginTop: 12 }}>Evidence</h2>

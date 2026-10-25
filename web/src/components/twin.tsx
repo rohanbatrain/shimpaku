@@ -2,6 +2,8 @@
 // primitives vendored from anatomy, MIT), and each guest as an original, generic front panel.
 // Every LED, port and number comes from GET /api/hardware; nothing collected = shown as such.
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Link, useNavigate } from "react-router";
+import { usePoll } from "./poll";
 import { fitProjection, insetPlan, iso, planOutline, sideMatrix, slabOf, topMatrix, type Plan, type Point3 } from "../vendor/anatomy/iso-kit";
 import { Solid } from "../vendor/anatomy/Solid";
 import { fmtBps } from "../live";
@@ -353,5 +355,42 @@ export function ChassisSketch({ kind }: { kind: string }) {
         <rect x={1} y={h - 3.4} width={plan.w - 2} height={2.4} rx={0.3} className="cs-band" />
       </g>
     </svg>
+  );
+}
+
+export function LiveClock({ hw, now }: { hw: Hardware; now: number }) {
+  const t = hw.telemetry.last_sample_t;
+  const stale = !t || now - t > 60;
+  return (
+    <span className="small" aria-live="off">
+      <span className={`live-dot${stale ? " stale" : ""}`} aria-hidden />
+      {t ? <>Last gNMI sample <b>{agoS(t, now)}</b> · streamed every {hw.telemetry.interval_s} s · page read {agoS(hw.generated_at, now)}</>
+        : "No telemetry sample stored yet"}
+    </span>
+  );
+}
+
+
+/** Overview: the hypervisor figure, compact, with the live clock; a guest opens its front panel. */
+export function TwinStrip() {
+  const q = usePoll<Hardware>("/api/hardware", 10000);
+  const nav = useNavigate();
+  const now = useNow(1000);
+  const hw = q.data;
+  if (!hw) return null; // the strip is an addition: on error or while loading the Overview reads as before
+  const running = hw.hypervisor.guest_counts.running;
+  return (
+    <section className="card twin-strip" aria-labelledby="twin-h">
+      <div><HypervisorFigure hw={hw} compact onSelect={(n) => nav(`/hardware?d=${encodeURIComponent(n)}`)} /></div>
+      <div>
+        <h2 id="twin-h">Seven real Junos devices, live</h2>
+        <p>
+          {hw.devices.length} vJunos VMs on one {hw.hypervisor.kind} host{running != null ? `, ${running} running` : ""}: the Junos of
+          EX9214-class switches and MX Series routers, streaming gNMI every {hw.telemetry.interval_s} s. The LEDs are their live port state.
+        </p>
+        <div style={{ marginBottom: 8 }}><LiveClock hw={hw} now={now} /></div>
+        <Link className="btn primary" to="/hardware">Open the hardware view →</Link>
+      </div>
+    </section>
   );
 }
