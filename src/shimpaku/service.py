@@ -111,6 +111,12 @@ async def iface_get_errors(device: str, ifname: str | None = None) -> dict:
     return await _device_read(devices.iface_errors, device, ifname)
 
 
+async def device_get_facts(device: str) -> dict:
+    """Junos version, product model and uptime of one device (live, two read RPCs):
+    `{"device", "version", "model", "uptime_s", "booted_at"}`; a field not found is None."""
+    return await _device_read(devices.facts, device)
+
+
 async def port_get_config(device: str, ifname: str) -> dict:
     """One port: own config, inherited config (apply-groups / interface-range expanded), VLAN
     membership, LLDP neighbour, live role and the topology's intended role."""

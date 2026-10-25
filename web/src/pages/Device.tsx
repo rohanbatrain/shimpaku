@@ -36,6 +36,7 @@ export default function Device() {
     <>
       <TopBar title={name} crumbs={<><Link to="/topology">Topology</Link> / device</>}>
         {d && <Pill tone={STATE_TONE[d.device.state]}>{STATE_LABEL[d.device.state]}</Pill>}
+        <Link className="btn" to={`/hardware?d=${encodeURIComponent(name)}`}>Front panel →</Link>
         <Seg label="History window" value={win} options={W} onChange={setWin} />
       </TopBar>
       <div className="content">

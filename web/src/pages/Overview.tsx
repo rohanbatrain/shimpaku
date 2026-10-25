@@ -6,6 +6,7 @@ import { Load, StatusPill } from "../components/ui";
 import { statusLabel, STATUS_TONE, time } from "../format";
 import { applyAsOf, Freshness } from "./Topology";
 import EventTicker from "../components/EventTicker";
+import { TwinStrip } from "../components/twin";
 import Scrubber, { useTimeParam } from "../components/Scrubber";
 import { useAsOf, useTraffic } from "../live";
 import { FunnelSummary, type FunnelData } from "../components/Funnel";
@@ -78,6 +79,7 @@ export default function Overview() {
         <Freshness t={ov.data?.generated_at} />
       </TopBar>
       <div className="content">
+        <TwinStrip />
         <Load q={ov} rows={3}>
           {(o) => (
             <div className="kpis">

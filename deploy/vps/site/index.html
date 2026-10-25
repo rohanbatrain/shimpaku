@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shimpaku</title>
-<meta name="description" content="A Mist-style assurance NMS for a Junos lab: service levels, blast radius, and an agent that can only propose changes behind guardrails, human approval and commit confirmed.">
+<meta name="description" content="Seven real vJunos devices on one hypervisor, live, under a Mist-style assurance NMS: service levels, blast radius, and an agent that can only propose changes behind guardrails, human approval and commit confirmed.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2301A982'/%3E%3Cpath d='M9 22c3-1 5-4 7-9 2 5 4 8 7 9' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
 :root{--bg:#fbfcfb;--fg:#17201d;--muted:#5b6662;--line:#e2e7e5;--card:#fff;--accent:#01A982;--accent-ink:#00785C;--warn:#8a5a00}
@@ -50,6 +50,14 @@ a{color:var(--accent-ink)}
 .live li b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line);margin-right:7px;vertical-align:2px}
 .live li.ok b::before{background:var(--accent)}.live li.warn b::before{background:var(--warn)}.live li.bad b::before{background:#c0392b}
 .live p{margin:0;font-size:13px;color:var(--muted)}.live .live-note{margin-top:8px;font-size:12px}
+.hw{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:14px}
+.hw .card b{display:block;font-size:22px;color:var(--accent-ink);line-height:1.25}
+.rack{list-style:none;margin:0;padding:12px;display:grid;gap:6px;background:#16211c;border-radius:10px}
+.rack li{display:flex;align-items:center;gap:10px;background:#22302b;border:1px solid #33433d;border-radius:6px;padding:6px 10px;color:#e8eeeb;font:13px ui-monospace,SFMono-Regular,Menlo,monospace}
+.rack li span{color:#9fb2aa;font-size:12px}
+.rack li em{margin-left:auto;font-style:normal;color:#9fb2aa;font-size:12px}
+.split{display:grid;gap:18px;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}
+@media (max-width:760px){.split{grid-template-columns:1fr}}
 @media (max-width:560px){header{padding-top:36px}td,th{padding:8px 4px}}
 </style>
 </head>
@@ -58,11 +66,13 @@ a{color:var(--accent-ink)}
 <header>
   <span class="tag">Independent project · Junos lab · agent-first</span>
   <h1>Shimpaku</h1>
-  <p class="lede">A Mist-style assurance system for a seven-device vJunos lab. It turns streaming
-  telemetry into service levels, isolates a fault's blast radius, and lets an AI agent
-  <em>propose</em> a fix, but never apply one on its own.</p>
+  <p class="lede">Seven real Junos devices run as VMs on one hypervisor, streaming telemetry every
+  10 seconds, and you can watch them live. Shimpaku is a Mist-style assurance system on top of
+  them: it turns that telemetry into service levels, isolates a fault's blast radius, and lets an
+  AI agent <em>propose</em> a fix, but never apply one on its own.</p>
   <div class="cta">
     <a class="btn primary" href="https://app.{{.Host}}/">Open the dashboard</a>
+    <a class="btn" href="https://app.{{.Host}}/hardware">See the devices live</a>
     <a class="btn" href="__REPO__">Source and evidence</a>
     <a class="btn" href="https://app.{{.Host}}/architecture">Architecture</a>
     <a class="btn" href="__REPO__/blob/main/docs/INCIDENTS.md">What went wrong</a>
@@ -76,6 +86,44 @@ a{color:var(--accent-ink)}
   <p class="note">The public dashboard is a read-only replay recorded from the live lab. The
   switches are never reachable from the internet.</p>
 </header>
+
+<section id="hardware">
+  <h2>Seven real Junos devices, live</h2>
+  <div class="split">
+    <div>
+      <p style="margin:0 0 10px">The lab is not a simulation of a network: it is seven Junos VMs on one
+      libvirt/KVM host, a campus (r1, r2, sw1) and a two-spine, two-leaf EVPN-VXLAN fabric. Each streams
+      gNMI telemetry every 10 seconds and answers NETCONF reads, and every number on the dashboard comes
+      from them. The dashboard's <a href="https://app.{{.Host}}/hardware">Hardware view</a> draws each one as a
+      front panel whose port LEDs, traffic blinks, CPU and memory are read live.</p>
+      <p style="margin:0 0 10px">The images run the same Junos OS as real hardware, per Juniper's own
+      documentation: vJunos-switch is built "using EX9214 as a reference Juniper switch", and vJunos-router
+      "using vMX as a reference Juniper router", with "feature consistency with the physical MX Series
+      platforms". What they do not have is the hardware's forwarding: the data plane is software in an x86
+      VM, limited to "up to 100 Mbps aggregated over all the interfaces", and Juniper says they are for labs
+      only. (<a href="https://www.juniper.net/documentation/us/en/software/vjunos/vjunos-switch-kvm/topics/vjunos-switch-overview-understanding.html">vJunos-switch</a>,
+      <a href="https://www.juniper.net/documentation/us/en/software/vjunos-router/vjunos-router-kvm/topics/vjunos-router-overview-understanding.html">vJunos-router</a>.)</p>
+      <div class="cta" style="margin-top:14px"><a class="btn primary" href="https://app.{{.Host}}/hardware">Watch them live</a></div>
+    </div>
+    <div>
+      <ul class="rack" aria-label="The seven lab devices: name, image and role (a list, not live state)">
+        <li>r1 <span>vJunos-router</span><em>campus router</em></li>
+        <li>r2 <span>vJunos-router</span><em>campus router</em></li>
+        <li>sw1 <span>vJunos-switch</span><em>access switch</em></li>
+        <li>spine1 <span>vJunos-switch</span><em>fabric spine</em></li>
+        <li>spine2 <span>vJunos-switch</span><em>fabric spine</em></li>
+        <li>leaf1 <span>vJunos-switch</span><em>fabric leaf</em></li>
+        <li>leaf2 <span>vJunos-switch</span><em>fabric leaf</em></li>
+      </ul>
+      <p class="note" style="margin:8px 0 0">This list is static. Live state is on the dashboard and in the status strip above.</p>
+    </div>
+  </div>
+  <div class="hw">
+    <div class="card"><b>7 VMs</b><p>on one KVM host, 4 vCPU and 5 GiB each as declared in the lab files: Juniper's minimum</p></div>
+    <div class="card"><b>every 10 s</b><p>gNMI dial-in telemetry from every device, plus NETCONF reads; no SNMP</p></div>
+    <div class="card"><b>EX9214 · MX</b><p>the reference platforms Juniper names for vJunos-switch and vJunos-router</p></div>
+  </div>
+</section>
 
 <section>
   <h2>The write path is the product</h2>

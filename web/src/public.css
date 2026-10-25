@@ -58,3 +58,4 @@
 @media (max-width: 600px) { .arch-svg { min-width: 620px; } }
 .hm-tick.end { direction: rtl; }
 .hm-tick { position: relative; }
+.arch-svg text.zone-link { fill: var(--p-ink); cursor: pointer; text-decoration: underline; }
