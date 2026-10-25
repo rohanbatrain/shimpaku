@@ -84,7 +84,7 @@
 		path /status /status/* /api/status-page/* /assets/* /upload/* /icon.svg /icon-192x192.png /icon-512x512.png /favicon.ico /apple-touch-icon.png /manifest.json
 	}
 	handle @kuma_public {
-		reverse_proxy uptime-kuma:3001 {
+		reverse_proxy {$SHIMPAKU_KUMA_UPSTREAM:uptime-kuma:3001} {
 			header_up X-Forwarded-For {client_ip}
 			header_up X-Real-IP {client_ip}
 		}
@@ -219,7 +219,7 @@
 
 	# ---- Reads: live first, replay when the lab's health check fails.
 	handle @api {
-		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} replay:8780 {
+		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {$SHIMPAKU_REPLAY_UPSTREAM:replay:8780} {
 			lb_policy first
 			import upstream_opts
 		}

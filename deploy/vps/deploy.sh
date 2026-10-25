@@ -29,8 +29,9 @@ mkdir -p "$HERE/snapshot" "$HERE/site-built"
 if [[ "${1:-}" != "--no-snapshot" ]]; then
   echo "== snapshot on the lab host"
   # Redact the lab host's names and the service user; the export refuses to write if any survive.
-  ssh "$LAB" 'cd ~/src/shimpaku && .venv/bin/shimpaku snapshot export --out /tmp/shimpaku-snapshot.json \
-      --redact "$(uname -n)" --redact "$USER"'
+  # Read the daemon where it listens (its NetBird address once public); reads are a public visitor's.
+  ssh "$LAB" "cd ~/src/shimpaku && .venv/bin/shimpaku snapshot export --out /tmp/shimpaku-snapshot.json \
+      --base http://$LAB_UP --redact \"\$(uname -n)\" --redact \"\$USER\""
   scp -q "$LAB:/tmp/shimpaku-snapshot.json" "$HERE/snapshot/snapshot.json"
   ssh "$LAB" 'rm -f /tmp/shimpaku-snapshot.json'
 fi
