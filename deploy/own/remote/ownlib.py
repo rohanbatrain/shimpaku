@@ -111,6 +111,13 @@ def resources(profile, running_owned=0, image_bytes=0):
     }
 
 
+def canonical_image(kind, path):
+    """The name the image gets in the lab image dir: lab-gen.py globs vJunos-<kind>-*.qcow2.
+    Mirrors canonical_image() in install.sh and remote/deploy.sh."""
+    m = re.search(r"(\d+\.\d+R\d+(?:-S\d+)?\.\d+)", os.path.basename(path or ""))
+    return "vJunos-%s-%s.qcow2" % (kind, m.group(1) if m else "own")
+
+
 def gib(b):
     return "%.1f GiB" % (float(b) / GIB)
 
@@ -387,7 +394,10 @@ def evaluate(facts, profile, allow_vm=False, enable_nested=False, owned=None):
                 rep.add(label, "WARN", "%s (%s, version %s; tested %s)" % (os.path.basename(p), gib(size), v, TESTED_VERSION))
             else:
                 rep.add(label, "PASS", "%s (%s, qcow2, %s)" % (os.path.basename(p), gib(size), f("image_%s_where" % kind, "")))
-    other = _list(f("other_images"))
+    given = {f("image_%s_path" % k, "") for k in ("router", "switch")}
+    given |= {os.path.join(f("data_dir", "/home/lab"), "images", canonical_image(k, f("image_%s_path" % k, "")))
+              for k in ("router", "switch") if f("image_%s_path" % k)}
+    other = [p for p in _list(f("other_images")) if p not in given and ("image", p) not in owned]
     if other:
         rep.add("Images dir", "WARN", "other vJunos images in the lab image dir (%s): lab-gen.py picks the last by name"
                 % ",".join(other))

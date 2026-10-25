@@ -143,7 +143,10 @@ nested_kvm() {
   say "2. nested KVM"
   local mod="" f
   for f in kvm_intel kvm_amd; do [[ -r /sys/module/$f/parameters/nested ]] && mod=$f; done
-  ((DRY)) && mod=kvm_intel
+  if ((DRY)); then
+    ((NESTED)) || { echo "   on (preflight checked it; --enable-nested shows the change)"; return; }
+    mod=kvm_intel
+  fi
   if ! ((DRY)) && [[ -n $mod && $(cat "/sys/module/$mod/parameters/nested") =~ ^(Y|y|1)$ ]]; then
     echo "   $mod nested is on"; return
   fi
