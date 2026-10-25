@@ -402,3 +402,28 @@ def test_the_bundle_is_extracted_as_root_owned():
     install = (OWN / "install.sh").read_text()
     assert install.count("tar --no-same-owner -C $STATE/bundle.new -xf -") == 2
     assert "tar -C $STATE/bundle.new" not in install
+
+
+def test_remove_key_never_writes_through_a_users_ssh_dir(tmp_path):
+    """--remove-key runs as root over every /home/*/.ssh/authorized_keys: a user's planted
+    authorized_keys.tmp symlink must not become a root write, and a symlinked authorized_keys is skipped."""
+    line = next(ln for ln in (OWN / "install.sh").read_text().splitlines() if "removed from" in ln)
+    quoted = re.search(r'"\$\{SUDO\}(sh -c .*)"$', line).group(1)
+    cmd = subprocess.run(["bash", "-c", f'printf %s "{quoted}"'], capture_output=True, text=True, check=True).stdout
+    script = re.match(r"sh -c '(.*)'$", cmd, re.S).group(1)
+    u1, u2, u3 = (tmp_path / u / ".ssh" for u in ("u1", "u2", "u3"))
+    for d in (u1, u2, u3):
+        d.mkdir(parents=True)
+    key, victim, other = "ssh-ed25519 KEY shimpaku-own", tmp_path / "victim", tmp_path / "other"
+    victim.write_text("victim\n")
+    other.write_text(key + "\n")
+    (u1 / "authorized_keys").write_text(f"ssh-ed25519 AAA mine\n{key}\n")
+    (u2 / "authorized_keys").write_text(key + "\n")
+    (u2 / "authorized_keys.tmp").symlink_to(victim)
+    (u3 / "authorized_keys").symlink_to(other)
+    script = script.replace("/root/.ssh/authorized_keys /home/*/.ssh/authorized_keys", f"{tmp_path}/u*/.ssh/authorized_keys")
+    subprocess.run(["sh", "-c", script], input=key + "\n", text=True, check=True,
+                   env={**os.environ, "TMPDIR": str(tmp_path)})
+    assert (u1 / "authorized_keys").read_text() == "ssh-ed25519 AAA mine\n"
+    assert (u2 / "authorized_keys").read_text() == ""
+    assert victim.read_text() == "victim\n" and other.read_text() == key + "\n"

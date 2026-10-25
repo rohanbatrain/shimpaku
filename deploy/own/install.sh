@@ -396,7 +396,9 @@ remove_key() {
   [ -f "$KEY.pub" ] || { note "no $KEY.pub here: nothing to remove"; return; }
   local pub; pub=$(cat "$KEY.pub")
   say "removing the deploy key from the host"
-  printf '%s\n' "$pub" | "${SSH[@]}" "${SUDO}sh -c 'k=\$(cat); for f in /root/.ssh/authorized_keys /home/*/.ssh/authorized_keys; do [ -f \"\$f\" ] || continue; grep -qxF \"\$k\" \"\$f\" || continue; grep -vxF \"\$k\" \"\$f\" > \"\$f.tmp\" || true; cat \"\$f.tmp\" > \"\$f\"; rm -f \"\$f.tmp\"; echo \"   removed from \$f\"; done'"
+  # root edits files in users' .ssh dirs: its scratch file is its own (mktemp), never <file>.tmp there, and
+  # a symlinked authorized_keys is skipped
+  printf '%s\n' "$pub" | "${SSH[@]}" "${SUDO}sh -c 'k=\$(cat); t=\$(mktemp); for f in /root/.ssh/authorized_keys /home/*/.ssh/authorized_keys; do [ -f \"\$f\" ] && [ ! -L \"\$f\" ] || continue; grep -qxF \"\$k\" \"\$f\" || continue; grep -vxF \"\$k\" \"\$f\" > \"\$t\" || true; cat \"\$t\" > \"\$f\"; echo \"   removed from \$f\"; done; rm -f \"\$t\"'"
   if [ "$KEY_GIVEN" = 0 ]; then rm -f "$KEY" "$KEY.pub"; note "deleted $KEY here"; fi
 }
 
