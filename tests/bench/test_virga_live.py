@@ -54,8 +54,11 @@ def test_demo_hold_ends_early_on_revert_now_and_inject_is_confirmed_for_the_hold
     assert h["ended_by"] == "operator" and h["elapsed_s"] < 5 and time.time() - t0 < 10
     assert h["samples"] >= 1 and h["fault_present_samples"] == h["samples"] and h["t_fix_verified"] is None
     assert demo_ttl_min(600) == 13
+    # FAB-09 can take 240 s to show its fault; a 600 s hold must not outlive the device's own timer
+    assert demo_ttl_min(600, 240) == 17
     inj = lab.commits[0]
-    assert inj["confirm_min"] == 13 and not inj["confirm_after"]          # D5: TTL >= ceil(600/60)+3
+    # D5: the timer covers the time to show the fault (inject_timeout_s is 1 s in this test catalogue) plus the hold, + 3 min
+    assert inj["confirm_min"] == demo_ttl_min(600, 1) == 14 and not inj["confirm_after"]
     assert seen_ttl["journal"] == 13                                       # `virga recover` waits long enough
     assert lab.cfg["leaf1"] == BASE and ctx.journal.entries() == {}
     phases = [(e["name"], e["status"]) for e in events if e["type"] == "phase"]
@@ -82,7 +85,7 @@ def test_demo_raises_an_explicit_short_ttl_and_never_injects_plain(fake_lab, tmp
     ctx = _ctx(lab, tmp_path, mode="demo", hold_s=240, inject_mode="plain")
     ctx.revert_now.set()  # pressed before the hold began: the hold ends at once
     rec = execute(ctx, sc)
-    assert rec["inject_mode"] == "confirmed" and lab.commits[0]["confirm_min"] == demo_ttl_min(240) == 7
+    assert rec["inject_mode"] == "confirmed" and lab.commits[0]["confirm_min"] == demo_ttl_min(240, 1) == 8
     assert rec["phases"]["hold"]["ended_by"] == "operator" and rec["phases"]["hold"]["samples"] == 0
 
 
