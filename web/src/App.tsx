@@ -1,6 +1,6 @@
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -30,6 +30,9 @@ const OpsHost = lazy(() => import("./pages/OpsHost"));
 const OpsGateway = lazy(() => import("./pages/OpsGateway"));
 const Probes = lazy(() => import("./pages/Probes"));
 const Architecture = lazy(() => import("./pages/Architecture"));
+const Guardrails = lazy(() => import("./pages/Guardrails"));
+const Audit = lazy(() => import("./pages/Audit"));
+const AssistantTrace = lazy(() => import("./pages/AssistantTrace"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -43,7 +46,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"], ["/ops/host", "Lab host"], ["/ops/gateway", "LLM gateway"], ["/probes", "Probe heatmap"], ["/architecture", "Architecture"], ["/guardrails", "Guardrails"], ["/audit", "Audit chain"], ["/assistant/trace", "Shim's reasoning"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -130,6 +133,16 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
           <Terminal {...ic} /> Console
         </NavLink>
       )}
+      <div className="sect">Explain</div>
+      <NavLink to="/guardrails">
+        <Shield {...ic} /> Guardrails
+      </NavLink>
+      <NavLink to="/audit">
+        <ChainIcon {...ic} /> Audit chain
+      </NavLink>
+      <NavLink to="/assistant/trace">
+        <Robot {...ic} /> Shim's reasoning
+      </NavLink>
       <div className="sect">Evaluate</div>
       <NavLink to="/benchmark">
         <BenchIcon {...ic} /> Benchmark
@@ -290,6 +303,9 @@ export default function App() {
             <Route path="/console" element={<Console />} />
             <Route path="/ops/host" element={<OpsHost />} />
             <Route path="/ops/gateway" element={<OpsGateway />} />
+            <Route path="/guardrails" element={<Guardrails />} />
+            <Route path="/audit" element={<Audit />} />
+            <Route path="/assistant/trace" element={<AssistantTrace />} />
             <Route path="*" element={<div className="content"><h1>Not found</h1><p className="weak">No page at {loc.pathname}.</p></div>} />
           </Routes>
           </Suspense>

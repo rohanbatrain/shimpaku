@@ -105,7 +105,11 @@ function Flow({ from, to, bps, util, side }: { from: [number, number]; to: [numb
   );
 }
 
-export default function TopoMap({ data, selected, onSelect, compact = false, traffic, onLink, selectedLink }: { data: Topo; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean; traffic?: TrafficLink[] | null; onLink?: (id: string) => void; selectedLink?: string | null }) {
+/** `focus`: highlight these nodes / link ids and dim the rest (blast radius on the root-cause page). */
+export type TopoFocus = { nodes: string[]; links: string[] } | null;
+
+export default function TopoMap({ data, selected, onSelect, compact = false, traffic, onLink, selectedLink, focus = null }: { data: Topo; focus?: TopoFocus; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean; traffic?: TrafficLink[] | null; onLink?: (id: string) => void; selectedLink?: string | null }) {
+  const fcls = (on: boolean) => (focus ? (on ? " focus" : " dim") : "");
   const tmap = new Map((traffic ?? []).map((t) => [t.id, t]));
   const tall = useTall();
   const POS = tall ? POS_TALL : POS_WIDE;
@@ -149,7 +153,7 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
         const hl = (selected && (l.a === selected || l.b === selected)) || selectedLink === l.id;
         const tr = tmap.get(l.id);
         return (
-          <g key={l.id} className={`topo-link s-${l.state}${hl ? " hl" : ""}${onLink ? " clickable" : ""}`}
+          <g key={l.id} className={`topo-link s-${l.state}${hl ? " hl" : ""}${onLink ? " clickable" : ""}${fcls(!!focus?.links.includes(l.id))}`}
             onClick={onLink ? () => onLink(l.id) : undefined} role={onLink ? "button" : undefined} tabIndex={onLink ? 0 : undefined}
             aria-label={onLink ? `${linkText(l)}${tr ? `. ${trafficText(tr)}` : ""}` : undefined}
             onKeyDown={onLink ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onLink(l.id); } } : undefined}>
@@ -180,7 +184,7 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
       })}
       {/* demo fixture trunk sw1 ge-0/0/5 */}
       {POS[fx.device] && (
-        <g className={`topo-fix${fx.present === false ? " missing" : ""}`}>
+        <g className={`topo-fix${fx.present === false ? " missing" : ""}${fcls(false)}`}>
           <title>{`${fx.device} ${fx.ifname} demo trunk: VLAN ${fx.vlan} ${fx.present == null ? "state unknown" : fx.present ? "present" : "missing"}`}</title>
           <line x1={POS[fx.device][0]} y1={POS[fx.device][1]} x2={FIX[0] - 70} y2={FIX[1]} stroke={fxColor} strokeWidth="3" strokeDasharray="1 6" strokeLinecap="round" />
           <rect x={FIX[0] - 72} y={FIX[1] - 24} width="160" height="48" rx="9" fill="#fff" stroke={fxColor} strokeWidth="2" filter="url(#tshadow)" className="topo-fix-box" />
@@ -197,10 +201,11 @@ export default function TopoMap({ data, selected, onSelect, compact = false, tra
         const sel = selected === n.name;
         const label = `${n.name}, ${n.role}, ${n.site}: ${STATE_LABEL[n.state]}${n.incidents.length ? `, ${n.incidents.length} open incident` : ""}`;
         return (
-          <g key={n.name} className={`topo-node${sel ? " sel" : ""}`} transform={`translate(${x} ${y})`} role="button" tabIndex={onSelect ? 0 : -1}
+          <g key={n.name} className={`topo-node${sel ? " sel" : ""}${fcls(!!focus?.nodes.includes(n.name))}`} transform={`translate(${x} ${y})`} role="button" tabIndex={onSelect ? 0 : -1}
             aria-label={label} aria-pressed={onSelect ? sel : undefined} onClick={() => onSelect?.(n.name)} onKeyDown={key(n.name)}>
             <rect className="topo-hit" x="-44" y="-44" width="88" height="104" rx="10" />
             {sel && <circle r="38" fill="none" stroke="#01A982" strokeWidth="3" opacity=".35" />}
+            {focus?.nodes.includes(n.name) && <circle r="40" className="topo-focus-ring" />}
             <circle r="30" fill="#fff" stroke={c} strokeWidth="4" filter="url(#tshadow)" />
             <Glyph role={n.role} />
             <g transform="translate(22 -22)" aria-hidden>

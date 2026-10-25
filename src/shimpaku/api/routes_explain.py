@@ -26,7 +26,7 @@ MAX_IDS = 200
 
 LABELS = {
     "proposed": "Proposed", "passed": "Passed guardrails", "awaiting": "Awaiting approval",
-    "automatic": "Self-drive (no approval needed)", "waiting": "Still waiting", "approved": "Approved",
+    "automatic": "Self-drive", "waiting": "Still waiting", "approved": "Approved",
     "rejected": "Rejected", "cancelled": "Cancelled", "queued": "Approved, not yet run",
     "executed": "Executed", "running": "Running", "validating": "Validating", "verified": "Verified",
     "recurred": "Recurred", "failed": "Failed", "rolled_back": "Rolled back",
@@ -149,7 +149,7 @@ def funnel(rows: list[dict], caller: str = "all", window_s: int = 0, now: float 
         nid = n["id"]
         if nid.startswith("blocked:"):
             rule = nid.split(":", 1)[1]
-            n.update(label=f"Blocked at {rule}", rule=rule, rule_name=_GUARDRAIL_NAMES.get(rule),
+            n.update(label=f"Blocked at {rule}", rule=rule, rule_name=_GUARDRAIL_NAMES.get(rule) or ("caller-role gate: what this caller's role may propose at all" if rule == "T0" else None),
                      examples=examples.get(rule, []), stage="blocked")
         else:
             n.update(label=LABELS.get(nid, nid), stage=nid)

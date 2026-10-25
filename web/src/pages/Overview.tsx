@@ -8,6 +8,8 @@ import { applyAsOf, Freshness } from "./Topology";
 import EventTicker from "../components/EventTicker";
 import Scrubber, { useTimeParam } from "../components/Scrubber";
 import { useAsOf, useTraffic } from "../live";
+import { FunnelSummary, type FunnelData } from "../components/Funnel";
+import "../explain.css";
 
 type Ov = {
   generated_at: number;
@@ -69,6 +71,7 @@ export default function Overview() {
   const asOf = useAsOf(t);
   const traffic = useTraffic(t == null);
   const past = t != null ? asOf.data : undefined;
+  const fun = usePoll<FunnelData>("/api/explain/funnel?window=7d", 30000);
   return (
     <>
       <TopBar title="Overview" crumbs="Seven vJunos devices, two sites, live">
@@ -154,6 +157,14 @@ export default function Overview() {
               )}
             </Load>
           </div>
+        </div>
+        <div className="card ov-funnel">
+          <div className="ex-head">
+            <h2 style={{ margin: 0 }}>Guardrail funnel · last 7 days</h2>
+            <span style={{ flex: 1 }} />
+            <Link className="small" to="/guardrails">Open funnel →</Link>
+          </div>
+          <Load q={fun} rows={2}>{(f) => <FunnelSummary data={f} />}</Load>
         </div>
         <section className="card how" aria-labelledby="how-h">
           <h2 id="how-h">How this works</h2>
