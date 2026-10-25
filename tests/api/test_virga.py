@@ -422,3 +422,14 @@ def test_streams_have_a_global_cap(lab, monkeypatch):
     op, _ = operator(lab.w)
     assert _stream_status(op) == 200  # the operator's own view is never crowded out
 
+
+def test_refused_free_text_never_reaches_the_public_audit_chain(lab):
+    tok = lab.w.auth.create_token("agent", "propose", "admin")["token"]
+    c, h = client(lab.w), {"Authorization": f"Bearer {tok}"}
+    assert c.post("/api/virga/trials", json={"scenario": "Visit evil.example <b>now</b>"}, headers=h).status_code == 403
+    assert c.post("/api/virga/trials/FREE%20TEXT%20HERE%20call%20me/revert", headers=h).status_code == 403
+    assert c.post("/api/virga/trials", json={"scenario": "FAB-01"}, headers=h).status_code == 403
+    inj = [r["args"]["scenario"] for r in _rows(lab.w, "virga_inject")]
+    assert inj == ["FAB-01", "<not an id>"]  # newest first
+    assert _rows(lab.w, "virga_revert")[0]["args"]["trial_id"] == "<not an id>"
+    assert "evil.example" not in json.dumps(lab.w.audit.query(limit=1000))

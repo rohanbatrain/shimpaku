@@ -14,6 +14,8 @@ Injects are rate limited per principal in category ``virga`` (default 6 per HOUR
 spend the ordinary ``write`` budget. Every attempt, allowed or refused, is one hash-chained audit row
 (``virga_inject``, ``virga_revert``, ``virga_recover``, D8): refusals are written here, accepted
 operations by the manager when their outcome is known (an inject's row when its commit is done).
+A refused caller's scenario or trial id is written only if it looks like an id (``<not an id>``
+otherwise): the audit chain is public, so it must not carry text a stranger chose.
 
 ``app.py`` mounts it with one line: ``app.include_router(routes_virga.router(call, reader, rate))``.
 """
@@ -22,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import time
 from typing import Any, Callable
 
@@ -40,6 +43,13 @@ STREAM_TICK_S = 1.0
 # Past either cap the stream is 429 and the page polls /api/virga/state every 5 s instead (web/src/virga.tsx).
 STREAMS_PER_IP, STREAMS_TOTAL = 6, 100
 NOT_OPERATOR = "fault injection is for the operator's own signed-in session"
+# What a refused caller typed goes into the public audit chain only when it looks like an id.
+AUDIT_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]*")
+
+
+def audit_id(v: str, n: int) -> str:
+    v = v[:n]
+    return v if AUDIT_ID.fullmatch(v) else ("" if not v else "<not an id>")
 
 
 class CountedStream(EventSourceResponse):
@@ -140,7 +150,7 @@ def router(call: Callable[..., Any], reader: Callable[..., Principal], rate: Cal
     # ---- writes ------------------------------------------------------------------------------
     @r.post("/api/virga/trials", status_code=202)
     async def inject(body: TrialBody, request: Request, p: Principal = Depends(reader)) -> dict:
-        args = {"scenario": body.scenario[:32], "hold_s": body.hold_s}
+        args = {"scenario": audit_id(body.scenario, 32), "hold_s": body.hold_s}
         c = gate(request, p, "virga_inject", args)
         key = p.token_id or f"{p.name}:{p.lease_id or ''}"
         wait = hourly_limiter(request.app).check("virga", key)
@@ -158,7 +168,7 @@ def router(call: Callable[..., Any], reader: Callable[..., Principal], rate: Cal
 
     @r.post("/api/virga/trials/{trial_id}/revert", status_code=202)
     async def revert(trial_id: str, request: Request, p: Principal = Depends(reader)) -> dict:
-        args = {"trial_id": trial_id[:80]}
+        args = {"trial_id": audit_id(trial_id, 80)}
         c = gate(request, p, "virga_revert", args)
         rate("write", p)
         try:
