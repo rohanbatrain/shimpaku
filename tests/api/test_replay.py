@@ -71,9 +71,24 @@ def test_scrub_and_leak_check():
     assert leaks('{"x": "LABHOST"}', ["labhost"]) == ["labhost"]
 
 
-def test_hardware_twin_degrades_on_the_replay(client):
-    """The replay holds no live counters or facts: the twin still renders, saying so, with no host block."""
+def test_hardware_twin_comes_from_the_snapshot(client):
+    """The replay serves the Hardware page as a visitor saw it at export: facts and ports, no host block."""
     r = client.get("/api/hardware")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["replay"] is True and len(d["devices"]) >= 7
+    assert d["hypervisor"].get("host") is None
+    assert any(x.get("version") or x.get("uptime_s") for x in d["devices"])
+    assert "10.99." not in r.text and "mgmt_ip" not in r.text
+
+
+def test_hardware_twin_degrades_on_an_older_snapshot(snap_file):
+    """A snapshot from before the hardware export: the twin still renders, saying so, with no host block."""
+    snap = json.loads(snap_file.read_text())
+    snap.pop("hardware", None)
+    snap_file.write_text(json.dumps(snap))
+    replay.load(snap_file)
+    r = TestClient(create_app(replay, auth_mode="off")).get("/api/hardware")
     assert r.status_code == 200
     d = r.json()
     assert d["hypervisor"]["host"] is None and d["hypervisor"]["guests"] == {}
