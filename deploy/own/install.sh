@@ -21,7 +21,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 . "$HERE/PINS"
 
 usage() { sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; }
-die() { printf 'error: %s\n' "$*" >&2; exit "${2:-3}"; }
+die() { printf 'error: %s\n' "$1" >&2; exit "${2:-3}"; }
 usage_die() { printf 'error: %s\n' "$1" >&2; echo "see: $0 --help" >&2; exit 64; }
 say() { printf '\n== %s\n' "$*" >&2; }      # progress goes to stderr: --json keeps stdout clean
 note() { printf '   %s\n' "$*" >&2; }
@@ -109,7 +109,7 @@ if [ "$DRY" = 0 ] && [ "$UNINSTALL" = 0 ] && [ "$CHECK" = 0 ] && have_tty && [ "
 fi
 needs_router || IMG_ROUTER=""
 
-if [ "$LOCAL" = 1 ] && [ "$DRY" = 0 ] && [ "$(id -u)" != 0 ]; then
+if [ "$LOCAL" = 1 ] && [ "$DRY" = 0 ] && [ "$CHECK" = 0 ] && [ "$(id -u)" != 0 ]; then
   # local mode needs root; sudo asks for its own password on the terminal (we never see it)
   command -v sudo >/dev/null || die "--local needs root: run as root" 64
   echo "local mode needs root: re-running under sudo"
@@ -225,7 +225,12 @@ connect() {
     fi
     [ -f "$KEY" ] || die "no key file $KEY" 64
     ssh_cmd
-    if ! "${SSH[@]}" true 2>/dev/null; then
+    local err
+    if ! err=$("${SSH[@]}" true 2>&1); then
+      case $err in
+        *"Permission denied"*) ;;
+        *) die "cannot reach $SSH_USER@$HOST:$PORT over SSH: ${err##*: }" 2 ;;
+      esac
       [ "$KEY_GIVEN" = 1 ] && die "the host does not accept $KEY for $SSH_USER" 2
       install_key_with_password "$SSH_USER"
       "${SSH[@]}" true || die "the key was installed but does not log in" 2

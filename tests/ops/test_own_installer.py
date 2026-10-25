@@ -293,3 +293,20 @@ def test_deploy_dry_run_records_before_it_creates():
     assert "virga --have day-06-fabric selftest --only FAB-01" in out
     assert "admin@123" not in out                  # env values are never printed, only their keys
     assert "git fetch -q --depth 1 origin 3e1cf694208942cce36b0c12f2efb3c65db96d1d" in out
+
+
+def test_bootstrap_shape():
+    text = (OWN / "get.sh").read_text()
+    code = [ln for ln in text.splitlines() if ln.strip() and not ln.lstrip().startswith("#")]
+    assert code[-1] == 'main "$@"'                       # a cut-short download defines, never runs
+    assert 'SHIMPAKU_REF="${SHIMPAKU_REF:-__SHIMPAKU_PIN__}"' in text
+    assert "codeload.github.com/rohanbatrain/shimpaku/tar.gz" in text
+    assert '</dev/null' in text.split("exec bash", 1)[1].splitlines()[0]   # prompts come from /dev/tty
+
+
+def test_install_has_no_bash4_only_constructs():
+    """install.sh and get.sh run on macOS's bash 3.2."""
+    for name in ("install.sh", "get.sh"):
+        text = (OWN / name).read_text()
+        for bad in ("declare -A", "mapfile", "readarray", "${@,,}", ",,}", "^^}", "&>>", "|&", "coproc"):
+            assert bad not in text, (name, bad)
