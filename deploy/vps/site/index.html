@@ -62,6 +62,7 @@ a{color:var(--accent-ink)}
 </style>
 </head>
 <body>
+{{/* one level under the zone so the free Cloudflare certificate covers it: shimpaku.x.in -> shimpaku-app.x.in */}}{{$app := regexReplaceAll "^([^.]+)\\." .Host "${1}-app."}}{{$status := regexReplaceAll "^([^.]+)\\." .Host "${1}-status."}}
 <div class="wrap">
 <header>
   <span class="tag">Independent project · Junos lab · agent-first</span>
@@ -71,16 +72,16 @@ a{color:var(--accent-ink)}
   them: it turns that telemetry into service levels, isolates a fault's blast radius, and lets an
   AI agent <em>propose</em> a fix, but never apply one on its own.</p>
   <div class="cta">
-    <a class="btn primary" href="https://app.{{.Host}}/">Open the dashboard</a>
-    <a class="btn" href="https://app.{{.Host}}/hardware">See the devices live</a>
+    <a class="btn primary" href="https://{{$app}}/">Open the dashboard</a>
+    <a class="btn" href="https://{{$app}}/hardware">See the devices live</a>
     <a class="btn" href="__REPO__">Source and evidence</a>
-    <a class="btn" href="https://app.{{.Host}}/architecture">Architecture</a>
+    <a class="btn" href="https://{{$app}}/architecture">Architecture</a>
     <a class="btn" href="__REPO__/blob/main/docs/INCIDENTS.md">What went wrong</a>
-    <a class="btn" href="https://status.{{.Host}}/">Uptime status</a>
+    <a class="btn" href="https://{{$status}}/">Uptime status</a>
   </div>
-  <div class="live" id="live" data-src="https://app.{{.Host}}/api/public/summary" aria-live="polite">
+  <div class="live" id="live" data-src="https://{{$app}}/api/public/summary" aria-live="polite">
     <p>Live status could not be loaded here. The dashboard shows the live lab when it is online and a
-    recorded replay when it is not; <a href="https://status.{{.Host}}/">the status page</a> has uptime.</p>
+    recorded replay when it is not; <a href="https://{{$status}}/">the status page</a> has uptime.</p>
   </div>
   <img src="hero.jpg" alt="Shimpaku overview: seven of seven devices reachable, all links up, audit chain verified, and today's actions, including five blocked by guardrails" style="width:100%;height:auto;border:1px solid var(--line);border-radius:10px;margin-top:24px">
   <p class="note">The public dashboard is a read-only replay recorded from the live lab. The
@@ -94,7 +95,7 @@ a{color:var(--accent-ink)}
       <p style="margin:0 0 10px">The lab is not a simulation of a network: it is seven Junos VMs on one
       libvirt/KVM host, a campus (r1, r2, sw1) and a two-spine, two-leaf EVPN-VXLAN fabric. Each streams
       gNMI telemetry every 10 seconds and answers NETCONF reads, and every number on the dashboard comes
-      from them. The dashboard's <a href="https://app.{{.Host}}/hardware">Hardware view</a> draws each one as a
+      from them. The dashboard's <a href="https://{{$app}}/hardware">Hardware view</a> draws each one as a
       front panel whose port LEDs, traffic blinks, CPU and memory are read live.</p>
       <p style="margin:0 0 10px">The images run the same Junos OS as real hardware, per Juniper's own
       documentation: vJunos-switch is built "using EX9214 as a reference Juniper switch", and vJunos-router
@@ -103,7 +104,7 @@ a{color:var(--accent-ink)}
       VM, limited to "up to 100 Mbps aggregated over all the interfaces", and Juniper says they are for labs
       only. (<a href="https://www.juniper.net/documentation/us/en/software/vjunos/vjunos-switch-kvm/topics/vjunos-switch-overview-understanding.html">vJunos-switch</a>,
       <a href="https://www.juniper.net/documentation/us/en/software/vjunos-router/vjunos-router-kvm/topics/vjunos-router-overview-understanding.html">vJunos-router</a>.)</p>
-      <div class="cta" style="margin-top:14px"><a class="btn primary" href="https://app.{{.Host}}/hardware">Watch them live</a></div>
+      <div class="cta" style="margin-top:14px"><a class="btn primary" href="https://{{$app}}/hardware">Watch them live</a></div>
     </div>
     <div>
       <ul class="rack" aria-label="The seven lab devices: name, image and role (a list, not live state)">

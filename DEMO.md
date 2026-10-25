@@ -202,7 +202,7 @@ shimpaku admin invite revoke inv_…                                # also ends 
 
 When you only have a borrowed machine (a meeting-room PC, an interviewer's laptop):
 
-1. Open `https://app.<domain>`. Everyone sees the live lab read-only; nothing to install.
+1. Open `https://<label>-app.<parent>`. Everyone sees the live lab read-only; nothing to install.
 2. Click **Operator sign in** (bottom of the side menu; on a phone, in the menu).
 3. Type the password, then the 6-digit code from your authenticator app. No phone? **Use a
    recovery code** (from your password manager; each works once).

@@ -45,7 +45,7 @@ it plainly so it can be reviewed.
 
 ## Operator over the internet
 
-The owner signs in as operator at `https://app.<domain>` (Cloudflare → Caddy → the daemon in
+The owner signs in as operator at `https://<label>-app.<parent>` (Cloudflare → Caddy → the daemon in
 `auth_mode=local`), sometimes from someone else's laptop. Before turning public view on, run
 `shimpaku admin set-password` and `shimpaku admin totp enable` on the lab host. On a shared
 computer:

@@ -1,7 +1,8 @@
 # docker compose -f deploy/vps/compose.yaml up -d --build   (from the repo root)
 # Needs: deploy/vps/.env with SHIMPAKU_SITE_HOSTS, SHIMPAKU_APP_HOSTS and SHIMPAKU_LAB_UPSTREAM, and
-# deploy/vps/snapshot/snapshot.json. The lab is reached through the host's NetBird interface
-# (container egress is NATed by the host, so the NetBird route applies).
+# deploy/vps/snapshot/snapshot.json. Caddy runs on the HOST network: the host firewall's input chain
+# (80/443 from Cloudflare only, ADR-0204 D2) is then the only way in — Docker-published ports would
+# bypass it through FORWARD/NAT — and it reaches the lab directly over the host's NetBird interface.
 services:
   replay:
     build: { context: ../.., dockerfile: deploy/vps/Dockerfile, target: replay }
@@ -14,11 +15,12 @@ services:
     cgroup_parent: edge.slice   # ADR-0204 D3: the whole edge shares one 1 GiB slice
     pids_limit: 128
     environment:
-      SHIMPAKU_TRUSTED_PROXIES: "*"   # only Caddy can reach it: no published port
+      SHIMPAKU_TRUSTED_PROXIES: "*"   # published on the host's loopback only; Caddy is the only client
       # the landing page's origins, allowed to read GET /api/public/summary cross-origin
       SHIMPAKU_PUBLIC_CORS_ORIGINS: ${SHIMPAKU_PUBLIC_CORS_ORIGINS:-}
     volumes:
       - ./snapshot:/snapshot:ro
+    ports: ["127.0.0.1:8781:8780"]
     networks: [web]
 
   caddy:
@@ -27,7 +29,7 @@ services:
     mem_limit: 192m
     cgroup_parent: edge.slice
     restart: unless-stopped
-    ports: ["80:80", "443:443", "443:443/udp"]
+    network_mode: host        # see the header: the host firewall governs 80/443
     environment:
       SHIMPAKU_SITE_HOSTS: ${SHIMPAKU_SITE_HOSTS:?set in deploy/vps/.env}
       SHIMPAKU_APP_HOSTS: ${SHIMPAKU_APP_HOSTS:?set in deploy/vps/.env}
@@ -35,12 +37,13 @@ services:
       SHIMPAKU_STATUS_SLUG: ${SHIMPAKU_STATUS_SLUG:-shimpaku}
       # host:port of shimpakud on the lab's NetBird address, e.g. 100.x.y.z:8780
       SHIMPAKU_LAB_UPSTREAM: ${SHIMPAKU_LAB_UPSTREAM:?set SHIMPAKU_LAB_UPSTREAM in deploy/vps/.env}
+      SHIMPAKU_REPLAY_UPSTREAM: 127.0.0.1:8781
+      SHIMPAKU_KUMA_UPSTREAM: 127.0.0.1:3001
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./site-built:/srv/site:ro
       - caddy_data:/data
       - caddy_config:/config
-    networks: [web]
     depends_on: [replay]
 
   uptime-kuma:

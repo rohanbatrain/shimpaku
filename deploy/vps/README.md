@@ -2,12 +2,12 @@
 
 ```
 visitor ─► Cloudflare (free, proxied) ─► VPS Caddy ─┬─► <domain>: landing (static)
-                                                    ├─► app.<domain>: SPA (static, baked into the edge image)
-                                                    ├─► app.<domain>/api/*, /mcp ─► NetBird ─► lab: shimpakud (live)
-                                                    └─► app.<domain>/api/* reads, lab down ─► replay container
+                                                    ├─► <label>-app.<parent>: SPA (static, baked into the edge image)
+                                                    ├─► <label>-app.<parent>/api/*, /mcp ─► NetBird ─► lab: shimpakud (live)
+                                                    └─► <label>-app.<parent>/api/* reads, lab down ─► replay container
 ```
 
-| Path on `app.<domain>` | Lab up | Lab down |
+| Path on `<label>-app.<parent>` | Lab up | Lab down |
 |---|---|---|
 | `/`, `/start`, other client routes, `/assets/*` | Caddy, static | Caddy, static |
 | `GET /api/*` | live daemon | replay (read-only snapshot) |
@@ -58,7 +58,7 @@ then refuses to ship it if it mentions the ssh names of the lab host or the VPS.
 built with xcaddy in `caddy:<ver>-builder` plus `mholt/caddy-ratelimit` and
 `WeidiDeng/caddy-cloudflare-ip`, with the files at `/srv/app` and the offline page at
 `/srv/offline`). The plugin refs are `latest` until pinned with `--build-arg RATELIMIT_REF=`/
-`CFIP_REF=`; Caddy is pinned to a minor tag (`CADDY_VERSION`). On `app.<domain>` Caddy serves the files itself, so the SPA stays up and cacheable whatever
+`CFIP_REF=`; Caddy is pinned to a minor tag (`CADDY_VERSION`). On `<label>-app.<parent>` Caddy serves the files itself, so the SPA stays up and cacheable whatever
 the lab or the replay is doing.
 
 - The build writes `.br`, `.gz` and (Node >= 22.15) `.zst` next to every text asset over 1 KB
@@ -109,7 +109,7 @@ On the lab host, in `~/.config/shimpaku/env` (the unit no longer hard-codes bind
 ```bash
 SHIMPAKU_BIND=<lab netbird ip>          # reachable on the NetBird interface only, not the LAN
 SHIMPAKU_AUTH_MODE=local                # sign-in required; the code default stays `off`
-SHIMPAKU_PUBLIC_URL=https://app.<domain>   # base for invite links
+SHIMPAKU_PUBLIC_URL=https://<label>-app.<parent>   # base for invite links
 SHIMPAKU_PUBLIC_VIEW=1                  # anonymous visitors read live, read-only; they request sessions
 SHIMPAKU_TRUSTED_PROXIES=<edge netbird ip>
 FORWARDED_ALLOW_IPS=<edge netbird ip>   # what uvicorn in shimpakud actually reads today (see below)
@@ -147,20 +147,20 @@ Free plan, proxied. The free plan has no partial (CNAME) setup, so the nameserve
 1. **Add the zone** in Cloudflare, let it import the existing records, then set the two
    Cloudflare nameservers at the registrar. Verify: `dig NS <domain> +short` lists only
    Cloudflare's; the dashboard shows the zone "Active".
-2. **DNS:** `A <domain> → <vps ip>` and `A app.<domain> → <vps ip>` (plus `AAAA` if the VPS has
+2. **DNS:** `A <domain> → <vps ip>` and `A <label>-app.<parent> → <vps ip>` (plus `AAAA` if the VPS has
    IPv6), both **Proxied** (orange cloud). Nothing else points at the VPS. Verify:
-   `dig +short app.<domain>` returns Cloudflare addresses, not the VPS.
+   `dig +short <label>-app.<parent>` returns Cloudflare addresses, not the VPS.
 3. **SSL/TLS: Full (strict), with Caddy's own public certificates.** Caddy keeps getting
    Let's Encrypt certificates (HTTP-01 over port 80 passes through the proxy; TLS-ALPN works too),
    so the origin is valid for any client, renews itself, and nothing breaks if a record is ever
    set to DNS-only. An Origin CA certificate would also work but is trusted only by Cloudflare and
-   is one more 15-year secret to place by hand. Verify: `curl -sI https://app.<domain>` is 200 and
+   is one more 15-year secret to place by hand. Verify: `curl -sI https://<label>-app.<parent>` is 200 and
    `cf-ray` is present; Caddy's log shows certificates obtained for both names.
    Also on: Always Use HTTPS, HTTP/3, Brotli, Smart Tiered Cache.
-4. **Cache rule:** hostname `app.<domain>` and URI path starts with `/assets/` → Eligible for
+4. **Cache rule:** hostname `<label>-app.<parent>` and URI path starts with `/assets/` → Eligible for
    cache, Edge TTL "use origin cache-control" (the origin says `immutable`, one year). No rule
    for HTML, `/api/*` or `/mcp`: they are not cached by default. Verify: a second
-   `curl -sI https://app.<domain>/assets/<file>` shows `cf-cache-status: HIT`; `/api/whoami`
+   `curl -sI https://<label>-app.<parent>/assets/<file>` shows `cf-cache-status: HIT`; `/api/whoami`
    shows `DYNAMIC`.
 5. **Firewall at the VPS provider (hPanel):** inbound TCP 80, 443 and UDP 443 only from
    Cloudflare's ranges (`ops/cloudflare-ips.sh` prints them; re-run it monthly and diff); SSH
@@ -175,9 +175,9 @@ reached with `ssh -L 3001:127.0.0.1:3001 <vps>` over NetBird and is not publishe
 admin app with its own login, and keeping it off the internet costs nothing. Kuma on the VPS
 cannot report the VPS itself being down; pair it with an external free checker (e.g. UptimeRobot).
 
-### Public status page (`status.<domain>`)
+### Public status page (`<label>-status.<parent>`)
 
-Caddy serves `status.<domain>` (`SHIMPAKU_STATUS_HOSTS`, written by `deploy.sh` as `status.` + each
+Caddy serves `<label>-status.<parent>` (`SHIMPAKU_STATUS_HOSTS`, written by `deploy.sh` as `status.` + each
 domain) by proxying **only** Kuma's public status-page paths, GET/HEAD only: `/status`,
 `/status/<slug>` (and its `/rss`), `/api/status-page/<slug>…` and `/api/status-page/heartbeat/<slug>`
 (the routes in Kuma's `server/routers/status-page-router.js`), plus the SPA's static files
@@ -197,15 +197,15 @@ Create it once, over the SSH tunnel to the admin UI:
    "Show Powered By" if wanted; Kuma shows monitor names and uptime only, not URLs, unless
    *Show URL* is ticked on a monitor — leave it off for the lab and replay monitors.
 4. DNS: a proxied `status` record for each domain, like `app`.
-5. Check from outside: `https://status.<domain>/` lands on the page;
-   `https://status.<domain>/dashboard` and `/socket.io/` are 404.
+5. Check from outside: `https://<label>-status.<parent>/` lands on the page;
+   `https://<label>-status.<parent>/dashboard` and `/socket.io/` are 404.
 
 The landing page links to it ("Uptime status") and to the dashboard's `/architecture` page.
 
 ### Landing status strip (`GET /api/public/summary`)
 
 The landing page (`site/index.html`, plus `site/live.js`; no inline script) fetches
-`https://app.<host>/api/public/summary` on load and shows: lab online/offline (offline = the edge is
+`https://<label>-app.<parent>/api/public/summary` on load and shows: lab online/offline (offline = the edge is
 serving the replay), devices up/total (live only; the replay says "—" rather than guess), the last
 action (relative time and status), unsafe actions executed (actions that committed to a device
 without an `allowed` guardrail decision, over the whole action record) and whether the audit chain
@@ -223,12 +223,12 @@ Monitors to create (20–60 s interval):
 | Monitor | Type | Target | Expect |
 |---|---|---|---|
 | Landing | HTTP(s) | `https://<domain>/` | 200 |
-| App shell | HTTP(s) | `https://app.<domain>/` | 200 |
-| Live API via edge | HTTP(s) – keyword (JSON query) | `https://app.<domain>/api/whoami` | 200 and `replay` is `false` (alerts when serving the replay) |
+| App shell | HTTP(s) | `https://<label>-app.<parent>/` | 200 |
+| Live API via edge | HTTP(s) – keyword (JSON query) | `https://<label>-app.<parent>/api/whoami` | 200 and `replay` is `false` (alerts when serving the replay) |
 | Replay | HTTP(s) | `http://replay:8780/api/whoami` | 200 |
 | Lab over NetBird | HTTP(s) | `http://<lab netbird ip>:8780/api/whoami` | 200 (needs the container to reach NetBird, as for Caddy) |
-| Status page itself | HTTP(s) | `https://status.<domain>/status/shimpaku` | 200 |
-| TLS expiry | HTTP(s) with certificate expiry notification | `https://app.<domain>/` | alert at 14 days (the Cloudflare edge certificate; check the origin's with `curl --resolve` from the VPS) |
+| Status page itself | HTTP(s) | `https://<label>-status.<parent>/status/shimpaku` | 200 |
+| TLS expiry | HTTP(s) with certificate expiry notification | `https://<label>-app.<parent>/` | alert at 14 days (the Cloudflare edge certificate; check the origin's with `curl --resolve` from the VPS) |
 
 ## First deploy
 
