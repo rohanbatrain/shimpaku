@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Copy } from "grommet-icons";
 import { api, useApi } from "../api";
 import TopBar from "../components/TopBar";
@@ -106,6 +106,11 @@ const INV_TONE: Record<string, "info" | "ok"> = { open: "ok", early: "info" };
 /** Invites not yet used (quick links and approved slots): the operator can withdraw one here without the CLI. */
 function OpenInvites() {
   const q = useApi<{ invites: Inv[] }>("/api/admin/invites");
+  const { reload } = q;
+  useEffect(() => {
+    window.addEventListener("shimpaku:invites", reload);
+    return () => window.removeEventListener("shimpaku:invites", reload);
+  }, [reload]);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [gone, setGone] = useState<string | null>(null);

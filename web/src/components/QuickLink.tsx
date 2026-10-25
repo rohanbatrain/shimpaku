@@ -50,6 +50,7 @@ export default function QuickLink() {
     try {
       const r = await api<Invite>("/api/admin/invites", { json: { note: note.trim(), ttl_hours: ttl } });
       setInv(r);
+      window.dispatchEvent(new Event("shimpaku:invites")); // the Open invites list on Session requests, if on screen
       await copy(`${location.origin}/start?i=${encodeURIComponent(r.token)}`);
     } catch (e: any) {
       setErr(e.status === 401 || e.status === 403 ? "Your operator session has ended. Sign in again." : e.message);
