@@ -61,7 +61,8 @@ main() {
   fi
 
   # stdin is this script when piped from curl: install.sh asks on /dev/tty, never on stdin
-  exec bash "$dest/deploy/own/install.sh" "$@" </dev/null
+  # SHIMPAKU_REF tells install.sh which commit the host should clone: the one just downloaded
+  SHIMPAKU_REF=$ref exec bash "$dest/deploy/own/install.sh" "$@" </dev/null
 }
 
 main "$@"

@@ -119,7 +119,7 @@ function CopyBlock({ label, text }: { label: string; text: string }) {
 
 const PREFLIGHT: { check: string; fail: string; warn: string; fix: string }[] = [
   { check: "SSH and root", fail: "It cannot log in as root (or as the sudo-capable user you gave with --user).", warn: "", fix: "Check the address, that sshd runs, and that root login by password or key is allowed." },
-  { check: "Operating system", fail: "Not Linux.", warn: "Not Debian 11 to 13 or Ubuntu 20.04 to 24.04, the systems Juniper lists (plus newer ones). Arch and Fedora are allowed with a warning.", fix: "Use Debian or Ubuntu if you can." },
+  { check: "Operating system", fail: "Not Linux, or a system Python below 3.11 (Debian 11, Ubuntu 20.04 and 22.04).", warn: "Not Debian 12 or 13 or Ubuntu 24.04. Arch and Fedora are allowed with a warning.", fix: "Use Debian or Ubuntu if you can." },
   { check: "CPU type", fail: "Not x86_64.", warn: "", fix: "vJunos is an x86 image; ARM machines (including Apple silicon) cannot run it." },
   { check: "Hardware virtualisation", fail: "No vmx or svm CPU flag, or no /dev/kvm.", warn: "", fix: "Turn on VT-x (Intel) or AMD-V in the BIOS/UEFI." },
   { check: "Nested KVM", fail: "kvm_intel or kvm_amd reports nested as off.", warn: "", fix: "Re-run with --enable-nested. It writes /etc/modprobe.d/kvm-nested.conf and reloads the module only if no VM is running; otherwise it asks you to reboot." },
@@ -180,7 +180,8 @@ export default function DeployOwn() {
         <section className="card" aria-labelledby="own-need">
           <h2 id="own-need">What you need</h2>
           <ul className="own-list">
-            <li><b>A bare-metal x86_64 Linux machine</b> with VT-x or AMD-V and nested KVM. Debian 11 to 13 or Ubuntu 20.04 to 24.04 are the safe choices.</li>
+            <li><b>A bare-metal x86_64 Linux machine</b> with VT-x or AMD-V and nested KVM. Debian 12 or 13, or Ubuntu 24.04, are the safe choices (older releases ship a Python below 3.11, which the lab toolchain needs).</li>
+            <li><b>Root on it</b>: Debian and Ubuntu refuse root password logins over SSH by default, so either give a sudo user (<code>--user</code>), an SSH key (<code>--key</code>), or run the one-liner on the hypervisor itself with <code>--local</code>.</li>
             <li><b>Root SSH access</b> to it from the computer you will run the installer on (or a sudo-capable user, with <code>--user</code>).</li>
             <li><b>The two vJunos images, downloaded by you from Juniper.</b> They are free for lab use, need a Juniper account and acceptance of Juniper's terms, and are not redistributed by this project.{" "}
               <a href={JUNIPER_FREE} target="_blank" rel="noreferrer">Free Virtual Junos OS Download for Labs ↗</a></li>

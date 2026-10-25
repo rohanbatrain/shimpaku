@@ -19,6 +19,13 @@ umask 077
 HERE=$(cd "$(dirname "$0")" && pwd)
 # shellcheck disable=SC1091
 . "$HERE/PINS"
+# The Shimpaku commit the host clones: the one this copy was downloaded at (get.sh exports SHIMPAKU_REF),
+# else this clone's own HEAD, else the last tested pin in PINS. Preflight FAILs if it is not on GitHub.
+if [[ "${SHIMPAKU_REF:-}" =~ ^[0-9a-f]{40}$ ]]; then
+  SHIMPAKU_COMMIT=$SHIMPAKU_REF
+elif _head=$(git -C "$HERE" rev-parse HEAD 2>/dev/null) && [[ "$_head" =~ ^[0-9a-f]{40}$ ]]; then
+  SHIMPAKU_COMMIT=$_head
+fi
 
 usage() { sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf 'error: %s\n' "$1" >&2; exit "${2:-3}"; }
@@ -319,8 +326,11 @@ ship_bundle() {
   say "shipping the installer bundle to $STATE/bundle"
   local tarflags=""
   tar --version 2>/dev/null | grep -q bsdtar && tarflags="--no-mac-metadata --no-xattrs"
+  # PINS travels with the commit chosen above, so the host clones what this copy is
+  local pins; pins=$(mktemp -d "${TMPDIR:-/tmp}/shimpaku-own-pins.XXXXXX")
+  sed "s/^SHIMPAKU_COMMIT=.*/SHIMPAKU_COMMIT=$SHIMPAKU_COMMIT/" "$HERE/PINS" > "$pins/PINS"
   # shellcheck disable=SC2086
-  (cd "$HERE" && COPYFILE_DISABLE=1 tar $tarflags --exclude __pycache__ -cf - PINS remote configs) |
+  (COPYFILE_DISABLE=1 tar $tarflags --exclude __pycache__ -cf - -C "$pins" PINS -C "$HERE" remote configs) |
     if [ "$LOCAL" = 1 ]; then
       bash -c "install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar -C $STATE/bundle.new -xf - && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle"
     else

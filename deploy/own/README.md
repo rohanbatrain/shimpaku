@@ -97,7 +97,7 @@ starts nothing (a socket-activated libvirtd may wake up for `virsh list`).
 | Check | FAIL | WARN |
 |---|---|---|
 | SSH + root | not root and no passwordless sudo | |
-| OS | not Linux | outside Debian 11–13 / Ubuntu 20.04–24.04; Arch, Fedora |
+| OS | not Linux | outside Debian 12–13 / Ubuntu 24.04; Arch, Fedora |
 | CPU arch | not x86_64 | |
 | Virtualisation | no `vmx`/`svm`, no `/dev/kvm` | |
 | Nested KVM | `nested` not Y/1 | `--enable-nested` given: it will be turned on |

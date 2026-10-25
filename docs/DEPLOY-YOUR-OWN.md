@@ -16,7 +16,7 @@ reference (flags, manifest) is [`deploy/own/README.md`](../deploy/own/README.md)
 
 | | |
 |---|---|
-| **A bare-metal machine** | x86_64 Linux with VT-x or AMD-V (turned on in the BIOS/UEFI) and nested KVM. Debian 11 to 13 or Ubuntu 20.04 to 24.04 are the safe choices; Arch and Fedora are allowed with a warning. |
+| **A bare-metal machine** | x86_64 Linux with VT-x or AMD-V (turned on in the BIOS/UEFI) and nested KVM. Debian 12 or 13, or Ubuntu 24.04, are the safe choices (Debian 11 and Ubuntu 20.04/22.04 ship a Python below 3.11, which the lab toolchain needs, and fail the check); Arch and Fedora are allowed with a warning. |
 | **Root SSH** | From the computer you run the installer on. A sudo-capable user works with `--user`. |
 | **The vJunos images** | Two qcow2 files you download yourself from Juniper (section 2). |
 | **A computer to run the installer on** | Linux or macOS with `bash`, `ssh` and `git`. This is not the hypervisor. |
@@ -114,7 +114,7 @@ that uses the key. If you already have a key the host accepts, pass `--key <file
 | Check | Fails when | Warns when |
 |---|---|---|
 | SSH and root | it cannot log in as root (or the `--user`) | |
-| Operating system | not Linux | not Debian 11 to 13 / Ubuntu 20.04 to 24.04 (Arch and Fedora allowed) |
+| Operating system | not Linux | not Debian 12–13 / Ubuntu 24.04 (Arch and Fedora allowed); a system Python below 3.11 FAILs |
 | CPU type | not x86_64 | |
 | Virtualisation | no `vmx`/`svm` flag, or no `/dev/kvm` | |
 | Nested KVM | the `kvm_intel`/`kvm_amd` `nested` parameter is off (fix: `--enable-nested`) | |

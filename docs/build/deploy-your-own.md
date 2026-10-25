@@ -27,7 +27,7 @@ it will change, and on a yes builds the lab with the same public toolchain this 
 | Check | FAIL when | WARN when |
 |---|---|---|
 | SSH + root | cannot log in as root (or sudo-capable user with `--user`) | |
-| OS | not Linux | not Debian 11–13 / Ubuntu 20.04–24.04 (Juniper's list + newer); Arch/Fedora allowed as WARN |
+| OS | not Linux | not Debian 12–13 / Ubuntu 24.04; Arch/Fedora allowed as WARN. (Juniper lists Ubuntu 18.04–22.04 and Debian 11, but those ship python3 < 3.11, which the lab toolchain needs: a FAIL, found while building.) |
 | CPU arch | not x86_64 | |
 | Virtualisation | no `vmx`/`svm` flag, no `/dev/kvm` | |
 | Nested KVM | `kvm_intel`/`kvm_amd` `nested` is not Y/1 (fix: `--enable-nested`, which writes `/etc/modprobe.d/kvm-nested.conf` and reloads the module only when no VM is running, else asks for a reboot) | |
