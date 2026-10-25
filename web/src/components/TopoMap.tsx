@@ -1,6 +1,8 @@
 // Live topology map: deterministic, hand-placed positions per site (no physics), original SVG glyphs.
 // Links are the lab TOML's intended links coloured by live evidence (LLDP, OSPF/BFD, stored port state).
 import { useEffect, useState, type KeyboardEvent } from "react";
+import { fmtBps, type TrafficLink } from "../live";
+import "../live.css";
 
 export type LinkState = "up" | "degraded" | "down" | "unknown";
 export type TNode = {
@@ -82,7 +84,29 @@ export function linkText(l: TLink) {
   return `${l.a} ${l.a_if ?? ""} ↔ ${l.b} ${l.b_if ?? ""}: ${STATE_LABEL[l.state]}${l.bad.length ? ` — ${l.bad.join(", ")}` : ""}${l.good.length ? ` (${l.good.join(", ")})` : ""}`;
 }
 
-export default function TopoMap({ data, selected, onSelect, compact = false }: { data: Topo; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean }) {
+// live traffic overlay: width grows with log(rate); dashes move a→b / b→a (CSS, off under reduced motion)
+const flowW = (v: number) => Math.max(1.4, Math.min(5, 1.4 + 0.95 * Math.log10(1 + v / 1e4)));
+const flowDur = (v: number) => `${Math.max(0.5, Math.min(4, 4.6 - 0.55 * Math.log10(1 + v))).toFixed(2)}s`;
+const UTIL_COLOR = (u: number | null) => (u == null ? "#2F6690" : u < 0.5 ? "#01A982" : u < 0.8 ? "#D99A06" : "#D93A30");
+export const trafficText = (t: TrafficLink) =>
+  `${t.a} → ${t.b}: ${fmtBps(t.ab_bps)} · ${t.b} → ${t.a}: ${fmtBps(t.ba_bps)}${t.speed_bps ? "" : " · link speed unknown"}`;
+
+function Flow({ from, to, bps, util, side }: { from: [number, number]; to: [number, number]; bps: number | null; util: number | null; side: 1 | -1 }) {
+  if (bps == null) return null;
+  const L = Math.hypot(to[0] - from[0], to[1] - from[1]) || 1;
+  const off = 6.5 * side;
+  const nx = (-(to[1] - from[1]) / L) * off, ny = ((to[0] - from[0]) / L) * off;
+  // stop short of the node circles (r = 30) so the dashes read as travelling between devices
+  const s = along(from, to, 34), e = along(to, from, 34);
+  const idle = bps < 1;
+  return (
+    <line className={`topo-flow${idle ? " idle" : ""}`} x1={s[0] + nx} y1={s[1] + ny} x2={e[0] + nx} y2={e[1] + ny}
+      stroke={UTIL_COLOR(util)} strokeWidth={idle ? 1.2 : flowW(bps)} style={{ ["--dur" as string]: flowDur(bps) }} />
+  );
+}
+
+export default function TopoMap({ data, selected, onSelect, compact = false, traffic, onLink, selectedLink }: { data: Topo; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean; traffic?: TrafficLink[] | null; onLink?: (id: string) => void; selectedLink?: string | null }) {
+  const tmap = new Map((traffic ?? []).map((t) => [t.id, t]));
   const tall = useTall();
   const POS = tall ? POS_TALL : POS_WIDE;
   const SITES = (tall ? SITES_TALL : SITES_WIDE) as { id: string; label: string; sub: string; x: number; w: number; y?: number }[];
@@ -122,12 +146,23 @@ export default function TopoMap({ data, selected, onSelect, compact = false }: {
         const anchor = vert ? (side < 0 ? "end" : "start") : "middle";
         const top = (p: [number, number], q: [number, number]) => (vert ? (p[1] < q[1] ? 92 : 56) : diag ? 96 : 62);
         const la = along(a, b, top(a, b)), lb = along(b, a, top(b, a));
-        const hl = selected && (l.a === selected || l.b === selected);
+        const hl = (selected && (l.a === selected || l.b === selected)) || selectedLink === l.id;
+        const tr = tmap.get(l.id);
         return (
-          <g key={l.id} className={`topo-link s-${l.state}${hl ? " hl" : ""}`}>
-            <title>{linkText(l)}</title>
+          <g key={l.id} className={`topo-link s-${l.state}${hl ? " hl" : ""}${onLink ? " clickable" : ""}`}
+            onClick={onLink ? () => onLink(l.id) : undefined} role={onLink ? "button" : undefined} tabIndex={onLink ? 0 : undefined}
+            aria-label={onLink ? `${linkText(l)}${tr ? `. ${trafficText(tr)}` : ""}` : undefined}
+            onKeyDown={onLink ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onLink(l.id); } } : undefined}>
+            <title>{`${linkText(l)}${tr ? `\n${trafficText(tr)}` : ""}`}</title>
             <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#fff" strokeWidth={hl ? 10 : 8} />
             <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={c} strokeWidth={hl ? 5 : 3.5} strokeDasharray={l.state === "unknown" ? "6 6" : l.state === "down" ? "2 7" : undefined} strokeLinecap="round" />
+            {tr && (
+              <g aria-hidden>
+                <Flow from={a} to={b} bps={tr.ab_bps} util={tr.util_ab} side={1} />
+                <Flow from={b} to={a} bps={tr.ba_bps} util={tr.util_ba} side={1} />
+              </g>
+            )}
+            {onLink && <line className="topo-link-hit" x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} />}
             {l.state !== "up" && (
               <g transform={`translate(${mx} ${my})`} aria-hidden>
                 <circle r="9" fill={c} stroke="#fff" strokeWidth="2" />
