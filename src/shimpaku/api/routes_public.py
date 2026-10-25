@@ -6,7 +6,7 @@
   RPM results as a probe-path × time grid (``analytics/heatmap.py``). Paths are named by device and
   test; target addresses are never returned.
 - ``GET /api/public/summary`` (no sign-in): the handful of aggregate numbers the static landing page
-  shows. It is fetched cross-origin (the landing is ``<domain>``, the app ``app.<domain>``), so it
+  shows. It is fetched cross-origin (the landing is ``<domain>``, the app ``<label>-app.<parent>``), so it
   answers CORS for the origins in ``SHIMPAKU_PUBLIC_CORS_ORIGINS`` only, GET only, never with
   credentials. It returns counts, statuses and timestamps: no device addresses, config, tokens,
   user names or tester identities. Rate limited per client address (category ``read``) and cached.

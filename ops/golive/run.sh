@@ -22,6 +22,7 @@ SETTINGS="$LOCAL/settings.env"
 # shellcheck disable=SC1090
 set -a; . "$SETTINGS"; set +a
 LOG="$LOCAL/golive.log"
+sib() { local d=$1; printf "%s-%s.%s" "${d%%.*}" "$2" "${d#*.}"; }   # one level under the zone (free Cloudflare SSL)
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*" | tee -a "$LOG"; }
 need() { local v; for v in "$@"; do [[ -n "${!v:-}" && "${!v}" != *"<"* ]] || { echo "set $v in $SETTINGS" >&2; exit 1; }; done; }
 ok() { printf '  \033[32mok\033[0m   %s\n' "$*"; }
@@ -96,7 +97,7 @@ step_lab_secrets() {
 step_lab_config() {
   need DOMAINS LAB_NETBIRD_IP VPS_NETBIRD_IP
   lab_env_set SHIMPAKU_AUTH_MODE local SHIMPAKU_PUBLIC_VIEW 1 SHIMPAKU_BIND "$LAB_NETBIRD_IP" \
-    SHIMPAKU_PORT "$LAB_PORT" SHIMPAKU_PUBLIC_URL "https://app.${DOMAINS%% *}" \
+    SHIMPAKU_PORT "$LAB_PORT" SHIMPAKU_PUBLIC_URL "https://$(sib "${DOMAINS%% *}" app)" \
     SHIMPAKU_TRUSTED_PROXIES "$VPS_NETBIRD_IP" FORWARDED_ALLOW_IPS "$VPS_NETBIRD_IP"
   ssh "$LAB_HOST" '[ -s ~/.local/share/shimpaku/admin.hash ] && [ -s ~/.local/share/shimpaku/totp.json ]' \
     || { echo "run lab-secrets first: public view refuses operator sign-in without a password and TOTP" >&2; exit 1; }
@@ -114,7 +115,7 @@ step_deploy() {
 
 step_verify() {
   need DOMAINS
-  local d; for d in $DOMAINS; do echo "== $d"; local a="https://app.$d" DOMAIN=$d
+  local d; for d in $DOMAINS; do echo "== $d"; local a="https://$(sib $d app)" DOMAIN=$d
   curl -fsS -o /dev/null -w "landing %{http_code}\n" "https://$DOMAIN/" | tee -a "$LOG"
   curl -fsS "$a/api/whoami" | python3 -c 'import json,sys; w=json.load(sys.stdin); print("whoami:", w.get("role") or w.get("kind"), "replay" if w.get("replay") else "live")' | tee -a "$LOG"
   echo "mcp without token: $(curl -s -o /dev/null -w '%{http_code}' -X POST "$a/mcp")" | tee -a "$LOG"

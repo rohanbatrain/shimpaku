@@ -20,7 +20,7 @@ install -m 0644 deploy/systemd/shimpakud.service ~/.config/systemd/user/shimpaku
 # and trust forwarded headers from the edge's NetBird address only.
 # SHIMPAKU_BIND=<lab netbird ip>
 # SHIMPAKU_AUTH_MODE=local
-# SHIMPAKU_PUBLIC_URL=https://app.<domain>
+# SHIMPAKU_PUBLIC_URL=https://<label>-app.<parent>
 # SHIMPAKU_TRUSTED_PROXIES=<edge netbird ip>
 # FORWARDED_ALLOW_IPS=<edge netbird ip>
 EOF
