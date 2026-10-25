@@ -396,3 +396,9 @@ def test_root_never_touches_a_file_in_the_operators_image_dir():
     assert "sh -c 'cat > $dst.part'" not in install and 'cp "$p" "$dst.part"' not in install
     assert install.count("runuser -u") >= 2
 
+
+def test_the_bundle_is_extracted_as_root_owned():
+    """tar run by root keeps the archive's uid (the visitor's), which can be a user on the host."""
+    install = (OWN / "install.sh").read_text()
+    assert install.count("tar --no-same-owner -C $STATE/bundle.new -xf -") == 2
+    assert "tar -C $STATE/bundle.new" not in install

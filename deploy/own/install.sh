@@ -332,16 +332,19 @@ ship_bundle() {
   say "shipping the installer bundle to $STATE/bundle"
   local tarflags=""
   tar --version 2>/dev/null | grep -q bsdtar && tarflags="--no-mac-metadata --no-xattrs"
+  # --no-same-owner: tar run by root keeps the archive's owner (this computer's uid, which may be a user on
+  # the host) and that user could then edit scripts root runs next; extracted, everything is root's.
   # PINS travels with the commit chosen above, so the host clones what this copy is
   local pins; pins=$(mktemp -d "${TMPDIR:-/tmp}/shimpaku-own-pins.XXXXXX")
   sed "s/^SHIMPAKU_COMMIT=.*/SHIMPAKU_COMMIT=$SHIMPAKU_COMMIT/" "$HERE/PINS" > "$pins/PINS"
   # shellcheck disable=SC2086
   (COPYFILE_DISABLE=1 tar $tarflags --exclude __pycache__ -cf - -C "$pins" PINS -C "$HERE" remote configs) |
     if [ "$LOCAL" = 1 ]; then
-      bash -c "install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar -C $STATE/bundle.new -xf - && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle"
+      bash -c "install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar --no-same-owner -C $STATE/bundle.new -xf - && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle"
     else
-      "${SSH[@]}" "${SUDO}sh -c 'install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar -C $STATE/bundle.new -xf - 2>/dev/null && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle'"
+      "${SSH[@]}" "${SUDO}sh -c 'install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar --no-same-owner -C $STATE/bundle.new -xf - 2>/dev/null && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle'"
     fi
+  rm -rf "$pins"
 }
 stage_args() {
   STAGE_ARGS=(--profile "$PROFILE" --operator "$OP" --data-dir "$DATA" --bind "$BIND")
