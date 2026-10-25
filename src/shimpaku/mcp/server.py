@@ -37,7 +37,7 @@ TIERS: dict[str, str] = {
     **{t: "T0" for t in ("inventory_list", "sle_get_summary", "sle_get_blast_radius", "iface_get_errors",
                          "port_get_config", "topo_get_neighbors", "routing_get_health", "config_get_commits",
                          "config_get_diff", "probe_run", "incident_list", "incident_get", "audit_query",
-                         "junos_show", "kb_search", "kb_read")},
+                         "junos_show", "kb_search", "kb_read", "device_get_health")},
     "action_propose_bounce_port": "T1", "action_propose_rerun_deploy": "T1",
     "action_propose_add_vlan_to_trunk": "T1",
     "action_propose_rollback": "T2", "action_propose_disable_port": "T2",
@@ -347,6 +347,12 @@ def build_server(audit: AuditLog | None = None) -> MCPServer:
             return _read(await junos_raw.run_show(device, command))
         except Exception as e:  # noqa: BLE001
             return _read({"error": {"code": "failed", "message": type(e).__name__}})
+
+    @mcp.tool(annotations=RO)
+    async def device_get_health(device: str | None = None, window_min: int = 60) -> ReadResult:
+        """CPU and memory (gNMI, sampled every 10 s), the device-minute verdicts (good / bad and why) and
+        port oper state, per device or for the whole lab. Use it for 'how busy / healthy is X'."""
+        return _read(await service.device_get_health(device, max(1, min(int(window_min), 1440))))
 
     @mcp.tool(annotations=RO)
     async def kb_search(query: str, k: int = 5) -> ReadResult:
