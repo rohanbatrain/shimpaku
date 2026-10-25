@@ -919,7 +919,8 @@ def create_app(
         return poller(request, "incidents", EVENTS_TICK_S, lambda: _viewed(view.incident_list, call("incident_list")))
 
     from shimpaku.api import routes_viz  # /api/viz/*: Overview, Topology, Device pages (read-only)
-    app.include_router(routes_viz.router(call, reader))
+    app.include_router(viz := routes_viz.router(call, reader))
+    from shimpaku.api import routes_hardware; app.include_router(routes_hardware.router(call, reader, service, topology=viz.topology, hostmon=lambda: getattr(app.state, "hostmon", None)))  # noqa: E702  /api/hardware
     from shimpaku.api import routes_console; app.include_router(routes_console.router(call, reader, rate))  # noqa: E702
     from shimpaku.api import routes_ops; app.include_router(routes_ops.router(operator, app, is_demo))  # noqa: E702  /api/ops/*: operator-only
     from shimpaku.api import routes_public  # /api/probes/heatmap, /api/public/summary (landing)

@@ -31,7 +31,8 @@ def _bps(node: str, ifn: str, direction: str, t: float) -> float | None:
     if _down(node, ifn, t):
         return 0.0
     rnd = random.Random(f"{node}{ifn}{direction}")
-    base = rnd.choice([3e5, 1.2e6, 6e6, 2.4e7, 9e7])
+    # well under the 100 Mbit/s a vJunos VM forwards in total (Juniper's vJunos overview pages)
+    base = rnd.choice([4e4, 1.5e5, 6e5, 2.4e6, 9e6])
     phase = rnd.uniform(0, 6.28)
     wobble = random.Random(f"{node}{ifn}{direction}{int(t // 10)}").uniform(0.92, 1.08)
     v = base * (1 + 0.45 * math.sin(t / 900 + phase)) * wobble
