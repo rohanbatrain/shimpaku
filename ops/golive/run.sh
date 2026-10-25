@@ -54,7 +54,11 @@ step_check() {
       echo "virga=$(grep -s ^SHIMPAKU_VIRGA_LIVE= $f | cut -d= -f2)"
       echo "contact=$(grep -sc ^SHIMPAKU_PRIVACY_CONTACT= $f)"; echo "pw=$([ -s $d/admin.hash ] && echo 1 || echo 0)"
       echo "totp=$([ -s $d/totp.json ] && echo 1 || echo 0)"; echo "svc=$(systemctl --user is-active shimpakud)"')
-    eval "$st"
+    # the answer is data (values come from the lab host's env file): read known keys, never eval it
+    local k v auth="" view="" virga="" pw="" totp="" svc=""
+    while IFS='=' read -r k v; do
+      case $k in auth|view|virga|pw|totp|svc) printf -v "$k" '%s' "$v" ;; esac
+    done <<<"$st"
     [[ $svc == active ]] && ok "shimpakud active" || no "shimpakud: $svc"
     [[ $pw == 1 ]] && ok "operator password set" || no "operator password (run: lab-secrets)"
     [[ $totp == 1 ]] && ok "TOTP enabled" || no "TOTP (run: lab-secrets)"
