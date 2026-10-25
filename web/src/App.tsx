@@ -1,6 +1,6 @@
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar } from "grommet-icons";
+import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal } from "grommet-icons";
 import { api, useApi } from "./api";
 import { SessionCtx, signOutAndClear, type Who } from "./session";
 import { Loading } from "./components/ui";
@@ -23,6 +23,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Request = lazy(() => import("./pages/Request"));
 const RequestStatus = lazy(() => import("./pages/RequestStatus"));
 const SessionRequests = lazy(() => import("./pages/SessionRequests"));
+const Console = lazy(() => import("./pages/Console"));
 
 export function Mark({ size = 26 }: { size?: number }) {
   return (
@@ -36,7 +37,7 @@ export function Mark({ size = 26 }: { size?: number }) {
 
 export const DISCLAIMER = "Independent project. Not affiliated with HPE or Juniper Networks.";
 
-const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"]];
+const TITLES: [string, string][] = [["/topology", "Topology"], ["/devices", "Device"], ["/sle", "Service levels"], ["/root-cause", "Root cause"], ["/actions", "Actions"], ["/benchmark", "Benchmark"], ["/agents", "Connected agents"], ["/settings", "Settings"], ["/admin/requests", "Session requests"], ["/console", "Console"]];
 const MOBILE = "(max-width: 900px)";
 
 // ≤ 900 px: compact app bar; the nav becomes a focus-trapped slide-over drawer.
@@ -75,7 +76,7 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
   }, [drawer, onClose]);
   const acts = useApi<{ actions: { status: string }[] }>("/api/actions", { url: "/api/stream/actions", event: "actions" });
   const open = acts.data?.actions.filter((a) => ["proposed", "awaiting_approval"].includes(a.status)).length ?? 0;
-  const op = who.role === "operator";
+  const op = who.role === "operator" && !who.presenting; // presenter mode: no admin nav
   const reqs = useApi<{ pending: number }>(op && who.mode === "local" ? "/api/admin/session-requests?status=pending" : null);
   useEffect(() => {
     if (!op || who.mode !== "local") return;
@@ -115,6 +116,11 @@ function Nav({ who, onSignOut, drawer, onClose }: { who: Who; onSignOut: () => v
           </span>
         )}
       </NavLink>
+      {who.role === "operator" && (
+        <NavLink to="/console">
+          <Terminal {...ic} /> Console
+        </NavLink>
+      )}
       <div className="sect">Evaluate</div>
       <NavLink to="/benchmark">
         <BenchIcon {...ic} /> Benchmark
@@ -260,6 +266,7 @@ export default function App() {
             <Route path="/agents" element={<Agents />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin/requests" element={<SessionRequests />} />
+            <Route path="/console" element={<Console />} />
             <Route path="*" element={<div className="content"><h1>Not found</h1><p className="weak">No page at {loc.pathname}.</p></div>} />
           </Routes>
           </Suspense>
