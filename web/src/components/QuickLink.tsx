@@ -3,7 +3,12 @@ import { Link as LinkIcon } from "grommet-icons";
 import { api } from "../api";
 import { Busy } from "./ui";
 
-type Invite = { id: string; token: string; expires: number };
+type Invite = { id: string; token: string; expires: number; link?: string | null };
+// The link follows the https domain the operator is on (every app host serves the same lab). Over the ssh
+// tunnel or plain http that would be http://127.0.0.1:8780/... (useless to them, token in clear): use the
+// server's own link (SHIMPAKU_PUBLIC_URL) then.
+const linkFor = (r: Invite) =>
+  location.protocol === "https:" || !r.link ? `${location.origin}/start?i=${encodeURIComponent(r.token)}` : r.link;
 const TTL = [{ h: 1, label: "1 hour" }, { h: 24, label: "24 hours" }, { h: 72, label: "3 days" }];
 const at = (t: number) => new Date(t * 1000).toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" });
 
@@ -18,8 +23,7 @@ export default function QuickLink() {
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const box = useRef<HTMLDivElement>(null);
-  // the link follows the domain the operator is on (both serve the same lab)
-  const link = inv ? `${location.origin}/start?i=${encodeURIComponent(inv.token)}` : "";
+  const link = inv ? linkFor(inv) : "";
 
   useEffect(() => {
     if (!open) return;
@@ -39,7 +43,7 @@ export default function QuickLink() {
     try {
       const r = await api<Invite>("/api/admin/invites", { json: { note: note.trim(), ttl_hours: ttl } });
       setInv(r);
-      await copy(`${location.origin}/start?i=${encodeURIComponent(r.token)}`);
+      await copy(linkFor(r));
     } catch (e: any) {
       setErr(e.status === 401 || e.status === 403 ? "Your operator session has ended. Sign in again." : e.message);
     } finally { setBusy(false); }
