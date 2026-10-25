@@ -62,13 +62,37 @@ const SUGGEST: [RegExp, string[]][] = [
 ];
 const suggestFor = (p: string) => SUGGEST.find(([r]) => r.test(p))![1];
 
+function useTick(on: boolean) {
+  const [, set] = useState(0);
+  useEffect(() => { if (!on) return; const i = window.setInterval(() => set((n) => n + 1), 1000); return () => window.clearInterval(i); }, [on]);
+}
+
+/** Always say what Shim is doing while an answer is open: the phase, the time so far, and a
+ * plain note when nothing has arrived for a while (slow model) rather than leaving silence. */
+function Progress({ t }: { t: Turn }) {
+  useTick(true);
+  const now = Date.now() / 1000;
+  const el = Math.max(0, Math.round(now - t.at));
+  const quiet = Math.round(now - (t.last ?? t.at));
+  const last = t.tools[t.tools.length - 1];
+  const phase = t.text ? "Writing the answer"
+    : last ? <>Checking <span className="mono">{last.name.replace(/_/g, " ")}</span>{t.tools.length > 1 ? ` (${t.tools.length} tool calls so far)` : ""}</>
+    : t.model ? <>Thinking with <span className="mono">{t.model}</span></>
+    : "Connecting to Shim";
+  return (
+    <div className="sc-working" role="status" aria-live="polite">
+      <Busy /> <span>{phase}…</span> <span className="sc-el mono">{el} s</span>
+      {quiet >= 25 && <div className="sc-slow">Still working: no update for {quiet} s. The model can take a minute on a hard question; you can wait or press Stop.</div>}
+    </div>
+  );
+}
+
 function Answer({ c, t, page }: { c: Convo; t: Turn; page: string }) {
   const [steps, setSteps] = useState(false);
   const [copied, setCopied] = useState(false);
   const { who } = useSession();
   const ms = t.tools.reduce((s, x) => s + (x.ms ?? 0), 0);
   const acts = [...new Set(t.tools.flatMap((x) => x.ids ?? []).filter((i) => /^act-/.test(i)))];
-  const last = t.tools[t.tools.length - 1];
   return (
     <div className="sc-a">
       <div className="sc-meta">
@@ -80,9 +104,7 @@ function Answer({ c, t, page }: { c: Convo; t: Turn; page: string }) {
           </button>
         )}
       </div>
-      {!t.done && (
-        <div className="sc-working" role="status"><Busy /> {last ? <>checking <span className="mono">{last.name.replace(/_/g, " ")}</span>…</> : "reading the question…"}</div>
-      )}
+      {!t.done && <Progress t={t} />}
       {(steps || (!t.done && t.tools.length > 0)) && <div className="sc-trace"><TraceDiagram t={traceOf(t, c.id)} compact /></div>}
       {t.text && <Md text={t.text} />}
       {t.evidence.length > 0 && (
@@ -101,11 +123,14 @@ function Answer({ c, t, page }: { c: Convo; t: Turn; page: string }) {
         </div>
       )}
       {t.error && <div className="notice crit">Shim could not answer: {t.error}</div>}
+      {t.done && !t.error && !t.stopped && !t.text && (
+        <div className="notice warn">Shim finished without writing an answer{t.tools.length ? ` (after ${t.tools.length} tool call${t.tools.length === 1 ? "" : "s"})` : ""}. Try again, or rephrase the question.</div>
+      )}
       {t.stopped && !t.error && <div className="small weak">Stopped{t.text ? "" : " before an answer"}.</div>}
       {t.done && (
         <div className="sc-foot">
           {t.text && <button type="button" className="linkish" onClick={() => { void navigator.clipboard?.writeText(t.text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }); }}>{copied ? "Copied" : "Copy"}</button>}
-          {(t.error || t.stopped) && <button type="button" className="linkish" onClick={() => retry(c, t, page)}>Retry</button>}
+          {(t.error || t.stopped || !t.text) && <button type="button" className="linkish" onClick={() => retry(c, t, page)}>Retry</button>}
           {t.tools.length > 0 && <Link to={`/assistant/trace?t=${t.id}`} className="linkish">Reasoning trace →</Link>}
         </div>
       )}

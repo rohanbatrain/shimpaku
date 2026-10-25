@@ -10,6 +10,7 @@ export type Turn = {
   tools: Extract<AskEvent, { type: "tool" }>[];
   evidence: Extract<AskEvent, { type: "evidence" }>[];
   text: string; done: boolean; error?: string; stopped?: boolean;
+  last?: number; // when the latest stream event arrived (seconds), to tell "slow" from "stuck"
 };
 export type Convo = { id: string; title: string; at: number; turns: Turn[] };
 type State = { owner: string | null; active: string | null; convos: Convo[] };
@@ -47,9 +48,10 @@ export function useShim(): State {
   return useSyncExternalStore((f) => { subs.add(f); return () => subs.delete(f); }, () => state, () => state);
 }
 
-/** A different signed-in user at this browser starts with an empty history. */
+/** A different signed-in user at this browser starts with an empty history. A visitor (no user,
+ * e.g. after an operator session times out) claims nothing: the history waits for its owner. */
 export function claim(user: string | null) {
-  if (state.owner !== user) set(() => ({ owner: user, active: null, convos: [] }));
+  if (user && state.owner !== user) set(() => ({ owner: user, active: null, convos: [] }));
 }
 
 let seq = Date.now() % 1e6;
@@ -88,7 +90,7 @@ export function send(question: string, page: string): boolean {
   set((s) => ({ ...s, convos: s.convos.map((x) => (x.id === cid ? { ...x, at: t.at, turns: [...x.turns, t].slice(-MAX_TURNS) } : x)) }));
   const ac = new AbortController();
   live.set(t.id, ac);
-  const u = (f: (t: Turn) => Turn) => upd(cid, t.id, f);
+  const u = (f: (t: Turn) => Turn) => upd(cid, t.id, (x) => ({ ...f(x), last: Date.now() / 1000 }));
   ask(q, { page }, (e) => {
     if (e.type === "meta") u((x) => ({ ...x, model: e.model }));
     else if (e.type === "tool") u((x) => ({ ...x, tools: [...x.tools, e] }));

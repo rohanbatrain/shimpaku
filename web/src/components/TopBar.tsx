@@ -15,7 +15,8 @@ const SECTIONS = new Set(["Overview", "Topology", "Hardware", "Service levels", 
 export default function TopBar({ title, crumbs, children }: { title: ReactNode; crumbs?: ReactNode; children?: ReactNode }) {
   const { who, openAssistant, refresh } = useSession();
   const present = (on: boolean) => { api("/api/console/presenting", { json: { on } }).then(refresh).catch(() => {}); };
-  const about = pageExplainer(useLocation().pathname);
+  const path = useLocation().pathname;
+  const about = pageExplainer(path);
   const mac = typeof navigator !== "undefined" && /Mac/.test(navigator.platform);
   return (
     <header className="topbar">
@@ -37,9 +38,9 @@ export default function TopBar({ title, crumbs, children }: { title: ReactNode; 
             <button type="button" className="btn present-toggle" onClick={() => present(false)}>Stop presenting</button></>
         : <button type="button" className="btn present-toggle" onClick={() => present(true)} title="Switch to the clean visitor-style view for a demo">Presenter mode</button>)}
       {who.mode === "off" && !who.replay && !who.presenting && <span className="badge-mode" title="SHIMPAKU_AUTH_MODE=off: no sign-in; approvals still need a click">Auth off · no sign-in</span>}
-      <button className="btn topbar-ask" onClick={() => openAssistant()} aria-keyshortcuts="Control+K Meta+K">
+      {path !== "/shim" && <button className="btn topbar-ask" onClick={() => openAssistant()} aria-keyshortcuts="Control+K Meta+K">
         <Chat size="15px" color="#00785C" aria-hidden /> Ask Shim <span className="kbd">{mac ? "⌘" : "Ctrl"} K</span>
-      </button>
+      </button>}
     </header>
   );
 }
