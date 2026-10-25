@@ -5,6 +5,8 @@ import { usePoll } from "../components/poll";
 import { Load, StatusPill } from "../components/ui";
 import { statusLabel, STATUS_TONE, time } from "../format";
 import { Freshness } from "./Topology";
+import { FunnelSummary, type FunnelData } from "../components/Funnel";
+import "../explain.css";
 
 type Ov = {
   generated_at: number;
@@ -62,6 +64,7 @@ export default function Overview() {
   const ov = usePoll<Ov>("/api/viz/overview");
   const topo = usePoll<Topo>("/api/viz/topology");
   const nav = useNavigate();
+  const fun = usePoll<FunnelData>("/api/explain/funnel?window=7d", 30000);
   return (
     <>
       <TopBar title="Overview" crumbs="Seven vJunos devices, two sites, live">
@@ -142,6 +145,14 @@ export default function Overview() {
               )}
             </Load>
           </div>
+        </div>
+        <div className="card ov-funnel">
+          <div className="ex-head">
+            <h2 style={{ margin: 0 }}>Guardrail funnel · last 7 days</h2>
+            <span style={{ flex: 1 }} />
+            <Link className="small" to="/guardrails">Open funnel →</Link>
+          </div>
+          <Load q={fun} rows={2}>{(f) => <FunnelSummary data={f} />}</Load>
         </div>
         <section className="card how" aria-labelledby="how-h">
           <h2 id="how-h">How this works</h2>

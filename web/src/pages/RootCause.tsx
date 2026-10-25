@@ -7,6 +7,7 @@ import { FailBars } from "../components/charts";
 import { Empty, Load, StatusPill } from "../components/ui";
 import { ago, time } from "../format";
 import { useSession } from "../session";
+import BlastMap from "../components/BlastMap";
 
 type Incident = { id: string; title: string; site: string; sle: string; classifier: string; status: string; opened_at: number; impact: Record<string, number>; action_id?: string | null; summary?: string };
 type Node = { name: string; share_pct: number; children: Node[] };
@@ -146,6 +147,7 @@ export default function RootCause() {
             </div>
           )}
         </Load>
+        <BlastMap id={id} />
         <Load q={br} rows={6}>
           {(b) => (
             <>

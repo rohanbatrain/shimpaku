@@ -82,7 +82,11 @@ export function linkText(l: TLink) {
   return `${l.a} ${l.a_if ?? ""} ↔ ${l.b} ${l.b_if ?? ""}: ${STATE_LABEL[l.state]}${l.bad.length ? ` — ${l.bad.join(", ")}` : ""}${l.good.length ? ` (${l.good.join(", ")})` : ""}`;
 }
 
-export default function TopoMap({ data, selected, onSelect, compact = false }: { data: Topo; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean }) {
+/** `focus`: highlight these nodes / link ids and dim the rest (blast radius on the root-cause page). */
+export type TopoFocus = { nodes: string[]; links: string[] } | null;
+
+export default function TopoMap({ data, selected, onSelect, compact = false, focus = null }: { data: Topo; selected?: string | null; onSelect?: (n: string) => void; compact?: boolean; focus?: TopoFocus }) {
+  const fcls = (on: boolean) => (focus ? (on ? " focus" : " dim") : "");
   const tall = useTall();
   const POS = tall ? POS_TALL : POS_WIDE;
   const SITES = (tall ? SITES_TALL : SITES_WIDE) as { id: string; label: string; sub: string; x: number; w: number; y?: number }[];
@@ -124,7 +128,7 @@ export default function TopoMap({ data, selected, onSelect, compact = false }: {
         const la = along(a, b, top(a, b)), lb = along(b, a, top(b, a));
         const hl = selected && (l.a === selected || l.b === selected);
         return (
-          <g key={l.id} className={`topo-link s-${l.state}${hl ? " hl" : ""}`}>
+          <g key={l.id} className={`topo-link s-${l.state}${hl ? " hl" : ""}${fcls(!!focus?.links.includes(l.id))}`}>
             <title>{linkText(l)}</title>
             <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#fff" strokeWidth={hl ? 10 : 8} />
             <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={c} strokeWidth={hl ? 5 : 3.5} strokeDasharray={l.state === "unknown" ? "6 6" : l.state === "down" ? "2 7" : undefined} strokeLinecap="round" />
@@ -145,7 +149,7 @@ export default function TopoMap({ data, selected, onSelect, compact = false }: {
       })}
       {/* demo fixture trunk sw1 ge-0/0/5 */}
       {POS[fx.device] && (
-        <g className={`topo-fix${fx.present === false ? " missing" : ""}`}>
+        <g className={`topo-fix${fx.present === false ? " missing" : ""}${fcls(false)}`}>
           <title>{`${fx.device} ${fx.ifname} demo trunk: VLAN ${fx.vlan} ${fx.present == null ? "state unknown" : fx.present ? "present" : "missing"}`}</title>
           <line x1={POS[fx.device][0]} y1={POS[fx.device][1]} x2={FIX[0] - 70} y2={FIX[1]} stroke={fxColor} strokeWidth="3" strokeDasharray="1 6" strokeLinecap="round" />
           <rect x={FIX[0] - 72} y={FIX[1] - 24} width="160" height="48" rx="9" fill="#fff" stroke={fxColor} strokeWidth="2" filter="url(#tshadow)" className="topo-fix-box" />
@@ -162,10 +166,11 @@ export default function TopoMap({ data, selected, onSelect, compact = false }: {
         const sel = selected === n.name;
         const label = `${n.name}, ${n.role}, ${n.site}: ${STATE_LABEL[n.state]}${n.incidents.length ? `, ${n.incidents.length} open incident` : ""}`;
         return (
-          <g key={n.name} className={`topo-node${sel ? " sel" : ""}`} transform={`translate(${x} ${y})`} role="button" tabIndex={onSelect ? 0 : -1}
+          <g key={n.name} className={`topo-node${sel ? " sel" : ""}${fcls(!!focus?.nodes.includes(n.name))}`} transform={`translate(${x} ${y})`} role="button" tabIndex={onSelect ? 0 : -1}
             aria-label={label} aria-pressed={onSelect ? sel : undefined} onClick={() => onSelect?.(n.name)} onKeyDown={key(n.name)}>
             <rect className="topo-hit" x="-44" y="-44" width="88" height="104" rx="10" />
             {sel && <circle r="38" fill="none" stroke="#01A982" strokeWidth="3" opacity=".35" />}
+            {focus?.nodes.includes(n.name) && <circle r="40" className="topo-focus-ring" />}
             <circle r="30" fill="#fff" stroke={c} strokeWidth="4" filter="url(#tshadow)" />
             <Glyph role={n.role} />
             <g transform="translate(22 -22)" aria-hidden>

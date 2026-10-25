@@ -70,7 +70,7 @@ export function useSse<T>(url: string | null, event: string, onData: (d: T) => v
 
 export type AskEvent =
   | { type: "meta"; model: string; demo?: boolean }
-  | { type: "tool"; name: string; call: string; ms?: number; ok?: boolean }
+  | { type: "tool"; name: string; call: string; ms?: number; ok?: boolean; args?: string; ids?: string[] }
   | { type: "evidence"; title: string; text: string; href?: string }
   | { type: "token"; text: string }
   | { type: "error"; message: string }
