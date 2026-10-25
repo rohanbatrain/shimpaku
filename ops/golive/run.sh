@@ -101,6 +101,7 @@ step_lab_config() {
   need DOMAINS LAB_NETBIRD_IP VPS_NETBIRD_IP
   lab_env_set SHIMPAKU_AUTH_MODE local SHIMPAKU_PUBLIC_VIEW 1 SHIMPAKU_BIND "$LAB_NETBIRD_IP" \
     SHIMPAKU_PORT "$LAB_PORT" SHIMPAKU_PUBLIC_URL "https://$(sib "${DOMAINS%% *}" app)" \
+    SHIMPAKU_PUBLIC_CORS_ORIGINS "$(printf "https://%s," $DOMAINS | sed "s/,$//")" \
     SHIMPAKU_TRUSTED_PROXIES "$VPS_NETBIRD_IP" FORWARDED_ALLOW_IPS "$VPS_NETBIRD_IP"
   ssh "$LAB_HOST" '[ -s ~/.local/share/shimpaku/admin.hash ] && [ -s ~/.local/share/shimpaku/totp.json ]' \
     || { echo "run lab-secrets first: public view refuses operator sign-in without a password and TOTP" >&2; exit 1; }
