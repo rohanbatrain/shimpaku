@@ -1,3 +1,4 @@
+import AccessBanner from "./components/AccessBanner";
 import { type RefObject, lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
 import { Chat, Menu, Close, Robot, Dashboard, Tree, Home, Cluster, Action, BarChart as BenchIcon, Connect, SettingsOption, Calendar, Terminal, Monitor, Cloud, Shield, Link as ChainIcon, Play, Servers } from "grommet-icons";
@@ -288,6 +289,7 @@ export default function App() {
         <Nav who={who} onSignOut={signOut} drawer={drawer} onClose={closeDrawer} />
         {drawer && <div className="scrim" onClick={closeDrawer} aria-hidden />}
         <main className="main" id="main">
+          <AccessBanner />
           {who.role === "tester" && <Suspense fallback={null}><LeaseBanner /></Suspense>}
           <Suspense fallback={<Loading label="Loading" />}>
           <Routes>
