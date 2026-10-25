@@ -371,7 +371,7 @@ class VirgaLive:
             t = self._trial if self._busy else None
             return {"active": t is not None, "scenario": t["scenario"] if t else None,
                     "title": t["title"] if t else None, "phase": t["phase"] if t else None,
-                    "since": t["t_start"] if t else None}
+                    "since": t["t_start"] if t else None, "site": t.get("site") if t else None}
 
     # ---- writes ----------------------------------------------------------------------
     def _check_scenario(self, scenario: str, hold_s: int | None) -> tuple[Any, dict, int]:
@@ -607,7 +607,7 @@ class ReplayVirga:
         return {"trials": tr.get("trials") or [], "selftest": tr.get("selftest") or selftest_block({})}
 
     def drill(self) -> dict:
-        return {"active": False, "scenario": None, "title": None, "phase": None, "since": None}
+        return {"active": False, "scenario": None, "title": None, "phase": None, "since": None, "site": None}
 
     def needs_recovery(self) -> bool:
         return False

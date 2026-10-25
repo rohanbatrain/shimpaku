@@ -12,8 +12,11 @@
   user names or tester identities. Rate limited per client address (category ``read``) and cached.
 - ``GET /api/public/health`` (no sign-in): bare words for the status page's keyword monitors
   (Uptime Kuma): per site ``healthy`` / ``degraded`` / ``offline``, ``drill`` idle / active, ``lab``
-  live / replay. ``degraded`` = the site's latest SLE minute is below its goal (100 % when none is
-  set) or a device of the site has no stored health sample (its reads are failing); ``offline`` =
+  live / replay. ``degraded`` = the site has an open incident (the incident engine's own judgement:
+  persistence and rate tests, CPU-only minutes left out unless they persist), or a Virga drill on the
+  site has a verified fault in place (phase hold / revert), or a device of the site has no stored
+  health sample (its reads are failing). A single SLE minute below goal is not enough: on the lab host
+  one-minute CPU spikes are routine (``analytics/incidents.py``). ``offline`` =
   every device of the site is failing, or nothing about the site can be read. Stored reads only, no
   device call; cached 10 s; same rate limit and CORS as the summary.
 
@@ -35,7 +38,7 @@ from shimpaku.config import settings
 
 SUMMARY_TTL_S = 20.0
 HEALTH_TTL_S = 10.0
-NO_DRILL = {"active": False, "scenario": None, "title": None, "phase": None, "since": None}
+NO_DRILL = {"active": False, "scenario": None, "title": None, "phase": None, "since": None, "site": None}
 # "executed" = the action has at least one Junos commit recorded (its change reached a device)
 UNSAFE_DEFINITION = ("actions that committed a change to a device although the guardrail policy did not "
                      "allow them (policy.allowed is not true), over every action in the action record")
@@ -73,16 +76,21 @@ def latest_below_goal(sle: Any) -> bool | None:
     return False
 
 
-def site_health(sle: Any, inv: dict, health: dict, site: str) -> str:
+FAULT_IN_PLACE = {"hold", "revert"}  # a drill's phases after Virga verified the fault, before the revert is verified
+
+
+def site_health(sle: Any, inv: dict, health: dict, site: str, incidents: Any = None, drill: dict | None = None) -> str:
     nodes = [d.get("name") for d in (inv.get("nodes") or inv.get("devices") or [])
              if isinstance(d, dict) and d.get("site") == site]
     rows = {d.get("device"): d for d in health.get("devices") or [] if isinstance(d, dict)} \
         if isinstance(health.get("devices"), list) else None
     failing = [n for n in nodes if rows is not None and not (rows.get(n) or {}).get("sampled_at")]
-    below = latest_below_goal(sle)
-    if (nodes and len(failing) == len(nodes)) or (below is None and rows is None):
+    if (nodes and len(failing) == len(nodes)) or (latest_below_goal(sle) is None and rows is None):
         return "offline"
-    return "degraded" if failing or below else "healthy"
+    open_inc = any(isinstance(i, dict) and i.get("site") == site and i.get("status") == "open"
+                   for i in (incidents or {}).get("incidents") or []) if isinstance(incidents, dict) else False
+    drilled = bool(drill and drill.get("active") and drill.get("site") == site and drill.get("phase") in FAULT_IN_PLACE)
+    return "degraded" if failing or open_inc or drilled else "healthy"
 
 
 def router(call: Callable[..., Awaitable[Any]], reader: Callable[..., Any]) -> APIRouter:
@@ -179,11 +187,14 @@ def router(call: Callable[..., Awaitable[Any]], reader: Callable[..., Any]) -> A
     async def build_health(app: Any) -> dict:
         if getattr(app.state.service, "REPLAY", False):
             return {"campus": "offline", "fabric": "offline", "drill": "idle", "lab": "replay"}
-        inv, health, campus, fabric = await asyncio.gather(
+        inv, health, campus, fabric, incs = await asyncio.gather(
             soft("inventory_list"), soft("device_get_health", window_min=5),
-            soft("sle_get_summary", "campus", window_min=5), soft("sle_get_summary", "fabric", window_min=5))
-        return {"campus": site_health(campus, inv, health, "campus"), "fabric": site_health(fabric, inv, health, "fabric"),
-                "drill": "active" if drill_of(app)["active"] else "idle", "lab": "live"}
+            soft("sle_get_summary", "campus", window_min=5), soft("sle_get_summary", "fabric", window_min=5),
+            soft("incident_list", "open"))
+        d = drill_of(app)
+        return {"campus": site_health(campus, inv, health, "campus", incs, d),
+                "fabric": site_health(fabric, inv, health, "fabric", incs, d),
+                "drill": "active" if d["active"] else "idle", "lab": "live"}
 
     @r.get("/api/public/health")
     async def public_health(request: Request) -> JSONResponse:

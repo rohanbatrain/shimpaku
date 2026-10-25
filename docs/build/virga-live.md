@@ -57,14 +57,17 @@ POST /api/virga/trials/{id}/revert can_present  202 {ok: true}   (ends the hold 
 POST /api/virga/recover            can_present  200 { recovered: [trial ids], ok: bool }
 
 GET  /api/public/summary           (existing) gains
-  drill: { active: bool, scenario: str|null, title: str|null, phase: str|null, since: float|null }
+  drill: { active: bool, scenario: str|null, title: str|null, phase: str|null, since: float|null, site: str|null }
 GET  /api/public/health            anonymous, cached 10 s, rate-limited (category read)
   { campus: "healthy"|"degraded"|"offline", fabric: "healthy"|"degraded"|"offline",
     drill: "idle"|"active", lab: "live"|"replay" }
 ```
 
 `/api/public/health` is for Uptime Kuma keyword monitors; values are bare words so a keyword match is
-unambiguous. "degraded" = the site's latest SLE minute is below its goal, or a device read fails.
+unambiguous. "degraded" = the site has an open incident, or a drill on the site has a verified fault in place
+(phase hold / revert), or a device read fails. (First built as "latest SLE minute below goal"; live, that flapped
+red every few minutes on Resources·CPU minutes from the overloaded lab host, which the incident engine already
+filters by persistence, so the status page now follows the incident engine.)
 
 ## 3. Where it shows
 

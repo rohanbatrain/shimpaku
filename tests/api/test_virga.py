@@ -316,7 +316,8 @@ def test_canned_demo_walks_a_simulated_trial(demo_client):
     st = c.get("/api/virga/state").json()
     assert st["simulated"] and st["busy"] and st["trial"]["phase"] == "preflight"
     assert c.get("/api/public/summary").json()["drill"] == {"active": True, "scenario": "FAB-01", "phase": "preflight",
-                                                           "title": st["trial"]["title"], "since": st["trial"]["t_start"]}
+                                                           "title": st["trial"]["title"], "since": st["trial"]["t_start"],
+                                                           "site": "fabric"}
     clock.t += 20
     st = c.get("/api/virga/state").json()
     assert st["trial"]["phase"] == "hold" and st["trial"]["hold_until"]
@@ -347,7 +348,15 @@ def test_site_health_rules():
     sle_good = {"sles": [{"goal_pct": 99, "series": [{"t": 1, "value": 50}, {"t": 2, "value": 100}]}]}
     sle_bad = {"sles": [{"goal_pct": None, "series": [{"t": 1, "value": 100}, {"t": 2, "value": 97.5}]}]}
     assert site_health(sle_good, inv, ok, "campus") == "healthy"
-    assert site_health(sle_bad, inv, ok, "campus") == "degraded"          # no goal set: 100 %
+    # one SLE minute below goal (e.g. a CPU spike on the lab host) is not enough on its own
+    assert site_health(sle_bad, inv, ok, "campus") == "healthy"
+    incs = {"incidents": [{"site": "campus", "status": "open"}, {"site": "fabric", "status": "closed"}]}
+    assert site_health(sle_bad, inv, ok, "campus", incs) == "degraded"
+    assert site_health(sle_good, inv, ok, "fabric", incs) == "healthy"
+    drill = {"active": True, "site": "fabric", "phase": "hold"}
+    assert site_health(sle_good, inv, ok, "fabric", None, drill) == "degraded"
+    assert site_health(sle_good, inv, ok, "fabric", None, {**drill, "phase": "inject"}) == "healthy"  # not verified yet
+    assert site_health(sle_good, inv, ok, "campus", None, drill) == "healthy"
     one_down = {"devices": [{"device": "r1", "sampled_at": None}, {"device": "sw1", "sampled_at": 1.0}]}
     assert site_health(sle_good, inv, one_down, "campus") == "degraded"
     assert site_health(sle_good, inv, {"devices": []}, "campus") == "offline"  # every device failing

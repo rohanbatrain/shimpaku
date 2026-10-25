@@ -158,9 +158,9 @@ class DemoVirga:
         with self._mu:
             trial, busy = self._settle(self.clock())
             if not busy:
-                return {"active": False, "scenario": None, "title": None, "phase": None, "since": None}
+                return {"active": False, "scenario": None, "title": None, "phase": None, "since": None, "site": None}
             return {"active": True, "scenario": trial["scenario"], "title": trial["title"], "phase": trial["phase"],
-                    "since": trial["t_start"]}
+                    "since": trial["t_start"], "site": trial.get("site")}
 
     def start(self, scenario: str, hold_s: int | None, caller: dict) -> str:
         cat = self.catalogue()
