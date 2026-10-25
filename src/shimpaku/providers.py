@@ -293,3 +293,6 @@ def register_all(store) -> None:
     service.register_provider("bench_results", bench_results)
     service.register_provider("device_get_health", device_get_health)
     service.register_provider("iface_get_history", iface_get_history)
+
+    from shimpaku import providers_live  # live traffic, event tail, as-of state (api/routes_live.py)
+    providers_live.register_all(store)
