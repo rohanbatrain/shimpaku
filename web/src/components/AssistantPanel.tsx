@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Close, Robot, Expand, History, Add, Split } from "grommet-icons";
 import { useSession } from "../session";
-import { activeConvo, claim, newChat, send, useShim } from "../shim";
-import { Composer, Conversation, ConvoList, VisitorNote, Welcome } from "./ShimChat";
+import { activeConvo, claim, newChat, send, setGuide, useShim } from "../shim";
+import { Composer, Conversation, ConvoList, GuideBanner, GuideWelcome, Welcome } from "./ShimChat";
 import "../explain.css";
 
 export default function AssistantPanel({ seed, onClose }: { seed?: string; onClose: () => void }) {
@@ -19,9 +19,10 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
   const [wide, setWide] = useState(() => { try { return localStorage.getItem("shimpaku.shim.wide") === "1"; } catch { return false; } });
   const toggleWide = () => setWide((w) => { try { localStorage.setItem("shimpaku.shim.wide", w ? "0" : "1"); } catch {} return !w; });
   const seeded = useRef(false);
-  useEffect(() => { claim(who.user); }, [who.user]);
+  useEffect(() => { claim(who.user); setGuide(visitor); }, [who.user, visitor]);
   useEffect(() => {
-    if (seed && !seeded.current && !visitor) {
+    if (seed && !seeded.current) {
+      setGuide(visitor);
       seeded.current = true; // refs survive StrictMode's effect replay, so the seed is sent once
       newChat();
       send(seed, loc.pathname);
@@ -33,7 +34,7 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
         <Robot color="#00785C" size="18px" aria-hidden />
         <b className="sc-h-t" title={c?.title}>{c?.title ?? "Ask Shim"}</b>
         <span style={{ flex: 1 }} />
-        {!visitor && <>
+        {<>
           <button className="icon-btn" onClick={() => setHist((h) => !h)} aria-pressed={hist} aria-label="Conversations" title="Conversations"><History size="15px" /></button>
           <button className="icon-btn" onClick={() => { newChat(); setHist(false); }} aria-label="New chat" title="New chat"><Add size="15px" /></button>
         </>}
@@ -41,11 +42,12 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
         <button className="icon-btn" onClick={() => { onClose(); nav("/shim"); }} aria-label="Open full screen" title="Open full screen"><Expand size="14px" /></button>
         <button className="icon-btn" onClick={onClose} aria-label="Close (Esc). An answer in progress keeps going." title="Close (Esc)"><Close size="14px" /></button>
       </div>
-      {hist && !visitor
+      {visitor && !hist && <GuideBanner />}
+      {hist
         ? <div className="sc-hist"><ConvoList onPick={() => setHist(false)} /></div>
-        : visitor ? <div className="sc-body"><VisitorNote /></div>
-        : <Conversation convo={c} empty={<Welcome onPick={(q) => send(q, loc.pathname)} />} />}
-      {!visitor && !hist && <Composer autoFocus />}
+        : <Conversation convo={c} guide={visitor}
+            empty={visitor ? <GuideWelcome onPick={(q) => send(q, loc.pathname)} /> : <Welcome onPick={(q) => send(q, loc.pathname)} />} />}
+      {!hist && <Composer autoFocus />}
     </aside>
   );
 }

@@ -26,6 +26,7 @@ import asyncio
 import hmac
 import inspect
 import json
+import time
 import logging
 import os
 import secrets
@@ -587,6 +588,67 @@ def create_app(
         return await call("action_reject", action_id, p.caller())
 
     tester_asks: dict[str, int] = {}  # lease id -> Shim questions asked on the shared key
+    public_asks: dict[str, list[float]] = {}  # client IP -> times of guide-mode questions (10 min)
+    public_day: dict[str, int] = {}  # "YYYY-MM-DD" -> guide-mode questions that day
+
+    @app.options("/api/assistant/public")
+    async def ask_public_preflight(request: Request):
+        from shimpaku.api.routes_public import cors_origins
+        origin = request.headers.get("origin", "")
+        h = {"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Methods": "POST",
+             "Access-Control-Allow-Headers": "content-type", "Access-Control-Max-Age": "600"} if origin in cors_origins() else {}
+        return Response(status_code=204, headers=h)
+
+    @app.post("/api/assistant/public")
+    async def ask_public(request: Request):
+        """Shim's guide mode for anyone, signed in or not, including the static landing page (CORS
+        for SHIMPAKU_PUBLIC_CORS_ORIGINS). It reads only Shimpaku's documents: no device, incident or
+        action tool is offered, nothing is proposed. No cookie is used, so there is no CSRF surface;
+        the body may be sent as text/plain to stay a simple (preflight-free) request."""
+        from shimpaku.api.routes_public import cors_origins
+        origin = request.headers.get("origin", "")
+        cors = {"Access-Control-Allow-Origin": origin, "Vary": "Origin"} if origin in cors_origins() else {}
+
+        def fail(code: int, msg: str) -> JSONResponse:  # errors carry CORS too, so the landing page can show them
+            return JSONResponse({"detail": msg}, status_code=code, headers=cors)
+
+        if origin and not cors and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return fail(403, "cross-origin request refused")
+        if not settings.public_shim or ask_fn is None or "guide" not in inspect.signature(ask_fn).parameters:
+            return fail(503, "Shim's public guide is not enabled on this server")
+        raw = await request.body()
+        if len(raw) > 32_000:
+            return fail(413, "request too large")
+        try:
+            body = AskBody.model_validate_json(raw)
+        except Exception:  # noqa: BLE001
+            return fail(422, "send {question, history?}")
+        if len(body.question) > 600:
+            return fail(422, "Questions are limited to 600 characters here")
+        ip, now = client_ip(request), time.time()
+        recent = [t for t in public_asks.get(ip, []) if now - t < 600]
+        day = time.strftime("%Y-%m-%d")
+        if len(recent) >= settings.public_shim_per_ip:
+            return fail(429, "That's a lot of questions! Shim's public guide takes a short break; try again in a few minutes, or request a live session for the full assistant.")
+        if public_day.get(day, 0) >= settings.public_shim_daily:
+            return fail(429, "Shim's public guide has answered all it can today. Request a live session for the full assistant.")
+        public_asks[ip] = recent + [now]
+        if day not in public_day:
+            public_day.clear()
+        public_day[day] = public_day.get(day, 0) + 1
+        hist = [t.model_dump() for t in body.history][-4:]
+
+        async def gen():
+            try:
+                async for ev in ask_fn(body.question, "public", {"page": "public"}, guide=True, history=hist):
+                    if await request.is_disconnected():
+                        break
+                    yield {"event": ev.get("type", "message"), "data": json.dumps(ev)}
+            except Exception:  # noqa: BLE001
+                log.exception("public guide failed")
+                yield {"event": "error", "data": json.dumps({"type": "error", "message": "Shim could not answer"})}
+
+        return EventSourceResponse(gen(), ping=15, headers=cors)
 
     @app.post("/api/assistant/ask")
     async def ask(body: AskBody, request: Request, p: Principal = Depends(reader)):

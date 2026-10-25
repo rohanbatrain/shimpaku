@@ -135,6 +135,10 @@ function components(done: boolean): Components {
       if (href && /^\/(?!\/)/.test(href)) return <Link to={href}>{children}</Link>;
       return <a href={href} target="_blank" rel="noopener noreferrer nofollow">{children}</a>;
     },
+    p({ children }) {
+      // guide mode ends each answer with a "🔓 …" line: show it as the call to action it is
+      return textOf(children).trimStart().startsWith("🔓") ? <p className="md-unlock">{children}</p> : <p>{children}</p>;
+    },
     img({ alt }) { return <span className="weak">[image not shown{alt ? `: ${alt}` : ""}]</span>; },
   };
 }

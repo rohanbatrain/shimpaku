@@ -3,6 +3,8 @@
 // While the operator runs a Virga fault drill (summary.drill.active, docs/build/virga-live.md §2) a
 // banner above the strip says so, with links to the dashboard's Fault lab and the status page.
 // The strip refreshes every 30 s while the tab is visible, so a visitor can watch a drill start and end.
+// Shim's public guide widget (shim.js) rides along with the live strip: one script tag on the page.
+(function () { var s = document.createElement("script"); s.src = "shim.js"; s.defer = true; document.head.appendChild(s); })();
 (function () {
   var box = document.getElementById("live");
   if (!box || !window.fetch) return;

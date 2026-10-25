@@ -18,6 +18,7 @@ export function Md({ text, done = true }: { text: string; done?: boolean }) {
 }
 
 const FOLLOW = ["Explain that more simply", "Show it as a table", "What should I do next?"];
+const FOLLOW_GUIDE = ["Explain that more simply", "What can the full assistant do?", "How do I get a live session?"];
 
 const SUGGEST: [RegExp, string[]][] = [
   [/^\/topology|^\/devices/, ["Is any link degraded right now?", "Why is leaf1 amber?", "Show OSPF and BFD health for the fabric"]],
@@ -109,7 +110,7 @@ function Answer({ c, t, page }: { c: Convo; t: Turn; page: string }) {
   );
 }
 
-export function Conversation({ convo, empty }: { convo?: Convo; empty?: ReactNode }) {
+export function Conversation({ convo, empty, guide = false }: { convo?: Convo; empty?: ReactNode; guide?: boolean }) {
   const loc = useLocation();
   const body = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
@@ -128,7 +129,7 @@ export function Conversation({ convo, empty }: { convo?: Convo; empty?: ReactNod
       ))}
       {last?.done && last.text && !last.error && (
         <div className="sc-follow" aria-label="Follow-up questions">
-          {FOLLOW.map((f) => <button key={f} type="button" onClick={() => { stick.current = true; send(f, loc.pathname); }}>{f}</button>)}
+          {(guide ? FOLLOW_GUIDE : FOLLOW).map((f) => <button key={f} type="button" onClick={() => { stick.current = true; send(f, loc.pathname); }}>{f}</button>)}
         </div>
       )}
       {away && (
@@ -153,12 +154,29 @@ export function Welcome({ onPick }: { onPick: (q: string) => void }) {
   );
 }
 
-export function VisitorNote() {
+/** The standing reminder in guide mode: what Shim can do here, and how to unlock the rest. */
+export function GuideBanner() {
+  return (
+    <div className="sc-guide" role="note">
+      <span><b>Guide mode.</b> Shim can explain how Shimpaku works and help you find your way. 🔓 To let it investigate the live lab and propose fixes, get into the full app.</span>
+      <span className="sc-guide-a">
+        <a className="btn primary" href="/request">Request a live session</a>
+        <Link className="btn" to="/login">Operator sign-in</Link>
+      </span>
+    </div>
+  );
+}
+
+export function GuideWelcome({ onPick }: { onPick: (q: string) => void }) {
   return (
     <div className="sc-welcome">
-      <b>Request a live session to use Shim</b>
-      <span className="weak">You are viewing read-only. During a live session Shim answers with the lab's own tools and can propose the fix for you to approve.</span>
-      <a className="btn primary" href="/request" style={{ alignSelf: "flex-start" }}>Request a live session</a>
+      <b>Hi! I'm Shim.</b>
+      <span className="weak">In guide mode I explain what Shimpaku is and how it works, from its own documents. I can't look at the live lab for you here.</span>
+      <div className="sc-sugg">
+        {["Hi! What is Shimpaku?", "What am I looking at on this page?", "How can an AI fix a network safely?", "What is Virga?", "How do I try it myself?"].map((s) => (
+          <button key={s} type="button" className="btn" onClick={() => onPick(s)}>{s}</button>
+        ))}
+      </div>
     </div>
   );
 }

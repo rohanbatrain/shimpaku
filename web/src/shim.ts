@@ -19,6 +19,9 @@ const KEY = "shimpaku.shim.v1";
 const MAX_CONVOS = 25, MAX_TURNS = 40, HISTORY_TURNS = 6, HISTORY_CHARS = 1500;
 
 let state: State = load();
+// guide mode: a visitor's Shim (POST /api/assistant/public) only explains Shimpaku from its docs
+let guide = false;
+export function setGuide(on: boolean) { guide = on; }
 const subs = new Set<() => void>();
 const live = new Map<number, AbortController>();
 
@@ -98,7 +101,7 @@ export function send(question: string, page: string): boolean {
     else if (e.type === "token") u((x) => ({ ...x, text: x.text + e.text }));
     else if (e.type === "error") u((x) => ({ ...x, error: e.message, done: true }));
     else if (e.type === "done") u((x) => ({ ...x, done: true }));
-  }, ac.signal, history)
+  }, ac.signal, history, guide ? "/api/assistant/public" : "/api/assistant/ask")
     .then(() => u((x) => ({ ...x, done: true })))
     .catch((err) => u((x) => (x.stopped ? x : { ...x, error: err.name === "AbortError" ? undefined : err.message, done: true })))
     .finally(() => live.delete(t.id));

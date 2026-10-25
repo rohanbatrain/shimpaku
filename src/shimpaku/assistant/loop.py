@@ -112,8 +112,12 @@ class Assistant:
         deadline_s: float = 300.0,
         seed: int | None = None,
         kb: bool = True,
+        system: str | None = None,
+        allow_tools: set[str] | None = None,
     ) -> None:
         self.kb = kb
+        self.system = system
+        self.allow_tools = allow_tools
         self.mcp_target = mcp_target if mcp_target is not None else default_mcp_url()
         self.model = model
         self.llm_factory = llm_factory or (lambda name: LLM(name, seed=seed))
@@ -144,8 +148,10 @@ class Assistant:
             async with Client(self.mcp_target, read_timeout_seconds=self.tool_timeout_s) as mcp:
                 listed = await mcp.list_tools()
                 tools = mcp_tools_to_openai(listed.tools)
+                if self.allow_tools is not None:  # guide mode: the model is not even offered the rest
+                    tools = [t for t in tools if t["function"]["name"] in self.allow_tools]
                 known = {t["function"]["name"] for t in tools}
-                system = prompts.SYSTEM
+                system = self.system or prompts.SYSTEM
                 if self.kb:
                     try:
                         from shimpaku import kb

@@ -100,8 +100,8 @@ export type AskEvent =
 
 /** POST /api/assistant/ask and parse the text/event-stream body incrementally. */
 export async function ask(question: string, context: unknown, onEvent: (e: AskEvent) => void, signal?: AbortSignal,
-  history?: { q: string; a: string }[]) {
-  const r = await fetch("/api/assistant/ask", {
+  history?: { q: string; a: string }[], path = "/api/assistant/ask") {
+  const r = await fetch(path, {
     method: "POST",
     credentials: "same-origin",
     signal,

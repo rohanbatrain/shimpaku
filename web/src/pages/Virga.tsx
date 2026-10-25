@@ -14,6 +14,7 @@ import {
   clock, isLive, PHASE_LABEL, secs, useServerNow, useVirga,
   type PhaseName, type VCatalogue, type VPhase, type VRecent, type VScenario, type VTrial,
 } from "../virga";
+import VirgaProof from "../components/VirgaProof";
 import VirgaMark from "../components/VirgaMark";
 import "../virga.css";
 
@@ -138,6 +139,7 @@ function Live({ t, simulated, operator, onError, reload }: { t: VTrial; simulate
           <RunnerLog log={t.log ?? []} />
         </div>
       </div>
+      <VirgaProof t={t} live={live} />
     </section>
   );
 }

@@ -121,3 +121,8 @@
 .md-code .hljs-meta, .md-code .hljs-symbol, .md-code .hljs-bullet { color: #c0b4ff; }
 .md-code .hljs-deletion { color: #ffb3aa; } .md-code .hljs-addition { color: #9be7c4; }
 .md li.task-list-item { list-style: none; margin-left: -18px; }
+.sc-guide { display: flex; flex-direction: column; gap: 8px; margin: 10px 12px 0; padding: 9px 11px; border-radius: 10px; background: #fff6e0; border: 1px solid #f0d9a4; color: #5b4100; font-size: 12.5px; }
+.sc-guide-a { display: flex; gap: 6px; flex-wrap: wrap; }
+.sc-guide-a .btn { font-size: 12px; padding: 4px 10px; min-height: 0; text-decoration: none; }
+.sc-page-main .sc-guide { margin: 12px 16px 0; }
+.md-unlock { padding: 7px 10px; border-radius: 8px; background: #e9f7f1; color: #0b4d38; border: 1px solid #bfe3d3; }

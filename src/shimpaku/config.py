@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     tester_llm_rpm: int = 10
     # Without an admin key no per-lease key can be minted. Opt in to let testers' Shim spend the
     # operator's key instead, capped at tester_shim_questions per lease (SECURITY.md, testers).
+    # Public guide mode: anonymous visitors (website and read-only dashboard) can chat with Shim, but
+    # only about Shimpaku's documents (kb tools), on the triage model, capped per IP and per day.
+    public_shim: bool = False
+    public_shim_per_ip: int = 6          # questions per IP per 10 minutes
+    public_shim_daily: int = 200         # questions per day, everyone together
     tester_shim_shared_key: bool = False
     tester_shim_questions: int = 25
     tester_llm_models: str = ""            # comma list; empty = the models in llm_models
