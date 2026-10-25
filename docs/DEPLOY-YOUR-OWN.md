@@ -12,6 +12,10 @@ reference (flags, manifest) is [`deploy/own/README.md`](../deploy/own/README.md)
 
 > You type the root password into the installer on your own computer, never into a web page.
 
+> **Status: new, and not yet run end to end on a clean machine.** The checks, the plan, the dry run and the
+> password handling are tested (`docs/build/deploy-your-own.md` §5); a full deploy on a fresh bare-metal host has
+> not happened yet. Start with `--check`, and expect to report or fix small things on the first run.
+
 ## 1. What you need
 
 | | |

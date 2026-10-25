@@ -155,6 +155,12 @@ export default function DeployOwn() {
           tells you what it will change, and builds the lab only after you say yes.
         </p>
 
+        <div className="notice info" role="note">
+          <b>New, and not yet run end to end on a clean machine.</b>{" "}
+          The checks, the plan and the password handling are tested; a full deploy on a fresh bare-metal host has not happened yet.
+          Start with the check, which changes nothing.
+        </div>
+
         <div className="notice ok" role="note">
           <b>You type the root password into the installer on your own computer, never into this page.</b>{" "}
           This page has no password field and sends nothing anywhere: the address below only fills in the command text in your browser,

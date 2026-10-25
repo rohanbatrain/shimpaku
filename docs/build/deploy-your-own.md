@@ -69,3 +69,38 @@ Every step is idempotent; a re-run resumes.
 Sources: Juniper, *vJunos-router Deployment Guide for KVM* (hardware/host requirements; "cannot be used in
 any deployments that launch the instances from within a VM"); *vJunos-switch Deployment Guide for KVM*;
 *Free Virtual Junos OS Download for Labs* (free, lab use only). Read 2026-10-25.
+
+## 5. Built (2026-10-25)
+
+**What exists.** `deploy/own/get.sh` (published as `/install.sh` on the landing hosts, pinned at each site
+deploy to the public repository's `main` commit), `deploy/own/install.sh` (the local CLI: options, askpass
+key bootstrap, preflight, plan, typed confirmation, stages), `deploy/own/remote/` (`preflight.sh` +
+`ownlib.py` evaluator, `deploy.sh` in two stages with a manifest-first record, `uninstall.sh`,
+`apply_sets.py`), `deploy/own/configs/` (campus and services `set` files, read once from the running lab
+over NETCONF because the lab repository has no campus day configs and nothing for gNMI or RPM),
+`deploy/own/PINS`, `deploy/own/README.md`; the dashboard page `/deploy`, the landing section,
+`docs/DEPLOY-YOUR-OWN.md`. Built by two subagents (installer: Opus; page and docs: Sonnet) against this
+contract, merged and corrected by the coordinating session.
+
+**Verified.**
+- 60 tests in `tests/ops/` (profiles and resource maths, preflight table, subnet overlap, manifest
+  round trip, set files, dry-run order, bootstrap shape and truncation); shellcheck and `bash -n` clean;
+  `install.sh` runs on macOS's bash 3.2.
+- The root password: proven with a dummy against a throwaway local sshd — delivered exactly (hash match),
+  absent from every argv and environment (29 `ps -wwE` samples), the terminal, the log and every file.
+- The public one-liner, from a laptop, `--check` against the real lab host (read-only): downloaded the
+  pinned commit from GitHub, 13 PASS / 1 WARN (Arch) / 3 FAIL (no root as that user; 23 GiB free of 39
+  needed; the existing lab's domains, networks, bridges, mgmt route, port 8780, `/home/lab`) — the
+  refusals it should make on a host that already runs this lab.
+- `--dry-run --profile full`: 90 commands, 42 manifest entries, each recorded before the thing it names.
+
+**Not yet proven.** A real deploy on a clean bare-metal host (package installs, libvirt groups on Debian,
+the vJunos boots, the config commits, the user unit, `--uninstall`, the `--user` sudo path, `--local`):
+no spare host existed. Until one run passes, the page and the guide say "untested end to end".
+
+**Found while building (amends §2).** Juniper's host list (Ubuntu 18.04–22.04, Debian 11) ships python3
+< 3.11, which the lab toolchain needs: those are a FAIL, so the recommended hosts are Debian 12/13 and
+Ubuntu 24.04. Debian and Ubuntu refuse root password logins by default, so the installer points at
+`--user`, `--key` or `--local`. `lab-bootstrap.py` ignores `ordinal_base`, so it is used for the campus
+only; each topology's net script recreates the `lab_iso` nft table, so the installer applies it once
+for all topologies. Device-subnet overlaps are a WARN; only the management subnet is a FAIL.

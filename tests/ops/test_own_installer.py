@@ -287,6 +287,12 @@ def test_deploy_dry_run_records_before_it_creates():
     assert first(r"manifest \+= domain lab-r1") < first(r"lab\.sh up lab/topologies/day-02")
     assert first(r"manifest \+= domain lab-leaf2") < first(r"lab\.sh up lab/topologies/day-06")
     assert first(r"manifest \+= nft-table inet lab_iso") < first(r"lab-net-up\.sh")
+    # each topology's net script recreates lab_iso with only its own bridges; after the last one,
+    # every lab bridge of every topology gets its forward drop back
+    last_net = max(i for i, ln in enumerate(lines) if re.search(r"lab-net-up\.sh", ln))
+    for b in ("lab-l1", "lab-l2", "lab-dc1", "lab-dc4"):
+        assert any(i > last_net and "nft add rule inet lab_iso forward" in ln.replace("\\ ", " ")
+                   and f'iifname \\"{b}\\" drop' in ln.replace("\\ ", " ") for i, ln in enumerate(lines)), b
     assert first(r"lab\.sh up lab/topologies/day-02") < first(r"apply_sets\.py .*--assert-campus")
     assert re.search(r"gen_fabric\.py lab/topologies/day-06-datacenter\.toml && \S+ day-07/automation/deploy\.py", out)
     assert first(r"manifest \+= user-unit shimpakud") < first(r"deploy/systemd/install\.sh")

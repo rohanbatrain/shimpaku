@@ -288,6 +288,17 @@ lab_up() {
     for n in $(topo_nodes "$t"); do rec domain "lab-${n%%=*}"; done
     as_op "cd ~/juniper-7-day-sprint && ops/lab.sh up lab/topologies/$t.toml"
   done
+  # each topology's net script recreates lab_iso with only its own bridges: put back a forward
+  # drop for every lab bridge of every topology (idempotent)
+  if (( ${#TOPOS[@]} > 1 )); then
+    say "9b. lab: isolation rules for every topology's bridges"
+    for t in "${TOPOS[@]}"; do
+      for b in $(lib bridges --topology "$t"); do
+        [[ $b =~ ^[a-z0-9-]{1,15}$ ]] || { echo "deploy.sh: unexpected bridge name '$b' in topology $t" >&2; exit 3; }
+        run sh -c "nft list chain inet lab_iso forward | grep -q 'iifname \"$b\" drop' || nft add rule inet lab_iso forward iifname \"$b\" drop"
+      done
+    done
+  fi
 }
 
 apply_args() {  # topology [services-only] -> apply_sets.py --node args
