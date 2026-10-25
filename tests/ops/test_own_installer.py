@@ -346,3 +346,34 @@ def test_uninstall_never_removes_through_dot_dot():
         rc = subprocess.run(["bash", "-c", f'{fn}\nsafe_path "$1"', "_", path], capture_output=True).returncode
         assert (rc == 0) == ok, path
 
+
+def _fake_codeload(tmp_path):
+    """A source tarball and a `curl` that 'downloads' it: get.sh end to end without a network."""
+    src = tmp_path / "pkg" / "shimpaku-x" / "deploy" / "own"
+    src.mkdir(parents=True)
+    (src / "install.sh").write_text('echo "install.sh ran with $*"\n')
+    subprocess.run(["tar", "-czf", str(tmp_path / "src.tgz"), "-C", str(tmp_path / "pkg"), "shimpaku-x"], check=True)
+    bin_ = tmp_path / "bin"
+    bin_.mkdir()
+    (bin_ / "curl").write_text(f'#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = -o ] && cp {tmp_path / "src.tgz"} "$2"; shift; done\n')
+    (bin_ / "curl").chmod(0o755)
+    return {**os.environ, "PATH": f"{bin_}:{os.environ['PATH']}", "XDG_DATA_HOME": str(tmp_path / "data")}
+
+
+def test_bootstrap_leaves_no_download_behind(tmp_path):
+    env = _fake_codeload(tmp_path)
+    ref = "a" * 40
+    p = subprocess.run(["bash", str(OWN / "get.sh"), "--check"], capture_output=True, text=True,
+                       env={**env, "SHIMPAKU_REF": ref})
+    assert p.returncode == 0 and "install.sh ran with --check" in p.stdout, p.stderr
+    base = tmp_path / "data" / "shimpaku-own"
+    assert sorted(x.name for x in base.iterdir()) == [f"src-{ref}"]   # no .get.* with the tarball in it
+
+
+def test_bootstrap_reuses_only_a_full_commit(tmp_path):
+    """A short hex ref may be a branch or tag name: it is downloaded again, never trusted from the cache."""
+    env = _fake_codeload(tmp_path)
+    for _ in range(2):
+        p = subprocess.run(["bash", str(OWN / "get.sh")], capture_output=True, text=True, env={**env, "SHIMPAKU_REF": "deadbeef"})
+        assert p.returncode == 0, p.stderr
+    assert "already in" not in p.stdout and "downloading" in p.stdout
