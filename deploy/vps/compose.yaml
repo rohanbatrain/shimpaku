@@ -47,14 +47,15 @@ services:
     depends_on: [replay]
 
   uptime-kuma:
-    # Admin UI on the VPS loopback only: reach it with `ssh -L 3001:127.0.0.1:3001 <vps>`.
-    # Major-pinned tag from the research note; pin a digest after the first pull.
+    # Host network: the admin UI answers on the VPS's NetBird address (the host firewall accepts the
+    # tunnel interface and drops everything else on 3001), so any of the owner's NetBird devices
+    # opens http://<vps netbird ip>:3001 with no SSH tunnel; the public reaches only the status page,
+    # through Caddy (127.0.0.1:3001, SHIMPAKU_KUMA_UPSTREAM). Major-pinned tag; pin a digest later.
     image: louislam/uptime-kuma:2
     restart: unless-stopped
-    ports: ["127.0.0.1:3001:3001"]
+    network_mode: host
     volumes:
       - kuma_data:/app/data
-    networks: [web]          # so it can check replay:8780 directly
     mem_limit: 320m
     cgroup_parent: edge.slice
 

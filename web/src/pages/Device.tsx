@@ -6,6 +6,8 @@ import { STATE_LABEL, STATE_TONE, type LinkState, type TLink, type Fixture } fro
 import { usePoll } from "../components/poll";
 import { Load, Pill, Seg, StatusPill } from "../components/ui";
 import { ago, time } from "../format";
+import { DeviceCard, TwinLegend } from "./Hardware";
+import { useNow, type Hardware } from "../components/twin";
 import "../vizfix.css";
 
 type Iface = { ifname: string; admin: string | null; oper: string | null; description: string | null; input_errors: number | null; input_drops: number | null; fcs_errors: number | null; output_errors: number | null; output_drops: number | null; carrier_transitions: number | null; input_packets: number | null; output_packets: number | null; mtu: string | null };
@@ -32,11 +34,13 @@ export default function Device() {
   const [win, setWin] = useState("60");
   const q = usePoll<Dev>(`/api/viz/devices/${encodeURIComponent(name)}?window=${win}`, 15000);
   const d = q.data;
+  const hw = usePoll<Hardware>("/api/hardware", 5000).data;
+  const twin = hw?.devices.find((x) => x.name === name);
+  const now = useNow(1000);
   return (
     <>
       <TopBar title={name} crumbs={<><Link to="/topology">Topology</Link> / device</>}>
         {d && <Pill tone={STATE_TONE[d.device.state]}>{STATE_LABEL[d.device.state]}</Pill>}
-        <Link className="btn" to={`/hardware?d=${encodeURIComponent(name)}`}>Front panel →</Link>
         <Seg label="History window" value={win} options={W} onChange={setWin} />
       </TopBar>
       <div className="content">
@@ -51,6 +55,12 @@ export default function Device() {
                   <div className="card kpi"><div className="k">Device-minutes · {d.window_min >= 60 ? `${d.window_min / 60} h` : `${d.window_min} min`}</div><div className="kpi-v">{h.available === false || !h.minutes.n ? "—" : <><span className={h.minutes.bad ? "tone-warn" : "tone-ok"}>{h.minutes.good}</span><span className="kpi-of"> good / n = {h.minutes.n}</span></>}</div><div className="small weak">{h.classifiers?.length ? h.classifiers.map((c) => `${c.classifier}${c.sub_classifier ? " · " + c.sub_classifier : ""} ${c.minutes} min`).join(", ") : "no bad minutes"}</div></div>
                   <div className="card kpi"><div className="k">Reachable</div><div className="kpi-v">{d.device.reachable == null ? "—" : d.device.reachable ? <span className="tone-ok">Yes</span> : <span className="tone-crit">No</span>}</div><div className="small weak">live NETCONF read</div></div>
                 </div>
+                {hw && twin && (
+                  <section aria-label={`${name} hardware twin`} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <DeviceCard d={twin} hw={hw} sel={false} now={now} page={false} />
+                    <TwinLegend />
+                  </section>
+                )}
                 {d.fixture && (
                   <div className={`notice ${d.fixture.present == null ? "info" : d.fixture.present ? "ok" : "crit"}`}>
                     <b>Demo trunk {d.fixture.ifname}</b> (wired to nothing by design, so oper {d.fixture.oper ?? "—"}): VLAN {d.fixture.vlan} is{" "}

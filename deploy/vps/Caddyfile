@@ -90,7 +90,7 @@
 		}
 	}
 	handle / {
-		redir /status/{$SHIMPAKU_STATUS_SLUG:shimpaku} 302
+		redir * /status/{$SHIMPAKU_STATUS_SLUG:shimpaku} 302   # `*`: a first argument starting with / would be read as a matcher
 	}
 	handle {
 		header Cache-Control no-store

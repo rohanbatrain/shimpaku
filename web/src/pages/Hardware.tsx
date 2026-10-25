@@ -16,30 +16,32 @@ function HypervisorCard({ hw, sel, onSelect, now }: { hw: Hardware; sel: string 
   return (
     <section className="card" aria-labelledby="hv-h">
       <div className="hv">
-        <div><HypervisorFigure hw={hw} selected={sel} onSelect={onSelect} /></div>
-        <div>
+        <HypervisorFigure hw={hw} selected={sel} onSelect={onSelect} />
+        <div className="hv-text">
           <h2 id="hv-h">The hypervisor</h2>
           <p className="hv-lede">
             <b>Seven real Junos devices</b> run as virtual machines on <b>one {hv.kind} host</b>: the same Junos OS
             Juniper ships on EX9214-class switches and MX Series routers, on an x86 forwarding plane. Every LED and number
             here is read from them, live. Pick a guest to jump to its front panel.
           </p>
-          <dl className="hv-stats">
-            <div><dt>Host</dt><dd>{hv.hosts} machine<small>{hv.kind}</small></dd></div>
-            <div><dt>Guests</dt><dd>{known ? `${running} / ${hv.devices} running` : `${hv.devices} vJunos VMs`}
-              <small>{known ? `virsh, ${agoS(hv.guests_sampled_at, now)}` : hv.guests_reason ?? "power state not sampled"}</small></dd></div>
-            <div><dt>Declared</dt><dd>{hv.declared_vcpu ?? "—"} vCPU · {gib(hv.declared_memory_mb)}
-              <small>{per ? `${per.vcpu} vCPU / ${gib(per.memory_mb)} each, Juniper's minimum` : "not declared"}</small></dd></div>
-            <div><dt>Telemetry</dt><dd>gNMI every {hw.telemetry.interval_s} s<small>+ NETCONF reads, no SNMP</small></dd></div>
-          </dl>
-          {h && (
-            <div className="hv-host">
-              <b>Host, operator view:</b> {h.ncpu ?? "—"} CPU threads · {gib(h.mem_total_mb)} RAM ({gib(h.mem_avail_mb)} free)
-              · load {h.load?.[0] ?? "—"} · CPU package {h.temp_c ?? "—"} °C{h.temp_crit_c ? ` of ${h.temp_crit_c} °C critical` : ""}
-              {" "}<Link to="/ops/host">Lab host →</Link>
-            </div>
-          )}
-          <div style={{ marginTop: 10 }}><LiveClock hw={hw} now={now} /></div>
+          <div>
+            <dl className="hv-stats">
+              <div><dt>Host</dt><dd>{hv.hosts} machine<small>{hv.kind}</small></dd></div>
+              <div><dt>Guests</dt><dd>{known ? `${running} / ${hv.devices} running` : `${hv.devices} vJunos VMs`}
+                <small>{known ? `virsh, ${agoS(hv.guests_sampled_at, now)}` : hv.guests_reason ?? "power state not sampled"}</small></dd></div>
+              <div><dt>Declared</dt><dd>{hv.declared_vcpu ?? "—"} vCPU · {gib(hv.declared_memory_mb)}
+                <small>{per ? `${per.vcpu} vCPU / ${gib(per.memory_mb)} each, Juniper's minimum` : "not declared"}</small></dd></div>
+              <div><dt>Telemetry</dt><dd>gNMI every {hw.telemetry.interval_s} s<small>+ NETCONF reads, no SNMP</small></dd></div>
+            </dl>
+            {h && (
+              <div className="hv-host">
+                <b>Host, operator view:</b> {h.ncpu ?? "—"} CPU threads · {gib(h.mem_total_mb)} RAM ({gib(h.mem_avail_mb)} free)
+                · load {h.load?.[0] ?? "—"} · CPU package {h.temp_c ?? "—"} °C{h.temp_crit_c ? ` of ${h.temp_crit_c} °C critical` : ""}
+                {" "}<Link to="/ops/host">Lab host →</Link>
+              </div>
+            )}
+            <div style={{ marginTop: 10 }}><LiveClock hw={hw} now={now} /></div>
+          </div>
         </div>
       </div>
     </section>
@@ -81,7 +83,7 @@ function Equivalents({ hw }: { hw: Hardware }) {
   );
 }
 
-function DeviceCard({ d, hw, sel, now }: { d: HwDevice; hw: Hardware; sel: boolean; now: number }) {
+export function DeviceCard({ d, hw, sel, now, page = true }: { d: HwDevice; hw: Hardware; sel: boolean; now: number; page?: boolean }) {
   const [hover, setHover] = useState<string | null>(null);
   const [pin, setPin] = useState<string | null>(null);
   const active = hover ?? pin;
@@ -94,7 +96,8 @@ function DeviceCard({ d, hw, sel, now }: { d: HwDevice; hw: Hardware; sel: boole
         <Pill tone={STATE_TONE[d.state]}>{STATE_WORD[d.state] ?? d.state}</Pill>
         <span className="small weak">{d.role} · {d.site}</span>
         <span style={{ flex: 1 }} />
-        <Link className="small" to={`/devices/${d.name}`}>Device page →</Link>
+        {page ? <Link className="small" to={`/devices/${d.name}`}>Device page →</Link>
+          : <Link className="small" to={`/hardware?d=${encodeURIComponent(d.name)}`}>On the hypervisor →</Link>}
       </div>
       <div className="dev-body">
         <Faceplate d={d} vm={vm} active={active} onHover={setHover} onPick={(i) => setPin((p) => (p === i ? null : i))} />

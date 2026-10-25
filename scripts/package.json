@@ -3,6 +3,13 @@
   "private": true,
   "type": "module",
   "description": "Recorder for the landing-page theatre clip (record_demo.mjs)",
-  "scripts": { "record": "node record_demo.mjs" },
-  "devDependencies": { "puppeteer-core": "^23.11.1" }
+  "scripts": {
+    "record": "node record_demo.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.11.1"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.4"
+  }
 }
