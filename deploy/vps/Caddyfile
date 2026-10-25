@@ -4,7 +4,9 @@
 #   app.<domain>/api/*   the LIVE daemon on the lab host over NetBird ({$SHIMPAKU_LAB_UPSTREAM}),
 #                        falling back to the local read-only replay for reads when the lab is down
 #   app.<domain>/mcp     the live daemon only (never the replay); 503 JSON when the lab is down
+#   status.<domain>      Uptime Kuma's PUBLIC status page only (never its admin UI)
 # Env: SHIMPAKU_SITE_HOSTS ("a.example, b.example"), SHIMPAKU_APP_HOSTS ("app.a.example, app.b.example"),
+#      SHIMPAKU_STATUS_HOSTS ("status.a.example, ..."), SHIMPAKU_STATUS_SLUG (the Kuma status page slug),
 #      SHIMPAKU_LAB_UPSTREAM (host:port, the lab's NetBird address).
 {
 	# rate_limit is a plugin directive with no default order; run it before anything else.
@@ -61,6 +63,39 @@
 	# the dashboard link follows the host the visitor used ({{.Host}}), so every domain serves itself
 	templates
 	file_server
+}
+
+# Uptime Kuma's public status page. Allow-list of Kuma's public paths only (its status-page router:
+# /status/<slug>, /api/status-page/<slug>[/...], /api/status-page/heartbeat/<slug>, plus the SPA's static
+# files). Everything else (the admin UI routes, /socket.io = the admin API, /api/push, /metrics) is a 404
+# here; the admin UI stays on the VPS loopback (127.0.0.1:3001). GET/HEAD only.
+{$SHIMPAKU_STATUS_HOSTS} {
+	import common
+	@status_rl path /api/status-page/*
+	rate_limit @status_rl {
+		zone status {
+			key {client_ip}
+			events 120
+			window 1m
+		}
+	}
+	@kuma_public {
+		method GET HEAD
+		path /status /status/* /api/status-page/* /assets/* /upload/* /icon.svg /icon-192x192.png /icon-512x512.png /favicon.ico /apple-touch-icon.png /manifest.json
+	}
+	handle @kuma_public {
+		reverse_proxy uptime-kuma:3001 {
+			header_up X-Forwarded-For {client_ip}
+			header_up X-Real-IP {client_ip}
+		}
+	}
+	handle / {
+		redir /status/{$SHIMPAKU_STATUS_SLUG:shimpaku} 302
+	}
+	handle {
+		header Cache-Control no-store
+		respond "Not found" 404
+	}
 }
 
 {$SHIMPAKU_APP_HOSTS} {

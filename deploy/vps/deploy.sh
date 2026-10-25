@@ -14,6 +14,8 @@ DOMAINS="${SHIMPAKU_DOMAINS:?set SHIMPAKU_DOMAINS}"
 DOMAIN="${DOMAINS%% *}"   # checks run against the first
 SITE_HOSTS=$(printf "%s, " $DOMAINS); SITE_HOSTS=${SITE_HOSTS%, }
 APP_HOSTS=$(printf "app.%s, " $DOMAINS); APP_HOSTS=${APP_HOSTS%, }
+STATUS_HOSTS=$(printf "status.%s, " $DOMAINS); STATUS_HOSTS=${STATUS_HOSTS%, }
+CORS=$(printf "https://%s," $DOMAINS); CORS=${CORS%,}
 REPO="${SHIMPAKU_REPO_URL:?set SHIMPAKU_REPO_URL}"
 LAB_UP="${SHIMPAKU_LAB_UPSTREAM:?set SHIMPAKU_LAB_UPSTREAM (lab NetBird host:port)}"
 [[ "$LAB_UP" =~ ^[^:/[:space:]]+:[0-9]+$ ]] || { echo "SHIMPAKU_LAB_UPSTREAM must be host:port" >&2; exit 1; }
@@ -43,7 +45,7 @@ echo "== ship"
 ssh "$VPS" 'mkdir -p ~/shimpaku'
 git archive --format=tar HEAD | ssh "$VPS" 'cd ~/shimpaku && tar -xf -'
 tar -C "$HERE" -cf - snapshot site-built | ssh "$VPS" 'cd ~/shimpaku/deploy/vps && tar -xf -'
-ssh "$VPS" "cd ~/shimpaku/deploy/vps && printf 'SHIMPAKU_SITE_HOSTS=%s\nSHIMPAKU_APP_HOSTS=%s\nSHIMPAKU_LAB_UPSTREAM=%s\n' '$SITE_HOSTS' '$APP_HOSTS' '$LAB_UP' > .env"
+ssh "$VPS" "cd ~/shimpaku/deploy/vps && printf 'SHIMPAKU_SITE_HOSTS=%s\nSHIMPAKU_APP_HOSTS=%s\nSHIMPAKU_STATUS_HOSTS=%s\nSHIMPAKU_PUBLIC_CORS_ORIGINS=%s\nSHIMPAKU_LAB_UPSTREAM=%s\n' '$SITE_HOSTS' '$APP_HOSTS' '$STATUS_HOSTS' '$CORS' '$LAB_UP' > .env"
 # Docker needs root on the VPS (no docker group: it is root-equivalent). The sudo password is decrypted
 # on this machine and piped to `sudo -S` on stdin, so it is never on a command line or in a log (RUN-0004).
 vps_sudo() {

@@ -38,6 +38,14 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--card
 .note{color:var(--warn);font-size:14px}
 footer{padding:32px 0 48px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 a{color:var(--accent-ink)}
+.live{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.live ul{list-style:none;margin:0;padding:0;display:grid;gap:8px 18px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.live li{display:flex;flex-direction:column;font-size:13px;color:var(--muted);line-height:1.35}
+.live li b{font-size:17px;color:var(--fg);font-variant-numeric:tabular-nums}
+.live li.ok b{color:var(--accent-ink)}.live li.warn b{color:var(--warn)}.live li.bad b{color:#c0392b}
+.live li b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line);margin-right:7px;vertical-align:2px}
+.live li.ok b::before{background:var(--accent)}.live li.warn b::before{background:var(--warn)}.live li.bad b::before{background:#c0392b}
+.live p{margin:0;font-size:13px;color:var(--muted)}.live .live-note{margin-top:8px;font-size:12px}
 @media (max-width:560px){header{padding-top:36px}td,th{padding:8px 4px}}
 </style>
 </head>
@@ -52,7 +60,13 @@ a{color:var(--accent-ink)}
   <div class="cta">
     <a class="btn primary" href="https://app.{{.Host}}/">Open the dashboard</a>
     <a class="btn" href="__REPO__">Source and evidence</a>
+    <a class="btn" href="https://app.{{.Host}}/architecture">Architecture</a>
     <a class="btn" href="__REPO__/blob/main/docs/INCIDENTS.md">What went wrong</a>
+    <a class="btn" href="https://status.{{.Host}}/">Uptime status</a>
+  </div>
+  <div class="live" id="live" data-src="https://app.{{.Host}}/api/public/summary" aria-live="polite">
+    <p>Live status could not be loaded here. The dashboard shows the live lab when it is online and a
+    recorded replay when it is not; <a href="https://status.{{.Host}}/">the status page</a> has uptime.</p>
   </div>
   <img src="hero.jpg" alt="Shimpaku overview: seven of seven devices reachable, all links up, audit chain verified, and today's actions, including five blocked by guardrails" style="width:100%;height:auto;border:1px solid var(--line);border-radius:10px;margin-top:24px">
   <p class="note">The public dashboard is a read-only replay recorded from the live lab. The
@@ -97,5 +111,6 @@ a{color:var(--accent-ink)}
   documentation. All trademarks belong to their owners.
 </footer>
 </div>
+<script src="live.js" defer></script>
 </body>
 </html>

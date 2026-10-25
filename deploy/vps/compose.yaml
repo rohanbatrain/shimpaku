@@ -15,6 +15,8 @@ services:
     pids_limit: 128
     environment:
       SHIMPAKU_TRUSTED_PROXIES: "*"   # only Caddy can reach it: no published port
+      # the landing page's origins, allowed to read GET /api/public/summary cross-origin
+      SHIMPAKU_PUBLIC_CORS_ORIGINS: ${SHIMPAKU_PUBLIC_CORS_ORIGINS:-}
     volumes:
       - ./snapshot:/snapshot:ro
     networks: [web]
@@ -29,6 +31,8 @@ services:
     environment:
       SHIMPAKU_SITE_HOSTS: ${SHIMPAKU_SITE_HOSTS:?set in deploy/vps/.env}
       SHIMPAKU_APP_HOSTS: ${SHIMPAKU_APP_HOSTS:?set in deploy/vps/.env}
+      SHIMPAKU_STATUS_HOSTS: ${SHIMPAKU_STATUS_HOSTS:?set in deploy/vps/.env}
+      SHIMPAKU_STATUS_SLUG: ${SHIMPAKU_STATUS_SLUG:-shimpaku}
       # host:port of shimpakud on the lab's NetBird address, e.g. 100.x.y.z:8780
       SHIMPAKU_LAB_UPSTREAM: ${SHIMPAKU_LAB_UPSTREAM:?set SHIMPAKU_LAB_UPSTREAM in deploy/vps/.env}
     volumes:
