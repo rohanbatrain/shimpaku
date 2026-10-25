@@ -2,7 +2,7 @@
 // closing the window never stops an answer (the conversation lives in shim.ts).
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { Close, Robot, Expand, History, Add } from "grommet-icons";
+import { Close, Robot, Expand, History, Add, Split } from "grommet-icons";
 import { useSession } from "../session";
 import { activeConvo, claim, newChat, send, useShim } from "../shim";
 import { Composer, Conversation, ConvoList, VisitorNote, Welcome } from "./ShimChat";
@@ -16,6 +16,8 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
   const loc = useLocation();
   const nav = useNavigate();
   const [hist, setHist] = useState(false);
+  const [wide, setWide] = useState(() => { try { return localStorage.getItem("shimpaku.shim.wide") === "1"; } catch { return false; } });
+  const toggleWide = () => setWide((w) => { try { localStorage.setItem("shimpaku.shim.wide", w ? "0" : "1"); } catch {} return !w; });
   const seeded = useRef(false);
   useEffect(() => { claim(who.user); }, [who.user]);
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
     }
   }, []); // eslint-disable-line
   return (
-    <aside className="sc-win" aria-label="Ask Shim assistant">
+    <aside className={`sc-win${wide ? " wide" : ""}`} aria-label="Ask Shim assistant">
       <div className="sc-h">
         <Robot color="#00785C" size="18px" aria-hidden />
         <b className="sc-h-t" title={c?.title}>{c?.title ?? "Ask Shim"}</b>
@@ -35,6 +37,7 @@ export default function AssistantPanel({ seed, onClose }: { seed?: string; onClo
           <button className="icon-btn" onClick={() => setHist((h) => !h)} aria-pressed={hist} aria-label="Conversations" title="Conversations"><History size="15px" /></button>
           <button className="icon-btn" onClick={() => { newChat(); setHist(false); }} aria-label="New chat" title="New chat"><Add size="15px" /></button>
         </>}
+        <button className="icon-btn sc-wide-btn" onClick={toggleWide} aria-pressed={wide} aria-label={wide ? "Narrower window" : "Wider window"} title={wide ? "Narrower" : "Wider (for tables and charts)"}><Split size="14px" /></button>
         <button className="icon-btn" onClick={() => { onClose(); nav("/shim"); }} aria-label="Open full screen" title="Open full screen"><Expand size="14px" /></button>
         <button className="icon-btn" onClick={onClose} aria-label="Close (Esc). An answer in progress keeps going." title="Close (Esc)"><Close size="14px" /></button>
       </div>

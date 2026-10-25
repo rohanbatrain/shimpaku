@@ -2,6 +2,7 @@
 // only the operator's own session can inject, revert or recover, and the server decides that
 // (docs/build/virga-live.md D2). This page never infers what may run: it shows what the API offers.
 import Info from "../components/Info";
+import type { Term } from "../glossary";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { api, ApiError, useApi } from "../api";
@@ -16,6 +17,10 @@ import {
 import VirgaMark from "../components/VirgaMark";
 import "../virga.css";
 
+const PHASE_INFO: Partial<Record<PhaseName, Term>> = {
+  preflight: "vg_preflight", inject: "vg_inject", verify_injected: "vg_verify_injected",
+  hold: "vg_hold_step", revert: "vg_revert", verify_reverted: "vg_verify_reverted",
+};
 const FLOW: PhaseName[] = ["preflight", "inject", "verify_injected", "hold", "revert", "verify_reverted"];
 const SITES: { id: string; label: string }[] = [{ id: "campus", label: "Campus" }, { id: "fabric", label: "Fabric" }];
 const STATUS_WORD: Record<string, string> = { pending: "waiting", running: "running", ok: "done", failed: "failed", skipped: "skipped" };
@@ -55,7 +60,7 @@ function Step({ name, p, now, holdUntil }: { name: PhaseName; p?: VPhase; now: n
       <span className="vg-pin" aria-hidden><span /></span>
       <div className="vg-step-b">
         <div className="vg-step-h">
-          <b>{PHASE_LABEL[name]}</b>
+          <b>{PHASE_LABEL[name]}</b>{PHASE_INFO[name] && <Info k={PHASE_INFO[name]} />}
           <span className="sr-only"> ({STATUS_WORD[status] ?? status})</span>
           <span className="vg-step-t mono">{p?.t_start ? hms(p.t_start) : "—"}{dur != null ? ` · ${secs(dur)}` : ""}</span>
         </div>
@@ -104,7 +109,7 @@ function Live({ t, simulated, operator, onError, reload }: { t: VTrial; simulate
   return (
     <section className={`card vg-live${live ? " running" : ""}`} aria-labelledby="vg-live-h">
       <div className="vg-live-h">
-        <h2 id="vg-live-h">{live ? "Live drill" : "Last drill"}</h2>
+        <h2 id="vg-live-h">{live ? "Live drill" : "Last drill"}<Info k="vg_drill" /></h2>
         <span className="mono">{t.id}</span>
         {live ? <Pill tone="warn">{PHASE_LABEL[t.phase]}</Pill> : null}
         {t.verdict === "pass" && <Pill tone="ok">Pass</Pill>}
@@ -129,7 +134,7 @@ function Live({ t, simulated, operator, onError, reload }: { t: VTrial; simulate
           )}
           {live && <div className="vg-watch small">Watch it land: <Link to="/topology">Topology</Link> · <Link to="/theatre">Theatre</Link> · <Link to="/events">Events</Link> · <Link to="/sle">Service levels</Link></div>}
           {!live && <div className="vg-watch small">Afterwards: <Link to="/events">Events</Link> · <Link to="/root-cause">Root cause</Link> · <Link to="/sle">Service levels</Link></div>}
-          <div className="k">Runner log</div>
+          <div className="k">Runner log<Info k="vg_log" /></div>
           <RunnerLog log={t.log ?? []} />
         </div>
       </div>
@@ -155,8 +160,8 @@ function Card({ s, live, blocked, operator, hold, confirm, setConfirm, setHold, 
       {s.demo_ok ? (
         <dl className="vg-meta">
           {(s.nodes ?? []).length > 0 && <><dt>Devices</dt><dd>{s.nodes.map((n) => <span key={n} className="vg-node mono">{n}</span>)}</dd></>}
-          <dt>Self-test</dt><dd>{st.runs ? <span className={st.passes === st.runs ? "tone-ok" : "tone-warn"}>{st.passes}/{st.runs} clean{st.last_at ? <span className="weak"> · {ago(st.last_at)}</span> : null}</span> : "not self-tested"}</dd>
-          <dt>Takes</dt><dd>{estimate(s.est_s)} + the hold</dd>
+          <dt>Self-test<Info k="vg_selftest" /></dt><dd>{st.runs ? <span className={st.passes === st.runs ? "tone-ok" : "tone-warn"}>{st.passes}/{st.runs} clean{st.last_at ? <span className="weak"> · {ago(st.last_at)}</span> : null}</span> : "not self-tested"}</dd>
+          <dt>Takes<Info k="vg_takes" /></dt><dd>{estimate(s.est_s)} + the hold<Info k="vg_hold" /></dd>
         </dl>
       ) : <div className="small vg-why">Not runnable here: {s.why_not ?? "no reason given"}</div>}
       {operator && s.demo_ok && !confirm && (
@@ -186,7 +191,7 @@ function History({ rows }: { rows: VRecent[] }) {
   if (!rows.length) return <div className="small weak" style={{ padding: "12px 16px" }}>No drills recorded yet.</div>;
   return (
     <table className="t vg-hist">
-      <thead><tr><th>Drill</th><th>Started</th><th>Verdict</th><th className="num">Took effect after</th><th className="num">Restored after</th><th>Incident</th></tr></thead>
+      <thead><tr><th>Drill</th><th>Started</th><th>Verdict</th><th className="num">Took effect after<Info k="vg_effect" /></th><th className="num">Restored after<Info k="vg_restore" /></th><th>Incident<Info k="vg_incident_col" /></th></tr></thead>
       <tbody>
         {rows.map((r) => (
           <tr key={r.id}>
@@ -305,15 +310,15 @@ export default function Virga() {
               <p>Virga breaks the lab on purpose with realistic faults, then checks whether Shimpaku noticed, explained and fixed them.
                 Like the rain it is named after, every fault is meant to vanish: each drill ends by reverting it and checking the revert took.</p>
               <ol className="vg-how" aria-label="How a drill runs">
-                {FLOW.map((n, i) => <li key={n}><span>{i + 1}</span>{PHASE_LABEL[n]}</li>)}
+                {FLOW.map((n, i) => <li key={n}><span>{i + 1}</span>{PHASE_LABEL[n]}<Info k={PHASE_INFO[n]} /></li>)}
               </ol>
             </div>
           </div>
           <dl className="vg-stats">
-            <div><dt>In the catalogue</dt><dd>{c ? c.scenarios.length : "—"}</dd></div>
+            <div><dt>In the catalogue<Info k="vg_catalogue_n" /></dt><dd>{c ? c.scenarios.length : "—"}</dd></div>
             <div><dt>Runnable live<Info k="vg_live" /></dt><dd>{c ? c.scenarios.filter((x) => x.demo_ok).length : "—"}</dd></div>
-            <div><dt>Recent drills</dt><dd>{state ? state.recent.length : "—"}</dd></div>
-            <div><dt>Last drill</dt><dd>{state?.recent[0] ? <>{state.recent[0].verdict === "pass" ? <span className="tone-ok">Pass</span> : state.recent[0].verdict === "fail" ? <span className="tone-crit">Fail</span> : "—"} <small>{ago(state.recent[0].t_start)}</small></> : "none yet"}</dd></div>
+            <div><dt>Recent drills<Info k="vg_recent" /></dt><dd>{state ? state.recent.length : "—"}</dd></div>
+            <div><dt>Last drill<Info k="vg_last" /></dt><dd>{state?.recent[0] ? <>{state.recent[0].verdict === "pass" ? <span className="tone-ok">Pass</span> : state.recent[0].verdict === "fail" ? <span className="tone-crit">Fail</span> : "—"} <small>{ago(state.recent[0].t_start)}</small></> : "none yet"}</dd></div>
           </dl>
         </section>
 
@@ -331,7 +336,7 @@ export default function Virga() {
 
         {state && state.recent.length > 0 && (
           <section className="card flush" aria-labelledby="vg-hist-h">
-            <div className="card-h"><h2 id="vg-hist-h">Recent drills</h2><span className="small weak">last {state.recent.length} {state.recent.length === 1 ? "drill" : "drills"}</span></div>
+            <div className="card-h"><h2 id="vg-hist-h">Recent drills<Info k="vg_recent" /></h2><span className="small weak">last {state.recent.length} {state.recent.length === 1 ? "drill" : "drills"}</span></div>
             <History rows={state.recent} />
           </section>
         )}
@@ -343,7 +348,9 @@ export default function Virga() {
               <div className="vg-tools" role="group" aria-label="Filter the catalogue">
                 <Seg label="Which faults" value={show} onChange={setShow}
                   options={[{ value: "live", label: `Runnable live (${c.scenarios.filter((x) => x.demo_ok).length})` }, { value: "all", label: `All (${c.scenarios.length})` }]} />
+                <Info k="vg_live" />
                 <Seg label="Site" value={site} onChange={setSite} options={[{ value: "all", label: "Both sites" }, ...SITES.map((x) => ({ value: x.id, label: x.label }))]} />
+                <Info k="vg_site" />
                 <Seg label="Impact" value={imp} onChange={setImp} options={[{ value: "all", label: "Any impact" }, { value: "user", label: "User impact" }, { value: "latent", label: "Latent" }]} />
                 <Info k="vg_impact" />
                 <input className="vg-search" type="search" placeholder="Search faults or devices…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search the catalogue" />

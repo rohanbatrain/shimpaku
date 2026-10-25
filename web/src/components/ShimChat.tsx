@@ -1,8 +1,8 @@
 // Shim's chat, shared by the floating window and the full-screen page: the conversation, its
 // composer and the conversation list. State lives in shim.ts, so a window can close mid-answer.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
-import { Send, StopFill } from "grommet-icons";
+import { Send, StopFill, Robot, Down } from "grommet-icons";
 import { Busy } from "./ui";
 import TraceDiagram from "./TraceDiagram";
 import { traceOf } from "../traces";
@@ -11,70 +11,13 @@ import { useSession } from "../session";
 import { time } from "../format";
 import "../shim.css";
 
-/* ---- a small, safe Markdown subset: paragraphs, bullet / numbered lists, headings, **bold**, `code` ---- */
-function inline(s: string, k: string): ReactNode[] {
-  return s.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((p, i) =>
-    p.startsWith("**") && p.endsWith("**") && p.length > 4 ? <b key={k + i}>{p.slice(2, -2)}</b>
-      : p.startsWith("`") && p.endsWith("`") && p.length > 2 ? <code key={k + i}>{p.slice(1, -1)}</code> : <span key={k + i}>{p}</span>);
+const ShimMarkdown = lazy(() => import("./ShimMarkdown"));
+/** An answer's text, fully rendered (tables, code, charts, diagrams) once the renderer has loaded. */
+export function Md({ text, done = true }: { text: string; done?: boolean }) {
+  return <Suspense fallback={<div className="md md-plain">{text}</div>}><ShimMarkdown text={text} done={done} /></Suspense>;
 }
-export function Md({ text }: { text: string }) {
-  const out: ReactNode[] = [];
-  let list: { ordered: boolean; items: string[] } | null = null;
-  const flush = () => {
-    if (!list) return;
-    const L = list.ordered ? "ol" : "ul";
-    out.push(<L key={out.length}>{list.items.map((it, i) => <li key={i}>{inline(it, `${out.length}-${i}-`)}</li>)}</L>);
-    list = null;
-  };
-  let para: string[] = [];
-  const flushP = () => { if (para.length) out.push(<p key={out.length}>{inline(para.join(" "), `${out.length}-`)}</p>); para = []; };
-  const lines = text.replace(/\r/g, "").split("\n");
-  for (let li = 0; li < lines.length; li++) {
-    const raw = lines[li];
-    const line = raw.trim();
-    // fenced code block
-    if (line.startsWith("```")) {
-      flushP(); flush();
-      const code: string[] = [];
-      while (++li < lines.length && !lines[li].trim().startsWith("```")) code.push(lines[li]);
-      out.push(<pre key={out.length} className="md-code"><code>{code.join("\n")}</code></pre>);
-      continue;
-    }
-    // pipe table: a header row, a --- separator, then rows
-    if (line.startsWith("|") && /^\|?\s*:?-{3,}/.test((lines[li + 1] ?? "").trim())) {
-      flushP(); flush();
-      const cells = (l: string) => l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-      const head = cells(line);
-      const rows: string[][] = [];
-      li += 1;
-      while (li + 1 < lines.length && lines[li + 1].trim().startsWith("|")) rows.push(cells(lines[++li]));
-      const k = out.length;
-      out.push(
-        <div key={k} className="md-table"><table><thead><tr>{head.map((h, i) => <th key={i}>{inline(h, `${k}h${i}`)}</th>)}</tr></thead>
-          <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{inline(c, `${k}-${i}-${j}`)}</td>)}</tr>)}</tbody></table></div>);
-      continue;
-    }
-    if (line.startsWith(">")) { flushP(); flush(); out.push(<blockquote key={out.length}>{inline(line.replace(/^>\s?/, ""), `${out.length}-`)}</blockquote>); continue; }
-    const b = line.match(/^[-*•]\s+(.*)$/), n = line.match(/^\d+[.)]\s+(.*)$/), h = line.match(/^#{1,4}\s+(.*)$/);
-    if (!line) { flushP(); flush(); continue; }
-    if (b || n) {
-      flushP();
-      const ordered = !!n;
-      if (list && list.ordered !== ordered) flush();
-      list = list ?? { ordered, items: [] };
-      list.items.push((b ?? n)![1]);
-      continue;
-    }
-    flush();
-    if (h) { flushP(); out.push(<h4 key={out.length}>{inline(h[1], `${out.length}-`)}</h4>); continue; }
-    // "Issue: …" style section labels read as small headings
-    const sec = line.match(/^(Issue|Impact|Cause|Root cause|Recommendation|Recommended action|Evidence|Summary|Next step)s?:\s*(.*)$/i);
-    if (sec) { flushP(); out.push(<p key={out.length}><b>{sec[1]}:</b> {inline(sec[2], `${out.length}-`)}</p>); continue; }
-    para.push(line);
-  }
-  flushP(); flush();
-  return <div className="md">{out}</div>;
-}
+
+const FOLLOW = ["Explain that more simply", "Show it as a table", "What should I do next?"];
 
 const SUGGEST: [RegExp, string[]][] = [
   [/^\/topology|^\/devices/, ["Is any link degraded right now?", "Why is leaf1 amber?", "Show OSPF and BFD health for the fabric"]],
@@ -122,7 +65,9 @@ function Answer({ c, t, page }: { c: Convo; t: Turn; page: string }) {
   return (
     <div className="sc-a">
       <div className="sc-meta">
+        <span className="sc-av" aria-hidden><Robot size="13px" color="#fff" /></span>
         <span className="sc-who">Shim</span>
+        <span className="sc-at">{time(t.at)}</span>
         {t.model && <span className="sc-model">{t.model}</span>}
         {t.tools.length > 0 && (
           <button type="button" className="sc-steps-t" onClick={() => setSteps((s) => !s)} aria-expanded={steps}>
@@ -132,7 +77,7 @@ function Answer({ c, t, page }: { c: Convo; t: Turn; page: string }) {
       </div>
       {!t.done && <Progress t={t} />}
       {(steps || (!t.done && t.tools.length > 0)) && <div className="sc-trace"><TraceDiagram t={traceOf(t, c.id)} compact /></div>}
-      {t.text && <Md text={t.text} />}
+      {t.text && <Md text={t.text} done={t.done} />}
       {t.evidence.length > 0 && (
         <div className="sc-ev">
           {t.evidence.map((e, j) => e.href
@@ -168,17 +113,29 @@ export function Conversation({ convo, empty }: { convo?: Convo; empty?: ReactNod
   const loc = useLocation();
   const body = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
+  const [away, setAway] = useState(false);
+  const last = convo?.turns[convo.turns.length - 1];
   const n = convo ? convo.turns.length + convo.turns.reduce((s, t) => s + t.text.length + t.tools.length, 0) : 0;
   useEffect(() => { if (stick.current) body.current?.scrollTo({ top: body.current.scrollHeight }); }, [n, convo?.id]);
   return (
     <div className="sc-body" ref={body} aria-live="polite"
-      onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; }}>
+      onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; setAway(!stick.current); }}>
       {!convo || convo.turns.length === 0 ? empty : convo.turns.map((t) => (
         <div key={t.id} className="sc-turn">
           <div className="msg-u">{t.q}</div>
           <Answer c={convo} t={t} page={loc.pathname} />
         </div>
       ))}
+      {last?.done && last.text && !last.error && (
+        <div className="sc-follow" aria-label="Follow-up questions">
+          {FOLLOW.map((f) => <button key={f} type="button" onClick={() => { stick.current = true; send(f, loc.pathname); }}>{f}</button>)}
+        </div>
+      )}
+      {away && (
+        <button type="button" className="sc-jump" onClick={() => { stick.current = true; setAway(false); body.current?.scrollTo({ top: body.current.scrollHeight, behavior: "smooth" }); }}>
+          <Down size="12px" color="currentColor" /> Latest
+        </button>
+      )}
     </div>
   );
 }

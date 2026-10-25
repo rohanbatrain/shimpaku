@@ -72,3 +72,52 @@
 .md-table th, .md-table td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
 .md-table th { background: var(--neutral-bg); font-weight: 650; }
 .md blockquote { margin: 0; padding: 4px 10px; border-left: 3px solid var(--p); background: #f3faf6; color: var(--t); }
+
+/* ---- rich answers ---- */
+.md-plain { white-space: pre-wrap; }
+.md > * { margin: 0; }
+.md h1, .md h2, .md h3, .md h4 { font-size: 14px; margin: 6px 0 0; text-transform: none; letter-spacing: 0; color: var(--t); }
+.md hr { border: 0; border-top: 1px solid var(--line); }
+.md a { color: var(--p-ink); text-decoration: underline; text-underline-offset: 2px; }
+.md li > p { margin: 0; }
+.md input[type="checkbox"] { margin-right: 6px; }
+.md-pre { border: 1px solid #1d3a2f; border-radius: 8px; overflow: hidden; }
+.md-pre-h { display: flex; justify-content: space-between; align-items: center; padding: 3px 8px; background: #1a3329; color: #9fc0b1; font: 11px var(--mono); }
+.md-pre .md-code { border-radius: 0; }
+.md-pre .md-code .hljs { background: transparent; color: inherit; padding: 0; }
+.md-code .hljs-keyword, .md-code .hljs-built_in { color: #7fd8b5; }
+.md-code .hljs-string { color: #f2c97d; }
+.md-code .hljs-number, .md-code .hljs-literal { color: #9cc3ff; }
+.md-code .hljs-comment { color: #7a958a; font-style: italic; }
+.md-code .hljs-attr, .md-code .hljs-property { color: #b6d6ff; }
+.md-copy { all: unset; cursor: pointer; font: 600 11px Inter, system-ui, sans-serif; color: #c9e6d9; padding: 2px 6px; border-radius: 4px; }
+.md-copy:hover { background: rgba(255, 255, 255, .1); }
+.md-copy:focus-visible { outline: 2px solid var(--p); }
+.md-table-f { display: flex; justify-content: flex-end; padding-top: 2px; }
+.md-table-f .md-copy { color: var(--p-ink); }
+.md-table tbody tr:nth-child(even) td { background: #fafcfb; }
+.md-chart { margin: 0; border: 1px solid var(--line); border-radius: 8px; padding: 8px 6px 4px; background: #fff; }
+.md-chart figcaption { font-size: 12.5px; font-weight: 650; padding: 0 6px 4px; }
+.md-chart-wait { color: var(--tw); font-size: 12.5px; padding: 18px; text-align: center; }
+.md-chart-err { font-size: 12.5px; color: var(--tw); display: flex; flex-direction: column; gap: 6px; }
+.md-mermaid { border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: #fff; overflow-x: auto; }
+.md-mermaid svg { max-width: 100%; height: auto; }
+
+/* ---- chat chrome ---- */
+.sc-win.wide { width: min(760px, calc(100vw - 32px)); height: min(760px, calc(100vh - 48px)); }
+.sc-av { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--p-ink); flex: none; }
+.sc-at { font-size: 11px; color: var(--tw); }
+.sc-a { background: #fbfdfc; border: 1px solid var(--line); border-radius: 4px 12px 12px 12px; padding: 10px 12px; }
+.sc-follow { display: flex; flex-wrap: wrap; gap: 6px; }
+.sc-follow button { all: unset; cursor: pointer; font-size: 12.5px; color: var(--p-ink); border: 1px solid #bfe3d3; background: #f2faf6; border-radius: 14px; padding: 4px 11px; }
+.sc-follow button:hover { background: #e3f3ec; }
+.sc-follow button:focus-visible { outline: 2px solid var(--p-ink); }
+.sc-body { position: relative; }
+.sc-jump { position: sticky; bottom: 4px; align-self: center; display: inline-flex; align-items: center; gap: 5px; font: 600 12px Inter, system-ui, sans-serif; color: #fff; background: var(--p-ink); border: 0; border-radius: 14px; padding: 5px 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(4, 38, 27, .22); }
+@media (max-width: 800px) { .sc-wide-btn { display: none; } }
+.md-code { color: #dbe9e2; }
+.md-code .hljs-title, .md-code .hljs-section, .md-code .hljs-name, .md-code .hljs-selector-tag { color: #8fe0c2; }
+.md-code .hljs-type, .md-code .hljs-variable, .md-code .hljs-template-variable { color: #ffd59a; }
+.md-code .hljs-meta, .md-code .hljs-symbol, .md-code .hljs-bullet { color: #c0b4ff; }
+.md-code .hljs-deletion { color: #ffb3aa; } .md-code .hljs-addition { color: #9be7c4; }
+.md li.task-list-item { list-style: none; margin-left: -18px; }
