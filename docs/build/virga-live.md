@@ -118,6 +118,10 @@ Details the contract left open, as built:
 - `POST /api/virga/recover` waits at most 60 s for a pending `commit confirmed` (the edge gives a
   write 100 s); a node still pending is left to roll itself back and the answer is `ok: false`:
   press *Recover* again after the TTL.
+- `GET /api/virga/stream` is capped at 6 open streams per client address and 100 in all (the operator's
+  own view is not counted); past a cap it answers 429 and the page polls `/api/virga/state` every 5 s.
+- A refused write's audit row carries the scenario or trial id only when it looks like an id
+  (`<not an id>` otherwise): the audit log is public and must not carry a stranger's text.
 - `/api/public/health` uses stored reads only: `degraded` = the newest SLE minute below goal (100 %
   when none is set) or a device of the site with no stored health sample in 10 min; `offline` = every
   device of the site failing, or neither SLE nor device health readable.

@@ -2,9 +2,10 @@
   "name": "shimpaku-scripts",
   "private": true,
   "type": "module",
-  "description": "Recorder for the landing-page theatre clip (record_demo.mjs)",
+  "description": "Recorder for the landing-page theatre clip (record_demo.mjs) and the documentation screenshot capture (capture_screens.mjs)",
   "scripts": {
-    "record": "node record_demo.mjs"
+    "record": "node record_demo.mjs",
+    "screens": "node capture_screens.mjs"
   },
   "devDependencies": {
     "puppeteer-core": "^23.11.1"

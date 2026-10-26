@@ -70,13 +70,25 @@ export function useApi<T = any>(path: string | null, stream?: { url: string; eve
       live = false;
     };
   }, [path, n]);
-  useSse<T>(stream?.url ?? null, stream?.event ?? "", (data) => setState({ data, loading: false }));
+  // a stream the server refused (429: too many live views) or lost for good: poll the GET instead
+  const [polling, setPolling] = useState(false);
+  useSse<T>(stream?.url ?? null, stream?.event ?? "", (data) => setState({ data, loading: false }), () => setPolling(true));
+  useEffect(() => {
+    if (!polling || !path) return;
+    const t = setInterval(reload, POLL_FALLBACK_MS);
+    return () => clearInterval(t);
+  }, [polling, path, reload]);
   return { ...state, reload };
 }
 
-export function useSse<T>(url: string | null, event: string, onData: (d: T) => void) {
+const POLL_FALLBACK_MS = 10000;
+
+/** ``onClosed``: the browser gave up on the stream (a non-200 answer such as 429 closes an EventSource for good). */
+export function useSse<T>(url: string | null, event: string, onData: (d: T) => void, onClosed?: () => void) {
   const cb = useRef(onData);
   cb.current = onData;
+  const closed = useRef(onClosed);
+  closed.current = onClosed;
   useEffect(() => {
     if (!url) return;
     const es = new EventSource(url, { withCredentials: true });
@@ -86,6 +98,7 @@ export function useSse<T>(url: string | null, event: string, onData: (d: T) => v
       } catch {}
     };
     es.addEventListener(event, h as EventListener);
+    es.onerror = () => { if (es.readyState === EventSource.CLOSED) closed.current?.(); };
     return () => es.close();
   }, [url, event]);
 }

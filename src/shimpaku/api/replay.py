@@ -124,6 +124,16 @@ async def topo_get_neighbors(device: str | None = None) -> dict:
     return _tag({**t, "edges": edges})
 
 
+def hardware_snapshot() -> dict | None:
+    """``/api/hardware`` as a visitor saw it at export time, or None in older snapshots. The lab host's
+    own figures (memory, load, temperature) are operator-only live, so they are dropped here whatever
+    the export held (an export from a daemon with auth off would carry them)."""
+    hw = load().get("hardware")
+    if not isinstance(hw, dict):
+        return None
+    return {**hw, "hypervisor": {**(hw.get("hypervisor") or {}), "host": None}}
+
+
 async def bench_results() -> dict:
     return _tag(load()["bench"])
 

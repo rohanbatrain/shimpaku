@@ -11,13 +11,18 @@ html, body, #root { height: 100%; }
 body { margin: 0; background: var(--back); color: var(--t); font: 14px/1.45 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01", "tnum"; }
 a { color: var(--p-ink); text-decoration: none; }
 a:hover { text-decoration: underline; }
+/* a link inside running or muted text is told apart by more than colour (WCAG 1.4.1) */
+:where(.crumbs, .weak, .small, .own-note, .tone-crit, .notice, p, li) a:not(.btn, .kpi, .vg-tile, .tile) { text-decoration: underline; text-underline-offset: 2px; }
 h1 { font-size: 20px; line-height: 28px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
 h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--tw); margin: 0 0 10px; font-weight: 600; }
 .mono { font-family: var(--mono); font-size: 12.5px; }
 .weak { color: var(--tw); }
 .small { font-size: 12px; }
-:focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 2px; } /* 5:1 on light surfaces; #01a982 is only 2.9:1 on white */
+.nav :focus-visible, .appbar :focus-visible, .theatre :focus-visible, .con-term :focus-visible, .login-art :focus-visible { outline-color: var(--p); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* the skip link shows itself when it takes focus */
+a.sr-only:focus-visible { position: fixed; top: 8px; left: 8px; z-index: 100; width: auto; height: auto; overflow: visible; clip: auto; padding: 8px 14px; background: var(--front); color: var(--p-ink); border: 2px solid var(--p-ink); border-radius: 6px; font-weight: 600; }
 
 .shell { display: grid; grid-template-columns: 224px 1fr; grid-template-rows: minmax(0, 1fr); height: 100vh; }
 .nav { background: var(--nav); color: #c9d8d1; display: flex; flex-direction: column; padding: 16px 0 12px; }
@@ -92,6 +97,7 @@ table.t td.num, table.t th.num { text-align: right; font-variant-numeric: tabula
 .cls { display: grid; grid-template-columns: 132px 1fr 40px; gap: 8px; align-items: center; font-size: 13px; margin: 0; min-height: 26px; }
 .cls button { all: unset; cursor: pointer; color: var(--t); min-height: 24px; display: flex; align-items: center; }
 .cls button:hover { color: var(--p-ink); text-decoration: underline; }
+.cls button:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 2px; border-radius: 3px; }
 .bar { height: 8px; border-radius: 4px; background: #e8eeeb; overflow: hidden; }
 .bar i { display: block; height: 100%; border-radius: 4px; background: var(--p); }
 .bar.crit i { background: #d93a30; }
@@ -197,7 +203,9 @@ ul.chg-list li { display: flex; gap: 6px; align-items: center; }
   .topbar h1 { font-size: 18px; line-height: 24px; }
   .topbar .spacer { display: none; }
   .topbar h1.dup { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .topbar:has(h1.dup) > div:first-child:not(:has(.crumbs)) { display: none; }
+  /* the app bar already shows the page title: keep the h1 for assistive tech, hide the rest of the block */
+  .topbar:has(h1.dup) > div:first-child:not(:has(.crumbs)) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .topbar:has(h1.dup) > div:first-child:not(:has(.crumbs)) .info-i { display: none; }
   .topbar-ctl { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
   .topbar-ask { display: none; }
   .badge-demo, .badge-mode { font-size: 11px; padding: 1px 7px; }
@@ -304,7 +312,7 @@ svg.topo.compact { max-height: 340px; }
 .topo-role { font-size: 11.5px; fill: var(--tw); text-transform: uppercase; letter-spacing: .06em; }
 .topo-node { cursor: pointer; outline: none; }
 .topo-hit { fill: transparent; }
-.topo-node:hover .topo-hit, .topo-node:focus-visible .topo-hit { fill: rgba(1, 169, 130, .08); stroke: var(--p); stroke-width: 2; }
+.topo-node:hover .topo-hit, .topo-node:focus-visible .topo-hit { fill: rgba(1, 169, 130, .08); stroke: var(--p-ink); stroke-width: 2; }
 .topo-link title { pointer-events: none; }
 .topo-fix-t { font-family: var(--mono); font-size: 11.5px; fill: var(--tw); }
 .topo-fix-v { font-size: 14px; font-weight: 700; }

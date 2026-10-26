@@ -54,7 +54,11 @@ step_check() {
       echo "virga=$(grep -s ^SHIMPAKU_VIRGA_LIVE= $f | cut -d= -f2)"
       echo "contact=$(grep -sc ^SHIMPAKU_PRIVACY_CONTACT= $f)"; echo "pw=$([ -s $d/admin.hash ] && echo 1 || echo 0)"
       echo "totp=$([ -s $d/totp.json ] && echo 1 || echo 0)"; echo "svc=$(systemctl --user is-active shimpakud)"')
-    eval "$st"
+    # the answer is data (values come from the lab host's env file): read known keys, never eval it
+    local k v auth="" view="" virga="" pw="" totp="" svc=""
+    while IFS='=' read -r k v; do
+      case $k in auth|view|virga|pw|totp|svc) printf -v "$k" '%s' "$v" ;; esac
+    done <<<"$st"
     [[ $svc == active ]] && ok "shimpakud active" || no "shimpakud: $svc"
     [[ $pw == 1 ]] && ok "operator password set" || no "operator password (run: lab-secrets)"
     [[ $totp == 1 ]] && ok "TOTP enabled" || no "TOTP (run: lab-secrets)"
@@ -146,7 +150,7 @@ step_kuma() {
   # one status-page group per domain, named from DOMAIN_LABELS ("A (host)|B (host)", same order as DOMAINS)
   local labels=() i=0; IFS='|' read -r -a labels <<< "${DOMAIN_LABELS:-}"
   for d in $DOMAINS; do
-    sites+=(--group "${labels[$i]:-$d}" --status-host "$(sib "$d" status)" "https://$d" "https://$(sib "$d" app)" "https://$(sib "$d" status)"); i=$((i+1))
+    sites+=(--group "${labels[$i]:-$d}" --status-host "$(sib "$d" status)" "https://$d" "https://$(sib "$d" app)" "https://$(sib "$d" status)" "https://$d/install.sh"); i=$((i+1))
   done
   log "kuma: $url, website monitors for: $DOMAINS; Live lab on https://$(sib "${DOMAINS%% *}" app)"
   # the credentials live only in this one process's environment (never argv, never echoed)

@@ -326,6 +326,11 @@ def router(call: Callable[..., Awaitable[Any]], reader: Callable[..., Any], serv
         """The seven guests as front panels: ports with live oper state and bits/s, counters,
         CPU / memory, version and uptime where collected; the hypervisor they run on."""
         op = bool(getattr(p, "is_operator", False))
+        if getattr(service, "REPLAY", False):
+            # the replay has no devices to read: serve the visitor view recorded with the snapshot
+            hw = service.hardware_snapshot() if hasattr(service, "hardware_snapshot") else None
+            if hw:
+                return {**hw, "replay": True}
         return await cached(f"hw:{int(op)}", TTL_S, lambda: build(op))
 
     return r

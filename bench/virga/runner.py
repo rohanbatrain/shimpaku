@@ -4,7 +4,7 @@ Self-test (no agent window) proves that each catalogued fault actually happens a
 Bench mode adds the agent window, decoys, the B0b capture and remediation verification.
 Demo mode (the daemon's live fault lab, `shimpaku.virga_live`) is self-test plus a hold: the verified
 fault stays in until `Context.revert_now` is set or `hold_s` runs out, then the normal revert. Every
-demo inject is `commit confirmed` with a TTL of at least ceil(hold_s / 60) + 3 minutes (D5), so a
+demo inject is `commit confirmed` with a TTL of at least ceil((inject_timeout_s + hold_s) / 60) + 3 minutes (D5), so a
 daemon that dies mid-hold leaves devices that roll themselves back.
 
 Inject modes (REVIEW A1):
@@ -70,9 +70,11 @@ class Context:
     on_event: Callable[[dict], None] | None = None
 
 
-def demo_ttl_min(hold_s: float) -> int:
-    """D5: the inject's commit-confirmed TTL outlives the hold by at least three minutes."""
-    return math.ceil(hold_s / 60) + 3
+def demo_ttl_min(hold_s: float, inject_timeout_s: float = 0) -> int:
+    """D5: the inject's commit-confirmed TTL outlives the hold by at least three minutes. The timer
+    starts at the inject commit and the hold only after the fault is verified (up to
+    ``inject_timeout_s``), so both count."""
+    return math.ceil((inject_timeout_s + hold_s) / 60) + 3
 
 
 def emit(ctx: Context, **ev) -> None:
@@ -255,7 +257,7 @@ def execute(ctx: Context, sc: dict, intensity: dict | None = None, hold_s: float
     inject, revert = subst(sc["inject"], env), subst(sc["revert"], env)
     tm = timing(cat.lab, sc)
     if demo:
-        tm["inject_ttl_min"] = max(int(tm["inject_ttl_min"]), demo_ttl_min(ctx.hold_s))
+        tm["inject_ttl_min"] = max(int(tm["inject_ttl_min"]), demo_ttl_min(ctx.hold_s, tm["inject_timeout_s"]))
     nodes = touched_nodes(inject) + [n for n in touched_nodes(revert) if n not in touched_nodes(inject)]
     write_nodes = [n for n in nodes if any(n == s.get(k, {}).get("node") for s in inject + revert
                                            for k in ("junos", "junos_op", "flap"))]

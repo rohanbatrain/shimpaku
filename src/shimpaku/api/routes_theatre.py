@@ -34,9 +34,8 @@ import time
 from typing import Any, Awaitable, Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sse_starlette.sse import EventSourceResponse
 
-from shimpaku.api import view
+from shimpaku.api import streams, view
 
 RUN_TTL_S = 1.0        # one build serves every viewer for this long
 FIXTURE_TTL_S = 5.0    # the fixture port is a device read: at most one per 5 s, whoever watches
@@ -409,6 +408,6 @@ def router(call: Callable[..., Awaitable[Any]], reader: Callable[..., Any]) -> A
                     yield {"event": "theatre", "data": json.dumps({**run, "server_now": time.time()}, default=str)}
                 await asyncio.sleep(STREAM_TICK_S)
 
-        return EventSourceResponse(gen(), ping=15)
+        return streams.capped(request, p, gen(), ping=15)
 
     return r

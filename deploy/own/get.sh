@@ -40,7 +40,8 @@ main() {
 
   local base=${XDG_DATA_HOME:-$HOME/.local/share}/shimpaku-own
   local dest=$base/src-$ref url=$SHIMPAKU_TARBALL_BASE/$ref pinned=0
-  case $ref in [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) pinned=1 ;; esac
+  # only a full commit id is immutable; a short hex string may be a branch or tag name: download it again
+  case ${#ref}:$ref in 40:*[!0-9a-f]*) ;; 40:*) pinned=1 ;; esac
 
   if [ "$pinned" = 1 ] && [ -f "$dest/deploy/own/install.sh" ]; then
     echo "using Shimpaku $ref already in $dest"
@@ -58,6 +59,8 @@ main() {
     [ -f "$tmp/src/deploy/own/install.sh" ] || die "the downloaded source has no deploy/own/install.sh (ref $ref too old?)"
     rm -rf "$dest"
     mv "$tmp/src" "$dest"
+    rm -rf "$tmp"   # exec below replaces this shell, so the EXIT trap would never run
+    trap - EXIT
   fi
 
   # stdin is this script when piped from curl: install.sh asks on /dev/tty, never on stdin

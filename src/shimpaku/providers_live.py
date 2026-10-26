@@ -123,6 +123,8 @@ def event_row(r) -> dict:
 
 
 def register_all(store) -> None:
+    from shimpaku.providers import off_loop
+
     def _cur():
         return adb.connection(store).cursor()
 
@@ -136,14 +138,14 @@ def register_all(store) -> None:
             finally:
                 cur.close()
 
-    async def live_port_rates(at: float | None = None) -> dict:
+    def live_port_rates(at: float | None = None) -> dict:
         out = _run(lambda cur: port_rates(cur, at))
         if out.get("available") is False:
             return out
         return {**out, "speed_bps": None, "speed_reason": SPEED_REASON,
                 "source": "gNMI interface counters (metric_sample, 10 s samples): Δoctets × 8 / Δt"}
 
-    async def live_events(after_id: int | None = None, before_id: int | None = None, limit: int = 200,
+    def live_events(after_id: int | None = None, before_id: int | None = None, limit: int = 200,
                           device: str | None = None, q: str | None = None) -> dict:
         limit = max(1, min(int(limit), 1000))
 
@@ -168,7 +170,7 @@ def register_all(store) -> None:
                     "source": "Junos events from gNMI /junos/events, as the collector stores them (event table)"}
         return _run(fn)
 
-    async def live_range() -> dict:
+    def live_range() -> dict:
         def fn(cur):
             m = cur.execute("SELECT min(ts), max(ts) FROM metric_sample WHERE metric = 'if.in_octets'").fetchone()
             d = cur.execute("SELECT min(minute), max(minute) FROM device_minute").fetchone() \
@@ -178,7 +180,7 @@ def register_all(store) -> None:
                     "retention": "none: nothing purges metric_sample, event or the minute tables"}
         return _run(fn)
 
-    async def live_state_at(t: float) -> dict:
+    def live_state_at(t: float) -> dict:
         """Stored state as of minute ``t``: port oper, OSPF adjacency per interface, collector
         reachability, the device-minute verdict, and traffic rates."""
         end = _naive(t)
@@ -210,7 +212,7 @@ def register_all(store) -> None:
                     "traffic": port_rates(cur, t)}
         return _run(fn)
 
-    async def live_sle_at(site: str, t: float, window_min: int = 60) -> dict:
+    def live_sle_at(site: str, t: float, window_min: int = 60) -> dict:
         """``sle_get_summary`` for the hour ending at ``t`` (same units, same summarise)."""
         from shimpaku.analytics.sle import APP, FABRIC, summarise
 
@@ -228,4 +230,4 @@ def register_all(store) -> None:
 
     for name, fn in (("live_port_rates", live_port_rates), ("live_events", live_events), ("live_range", live_range),
                      ("live_state_at", live_state_at), ("live_sle_at", live_sle_at)):
-        service.register_provider(name, fn)
+        service.register_provider(name, off_loop(fn))  # synchronous bodies: never on the event loop

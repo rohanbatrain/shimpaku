@@ -37,8 +37,16 @@ export function fmtBps(v: number | null | undefined) {
 /** Live traffic: one GET, then the SSE stream (every ~5 s). Pass `t` to read a past minute instead. */
 export function useTraffic(enabled = true) {
   const [d, setD] = useState<Traffic>();
-  useEffect(() => { if (enabled) api<Traffic>("/api/live/traffic").then(setD).catch(() => {}); }, [enabled]);
-  useSse<Traffic>(enabled ? "/api/live/stream/traffic" : null, "traffic", setD);
+  const [poll, setPoll] = useState(false); // the stream was refused (too many live views): poll instead
+  useEffect(() => {
+    if (!enabled) return;
+    const get = () => api<Traffic>("/api/live/traffic").then(setD).catch(() => {});
+    get();
+    if (!poll) return;
+    const t = setInterval(get, 10000);
+    return () => clearInterval(t);
+  }, [enabled, poll]);
+  useSse<Traffic>(enabled ? "/api/live/stream/traffic" : null, "traffic", setD, () => setPoll(true));
   return d;
 }
 
@@ -57,11 +65,26 @@ export function useEventStream(cap = 50, paused = false) {
       setAfter(p.last_id ?? 0);
     }).catch((e) => setState({ available: false, reason: String(e.message ?? e), loaded: true }));
   }, [cap]);
-  useSse<JEvent[]>(after == null ? null : `/api/live/stream/events?after_id=${after}`, "events", (batch) => {
+  const last = useRef<number | null>(null);
+  const [poll, setPoll] = useState(false); // the stream was refused (too many live views): poll instead
+  const take = (batch: JEvent[]) => {
+    if (!batch.length) return;
+    last.current = Math.max(last.current ?? 0, ...batch.map((e) => e.id));
     const fresh = [...batch].sort((a, b) => b.id - a.id);
     if (pausedRef.current) setHeld((h) => [...fresh, ...h].slice(0, cap));
     else setRows((r) => dedupe([...fresh, ...r]).slice(0, cap));
-  });
+  };
+  const takeRef = useRef(take);
+  takeRef.current = take;
+  useSse<JEvent[]>(after == null ? null : `/api/live/stream/events?after_id=${after}`, "events", take, () => setPoll(true));
+  useEffect(() => {
+    if (!poll || after == null) return;
+    const t = setInterval(() => {
+      api<EventsPage>(`/api/live/events?after_id=${last.current ?? after}&limit=100`)
+        .then((p) => takeRef.current(p.events ?? [])).catch(() => {});
+    }, 10000);
+    return () => clearInterval(t);
+  }, [poll, after]);
   useEffect(() => {
     if (!paused && held.length) { setRows((r) => dedupe([...held, ...r]).slice(0, cap)); setHeld([]); }
   }, [paused, held, cap]);

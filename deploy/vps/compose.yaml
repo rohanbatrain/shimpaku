@@ -51,7 +51,8 @@ services:
     # tunnel interface and drops everything else on 3001), so any of the owner's NetBird devices
     # opens http://<vps netbird ip>:3001 with no SSH tunnel; the public reaches only the status page,
     # through Caddy (127.0.0.1:3001, SHIMPAKU_KUMA_UPSTREAM). Major-pinned tag; pin a digest later.
-    image: louislam/uptime-kuma:2
+    # pinned to the image verified live (2.5.7, 2026-10-26); bump deliberately
+    image: louislam/uptime-kuma:2.5.7@sha256:4b95dbe7ac5343b768f8e04e3035ccd59997872b1a35ab9b0f082d2cc279070e
     restart: unless-stopped
     network_mode: host
     volumes:

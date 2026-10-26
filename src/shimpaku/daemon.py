@@ -84,6 +84,10 @@ async def async_main() -> None:
 
     tasks: list[asyncio.Task] = []
     async with mcp_app.router.lifespan_context(mcp_app):
+        # a stalled loop stalls every request, the edge's health check too: log where it is stuck
+        from shimpaku.loopwatch import LoopWatch
+        rest_app.state.loopwatch = LoopWatch()
+        tasks.append(rest_app.state.loopwatch.start())
         tasks.append(asyncio.create_task(Collector(store, topo).run(), name="collector"))
         tasks.append(asyncio.create_task(run_analytics_loop(store), name="analytics"))
         tasks.append(engine().start())

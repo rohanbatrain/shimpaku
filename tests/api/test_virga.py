@@ -374,3 +374,62 @@ def test_stream_sends_the_state(demo_client):
                 data = json.loads(next(lines).split(":", 1)[1])
                 assert data["simulated"] is True and "recent" in data
                 break
+
+
+# ================================================================ abuse: stream fan-out, audit text
+
+def _visitor_app(lab):
+    from shimpaku import service
+    app = create_app(service, auth_mode="local", web_dist=lab.w.tmp / "dist", leases=lab.w.lm,
+                     limiter=RateLimiter({}), public_view=True, totp=lab.w.totp)
+    app.state.virga_live = lab.m
+    return app
+
+
+def _first_state(lines):
+    for line in lines:  # the caller keeps `lines`: dropping the iterator would close the stream
+        if line.startswith("data:"):
+            return json.loads(line.split(":", 1)[1])
+    raise AssertionError("no state event")
+
+
+def test_anonymous_streams_are_capped_per_address(lab, monkeypatch):
+    from shimpaku.api import routes_virga
+    monkeypatch.setattr(routes_virga, "STREAMS_PER_IP", 1)
+    c = TestClient(_visitor_app(lab))
+    with c.stream("GET", "/api/virga/stream") as r1:
+        lines = r1.iter_lines()
+        assert r1.status_code == 200 and "busy" in _first_state(lines)
+        with c.stream("GET", "/api/virga/stream") as r2:
+            assert r2.status_code == 429 and r2.headers["retry-after"] == "60"
+    # the slot comes back when the viewer leaves
+    _until(lambda: c.get("/api/virga/state").status_code == 200 and _stream_status(c) == 200, s=10)
+
+
+def _stream_status(c):
+    with c.stream("GET", "/api/virga/stream") as r:
+        return r.status_code
+
+
+def test_streams_have_a_global_cap(lab, monkeypatch):
+    from shimpaku.api import routes_virga
+    monkeypatch.setattr(routes_virga, "STREAMS_TOTAL", 1)
+    c = TestClient(_visitor_app(lab))
+    with c.stream("GET", "/api/virga/stream") as r1:
+        assert r1.status_code == 200
+        assert _stream_status(c) == 429
+    monkeypatch.setattr(routes_virga, "STREAMS_TOTAL", 0)
+    op, _ = operator(lab.w)
+    assert _stream_status(op) == 200  # the operator's own view is never crowded out
+
+
+def test_refused_free_text_never_reaches_the_public_audit_chain(lab):
+    tok = lab.w.auth.create_token("agent", "propose", "admin")["token"]
+    c, h = client(lab.w), {"Authorization": f"Bearer {tok}"}
+    assert c.post("/api/virga/trials", json={"scenario": "Visit evil.example <b>now</b>"}, headers=h).status_code == 403
+    assert c.post("/api/virga/trials/FREE%20TEXT%20HERE%20call%20me/revert", headers=h).status_code == 403
+    assert c.post("/api/virga/trials", json={"scenario": "FAB-01"}, headers=h).status_code == 403
+    inj = [r["args"]["scenario"] for r in _rows(lab.w, "virga_inject")]
+    assert inj == ["FAB-01", "<not an id>"]  # newest first
+    assert _rows(lab.w, "virga_revert")[0]["args"]["trial_id"] == "<not an id>"
+    assert "evil.example" not in json.dumps(lab.w.audit.query(limit=1000))

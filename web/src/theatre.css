@@ -96,7 +96,7 @@
 .th-row.s-current { background: #13283a; }
 .th-row.s-done .th-row-b, .th-row.s-failed .th-row-b { animation: th-in .45s ease both; }
 .th-row.s-pending { opacity: .55; }
-.th-row.s-skipped { opacity: .7; }
+.th-row.s-skipped .th-ico { opacity: .7; }
 .th-ico { flex: none; width: 26px; height: 26px; margin-top: 1px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 700; border: 2px solid var(--th-line); color: var(--th-dim); }
 .s-done .th-ico { background: var(--th-ok); border-color: var(--th-ok); color: #04261b; }
 .s-failed .th-ico { background: var(--th-bad); border-color: var(--th-bad); color: #2a0a07; }

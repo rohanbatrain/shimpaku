@@ -68,7 +68,7 @@ function Tree({ nodes, depth = 0 }: { nodes: Node[]; depth?: number }) {
       {nodes.map((n) => (
         <div key={n.name + depth}>
           <div className="cls" style={{ gridTemplateColumns: "210px 1fr 40px" }}>
-            <span style={{ fontWeight: depth ? 400 : 600, paddingLeft: depth * 16 }}>{depth ? "└ " : ""}{n.name}</span>
+            <span style={{ fontWeight: depth ? 400 : 600, paddingLeft: depth * 16, minWidth: 0, overflowWrap: "anywhere" }}>{depth ? "└ " : ""}{n.name}</span>
             <span className={`bar${n.share_pct >= 50 ? " crit" : ""}`}><i style={{ width: `${n.share_pct}%` }} /></span>
             <span className="small" style={{ textAlign: "right" }}>{n.share_pct}%</span>
           </div>
@@ -84,7 +84,8 @@ function Tree({ nodes, depth = 0 }: { nodes: Node[]; depth?: number }) {
 function BlastTree({ b }: { b: Blast }) {
   const rows: { g: Node; c: Node; gi: number }[] = [];
   b.tree.forEach((g, gi) => (g.children?.length ? g.children : [{ name: "—", share_pct: g.share_pct, children: [] }]).forEach((c) => rows.push({ g, c, gi })));
-  const RH = 52, top = 22, H = Math.max(rows.length * RH + top * 2, 140), W = 1180;
+  const RH = 52, top = 22, H = Math.max(rows.length * RH + top * 2, 140), W = 1260;
+  const clip = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
   const X0 = 170, X1 = 580, X2 = 900;
   const rootY = H / 2;
   const bw = (p: number) => Math.max(2, (p / 100) * 26);
@@ -103,14 +104,14 @@ function BlastTree({ b }: { b: Blast }) {
       {b.tree.map((g, gi) => (
         <g key={"g" + gi} transform={`translate(${X1} ${gY(gi)})`}>
           <circle r="7" fill={tone(g.share_pct)} stroke="#fff" strokeWidth="2" />
-          <text x="0" y="-24" textAnchor="middle" className="bt-l"><tspan fontWeight="600">{g.name}</tspan></text>
-          <text x="0" y="32" textAnchor="middle" className="bt-v">{g.share_pct}%</text>
+          {/* name and share on one line above the node: groups with a single leaf sit one row (52) apart, and a second line below overlapped the next group's name */}
+          <text x="0" y="-18" textAnchor="middle" className="bt-l"><title>{g.name}</title><tspan fontWeight="600">{clip(g.name, 30)}</tspan><tspan className="bt-v" dx="6">{g.share_pct}%</tspan></text>
         </g>
       ))}
       {rows.map((r, i) => (
         <g key={"l" + i} transform={`translate(${X2} ${top + i * RH + RH / 2})`}>
           <circle r="5" fill={tone(r.c.share_pct)} stroke="#fff" strokeWidth="2" />
-          <text x="14" y="4" className="bt-l">{r.c.name} <tspan className="bt-v" dx="6">{r.c.share_pct}%</tspan></text>
+          <text x="14" y="4" className="bt-l"><title>{r.c.name}</title>{clip(r.c.name, 36)}<tspan className="bt-v" dx="6">{r.c.share_pct}%</tspan></text>
         </g>
       ))}
     </svg>
@@ -158,7 +159,7 @@ export default function RootCause() {
                     <h2 style={{ margin: 0 }}>Blast radius<Info k="blast" /></h2>
                     <span className="small weak">share of bad units per classifier → sub-classifier; band width = share</span>
                   </div>
-                  <div className="blast-scroll"><BlastTree b={b} /></div>
+                  <div className="blast-scroll" tabIndex={0} role="region" aria-label="Blast radius diagram, scrolls sideways"><BlastTree b={b} /></div>
                 </div>
               )}
               <div className="grid2">

@@ -30,10 +30,24 @@ pass. Each test fails on the code before its fix.
 | 12 | 2026-10-24 | Demo operation errors returned the raw exception text | A device's management address reached the tester and the audit rows | Addresses replaced with `<host>`; full text only in the daemon log (`4743650`) | `test_device_errors_do_not_leak_management_addresses_to_a_tester` |
 | 13 | 2026-10-24 | MCP `inventory_list` returned `mgmt_ip` to tester callers | A tester's token or Shim listed every management address | Dropped for tester and visitor callers (`c00c863`) | `test_mcp_inventory_hides_management_addresses_from_a_tester` |
 
+## Defects found going live (2026-10-25)
+
+Found while putting the lab behind the public edge, the status page and the Virga fault lab. Each was
+caught by watching the live system, not by a test; the fix commit adds the test where one fits.
+
+| # | Date | Defect | Impact | Fix | Regression test |
+|---|---|---|---|---|---|
+| 14 | 2026-10-25 | Caddy read `redir /status/<slug> 302` as a path matcher plus a target | The status host's `/` answered an empty 200 instead of the status page | `redir * …` | live check (`ops/golive/run.sh verify`) |
+| 15 | 2026-10-25 | `/api/public/health` called a site degraded on any SLE minute below goal | The public "Campus / Fabric network" monitors went red seven times in 45 minutes with no fault: every bad unit was Resources·CPU from the overloaded lab host, which the incident engine already filters by persistence | Degraded follows open incidents, a verified drill fault in place, or a failing device read (`16fe07f`) | `test_site_health_rules` (one CPU-heavy minute stays healthy) |
+| 16 | 2026-10-25 | `scripts/kuma_setup.mjs` ignored Kuma 2's incremental `updateMonitorIntoList` events | After regrouping, the emptied default group was not found and stayed | Merge the incremental updates (`322b7ee`) | rerun against the live Kuma: group removed |
+| 17 | 2026-10-25 | `ops/sync.sh` mirrored the git-ignored operator folder (`.local/`) to the lab host | Operator-only files (settings, a status-page admin credential, deploy logs) sat on the lab host, same owner, mode 0600 | Removed there; the sync excludes `.local/` (`9fa02ea`) | `ls` on the lab host after a sync |
+| 18 | 2026-10-25 | The deploy-your-own installer pinned Shimpaku to a commit of the private working history | Every self-deploy would have failed at the clone step | The host clones the commit the one-liner downloaded (or the clone's own HEAD) (`767b69c`); preflight's "Pins" check FAILs on an unpublished commit | the public one-liner's `--check` run: "pinned commits are published" |
+| 19 | 2026-10-26 | Providers took the shared DuckDB lock (and ran `ping`) on the event loop | While the analytics pass held the lock, every request stalled, the edge's 3 s health check failed ~100 times in 3 h, and the public site kept flipping to "lab offline" (replay) | Providers run in worker threads; the edge needs 3 failed checks in a row; a loop watchdog logs any future stall with its stack | `test_a_provider_waiting_for_the_store_lock_never_stalls_the_event_loop` (fails on the old code); 15 min live after: 0 stalls, 0 failed checks |
+
 ## How a reviewer can check
 
 ```bash
-.venv/bin/pytest -q                                   # 503 passed, 2 skipped (live-lab tests need -m lab)
+.venv/bin/pytest -q                                   # 1014 passed, 2 skipped (live-lab tests need -m lab)
 git log --oneline                                     # every fix is its own commit, with evidence in the message
 curl -s 127.0.0.1:8780/api/actions/act-20261024-9b7065   # the false verification, unaltered
 curl -s 127.0.0.1:8780/api/actions/act-20261024-acdfc3   # the recurrence, caught

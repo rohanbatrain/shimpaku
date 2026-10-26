@@ -64,6 +64,10 @@ def collect(get) -> dict:
     snap["audit"] = get("/api/audit", limit=1000)
     snap["audit_verify"] = get("/api/audit/verify")
     snap["bench"] = get("/api/bench/results")
+    try:  # the Hardware page, as a visitor sees it (the export is anonymous: no hypervisor detail)
+        snap["hardware"] = get("/api/hardware")
+    except Exception:  # noqa: BLE001
+        pass
     try:  # a daemon older than the heatmap has no such route; the replay then says "not in snapshot"
         snap["probes"] = {s: {str(w): get("/api/probes/heatmap", site=s, window=w) for w in WINDOWS} for s in SITES}
     except Exception:  # noqa: BLE001

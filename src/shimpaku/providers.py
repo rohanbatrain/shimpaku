@@ -11,6 +11,8 @@ a provider must never open its own `Store`.
 
 from __future__ import annotations
 
+import asyncio
+import functools
 import json
 import logging
 import time
@@ -26,6 +28,17 @@ from shimpaku.config import settings
 log = logging.getLogger("shimpaku.providers")
 
 
+def off_loop(fn):
+    """Register a provider whose body is synchronous (a DuckDB read under the shared connection's
+    lock, a subprocess) as a coroutine that runs it in a worker thread. On the event loop it stalled
+    every request for as long as the analytics pass held the lock, the edge's 3 s health check
+    included, and the public site fell back to the replay (``loopwatch`` caught it, 2026-10-26)."""
+    @functools.wraps(fn)
+    async def run(*a, **kw):
+        return await asyncio.to_thread(fn, *a, **kw)
+    return run
+
+
 def register_all(store) -> None:
     """`store`: the daemon's single read-write Store (CONTRACT "Process model" — DuckDB allows
     one read-write process; these providers read through its existing connection)."""
@@ -33,7 +46,7 @@ def register_all(store) -> None:
     def _cursor():
         return adb.connection(store).cursor()
 
-    async def sle_get_summary(site: str, window_min: int = 60) -> dict:
+    def sle_get_summary(site: str, window_min: int = 60) -> dict:
         with adb.lock_of(store):
             cur = _cursor()
             try:
@@ -106,7 +119,7 @@ def register_all(store) -> None:
                 "t_close": str(r[3]) if r[3] else None, "sle": r[4],
                 "root_causes": json.loads(r[5]) if r[5] else [], "status": r[6] if len(r) > 6 else None}
 
-    async def sle_get_blast_radius(incident_id: str) -> dict:
+    def sle_get_blast_radius(incident_id: str) -> dict:
         with adb.lock_of(store):
             cur = _cursor()
             try:
@@ -121,7 +134,7 @@ def register_all(store) -> None:
         return {"incident_id": row[0], "blast_radius": json.loads(row[1]) if row[1] else None,
                 "root_causes": json.loads(row[2]) if row[2] else []}
 
-    async def incident_list(status: str | None = None) -> dict:
+    def incident_list(status: str | None = None) -> dict:
         with adb.lock_of(store):
             cur = _cursor()
             try:
@@ -134,7 +147,7 @@ def register_all(store) -> None:
                 cur.close()
         return {"incidents": [_inc_row(r) for r in rows]}
 
-    async def incident_get(incident_id: str) -> dict:
+    def incident_get(incident_id: str) -> dict:
         with adb.lock_of(store):
             cur = _cursor()
             try:
@@ -148,7 +161,7 @@ def register_all(store) -> None:
             raise KeyError(incident_id)
         return _inc_row(row)
 
-    async def probe_run(target: str, kind: str = "ping") -> dict:
+    def probe_run(target: str, kind: str = "ping") -> dict:
         """A live synthetic probe, run on demand (not the periodic RPM probes)."""
         import subprocess
 
@@ -163,7 +176,7 @@ def register_all(store) -> None:
         return {"target": target, "kind": kind, "ok": r.returncode == 0, "loss_pct": loss,
                 "elapsed_s": round(time.monotonic() - t0, 3)}
 
-    async def bench_results() -> dict:
+    def bench_results() -> dict:
         p = settings.data / "bench" / "results.json"
         if not p.exists():
             return {"available": False, "reason": "no benchmark results published yet"}
@@ -175,7 +188,7 @@ def register_all(store) -> None:
         t = pd.Timestamp(t)
         return (t.tz_localize("UTC") if t.tzinfo is None else t).timestamp()
 
-    async def device_get_health(device: str | None = None, window_min: int = 60) -> dict:
+    def device_get_health(device: str | None = None, window_min: int = 60) -> dict:
         """Stored health only (no device call): the newest CPU / memory sample per device (≤ 10 min
         old) and the device-minute verdicts of the window. Nothing is filled in when absent."""
         window_min = max(5, min(int(window_min), 7 * 24 * 60))
@@ -240,7 +253,7 @@ def register_all(store) -> None:
     IF_RATE_METRICS = {"if.in_octets": "in_bps", "if.out_octets": "out_bps",
                        "if.in_pkts": "in_pps", "if.out_pkts": "out_pps"}
 
-    async def iface_get_history(device: str, window_min: int = 60) -> dict:
+    def iface_get_history(device: str, window_min: int = 60) -> dict:
         """Traffic rates per interface from the collector's stored gNMI counters: the last sample of
         each bucket, rate = Δcounter / Δt between consecutive buckets (octets × 8 = bits). A counter
         that goes backwards (reset) gives no point rather than a made-up one."""
@@ -285,7 +298,7 @@ def register_all(store) -> None:
                 "source": "gNMI interface counters stored by the collector (metric_sample)",
                 "interfaces": [r for r in rows if r["series"]]}
 
-    async def probe_heatmap(site: str = "campus", window_min: int = 60) -> dict:
+    def probe_heatmap(site: str = "campus", window_min: int = 60) -> dict:
         from shimpaku.analytics import heatmap
         end = pd.Timestamp.now(tz="UTC").tz_localize(None)
         start = end - pd.Timedelta(minutes=window_min)
@@ -301,15 +314,15 @@ def register_all(store) -> None:
                 cur.close()
         return heatmap.build(df, start, end, site, window_min)
 
-    service.register_provider("probe_heatmap", probe_heatmap)
-    service.register_provider("sle_get_summary", sle_get_summary)
-    service.register_provider("sle_get_blast_radius", sle_get_blast_radius)
-    service.register_provider("probe_run", probe_run)
-    service.register_provider("incident_list", incident_list)
-    service.register_provider("incident_get", incident_get)
-    service.register_provider("bench_results", bench_results)
-    service.register_provider("device_get_health", device_get_health)
-    service.register_provider("iface_get_history", iface_get_history)
+    service.register_provider("probe_heatmap", off_loop(probe_heatmap))
+    service.register_provider("sle_get_summary", off_loop(sle_get_summary))
+    service.register_provider("sle_get_blast_radius", off_loop(sle_get_blast_radius))
+    service.register_provider("probe_run", off_loop(probe_run))
+    service.register_provider("incident_list", off_loop(incident_list))
+    service.register_provider("incident_get", off_loop(incident_get))
+    service.register_provider("bench_results", off_loop(bench_results))
+    service.register_provider("device_get_health", off_loop(device_get_health))
+    service.register_provider("iface_get_history", off_loop(iface_get_history))
 
     from shimpaku import providers_live  # live traffic, event tail, as-of state (api/routes_live.py)
     providers_live.register_all(store)

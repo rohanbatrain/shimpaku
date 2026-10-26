@@ -1,7 +1,7 @@
 # Public read-only replay of Shimpaku (see deploy/vps/README.md).
 # No Junos libraries, no device credentials, no LLM key: this image cannot reach a switch.
 
-ARG CADDY_VERSION=2.11
+ARG CADDY_VERSION=2.11.7
 
 FROM node:22-slim AS web
 WORKDIR /src/web
@@ -15,11 +15,12 @@ RUN npm run build
 # the Caddyfile stays a bind mount.
 #   mholt/caddy-ratelimit         `rate_limit` (not an official Caddy-org module)
 #   WeidiDeng/caddy-cloudflare-ip `trusted_proxies cloudflare` (fetches Cloudflare's published ranges)
-# Caddy is pinned to a minor tag; pin the plugins to tags/commits by overriding the ARGs
-# (e.g. --build-arg RATELIMIT_REF=<commit>) once a build has been verified. TODO: pin digests.
+# Pinned to what the live edge was verified with (`caddy build-info` on 2026-10-26): Caddy 2.11.7,
+# caddy-ratelimit v0.1.0, caddy-cloudflare-ip f53b62aa13cb. Bump deliberately, rebuild, re-run the
+# deploy checks.
 FROM caddy:${CADDY_VERSION}-builder AS edge-builder
-ARG RATELIMIT_REF=latest
-ARG CFIP_REF=latest
+ARG RATELIMIT_REF=v0.1.0
+ARG CFIP_REF=f53b62aa13cb
 RUN xcaddy build \
       --with github.com/mholt/caddy-ratelimit@${RATELIMIT_REF} \
       --with github.com/WeidiDeng/caddy-cloudflare-ip@${CFIP_REF}

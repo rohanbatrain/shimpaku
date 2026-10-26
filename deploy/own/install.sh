@@ -70,13 +70,19 @@ while [ "$#" -gt 0 ]; do
 done
 PROFILE=${PROFILE:-full}
 case $PROFILE in full|fabric|campus) ;; *) usage_die "--profile is full, fabric or campus" ;; esac
-case $OP in *[!a-z0-9_-]*|"") usage_die "--operator: lower-case letters, digits, - and _ only" ;; esac
+case $OP in *[!a-z0-9_-]*|-*|"") usage_die "--operator: lower-case letters, digits, - and _ only" ;; esac
 case $PORT in *[!0-9]*|"") usage_die "--port is a number" ;; esac
 [ -n "$HOST" ] && [ -n "$ALIAS" ] && usage_die "--host and --ssh-alias are alternatives"
 { [ -n "$HOST" ] || [ -n "$ALIAS" ]; } && [ "$LOCAL" = 1 ] && usage_die "--local deploys to this machine: no --host"
 if [ -n "$HOST" ]; then
   case $HOST in *[!A-Za-z0-9.:_-]*|-*) usage_die "--host: an IP address or host name" ;; esac
 fi
+# Every value below ends up in an ssh argument or a command string run on the host: a leading '-'
+# would be read by ssh as an option (-oProxyCommand=...), a ';' or newline as a second command.
+case $SSH_USER in *[!A-Za-z0-9._-]*|-*|"") usage_die "--user: a user name (letters, digits, . _ -)" ;; esac
+case $ALIAS in *[!A-Za-z0-9.:_-]*|-*) usage_die "--ssh-alias: a Host name from your ssh config" ;; esac
+case $BIND in localhost) ;; *[!0-9A-Fa-f.:]*|"") usage_die "--bind: an IP address (127.0.0.1, 0.0.0.0, ::1, ...)" ;; esac
+case $IMG_ROUTER$IMG_SWITCH$KEY in *[[:cntrl:]]*) usage_die "an image or key path contains a control character" ;; esac
 
 # ---- the terminal (stdin may be this script, piped from curl) --------------------------------------
 have_tty() { (exec </dev/tty) 2>/dev/null; }
@@ -326,16 +332,19 @@ ship_bundle() {
   say "shipping the installer bundle to $STATE/bundle"
   local tarflags=""
   tar --version 2>/dev/null | grep -q bsdtar && tarflags="--no-mac-metadata --no-xattrs"
+  # --no-same-owner: tar run by root keeps the archive's owner (this computer's uid, which may be a user on
+  # the host) and that user could then edit scripts root runs next; extracted, everything is root's.
   # PINS travels with the commit chosen above, so the host clones what this copy is
   local pins; pins=$(mktemp -d "${TMPDIR:-/tmp}/shimpaku-own-pins.XXXXXX")
   sed "s/^SHIMPAKU_COMMIT=.*/SHIMPAKU_COMMIT=$SHIMPAKU_COMMIT/" "$HERE/PINS" > "$pins/PINS"
   # shellcheck disable=SC2086
   (COPYFILE_DISABLE=1 tar $tarflags --exclude __pycache__ -cf - -C "$pins" PINS -C "$HERE" remote configs) |
     if [ "$LOCAL" = 1 ]; then
-      bash -c "install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar -C $STATE/bundle.new -xf - && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle"
+      bash -c "install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar --no-same-owner -C $STATE/bundle.new -xf - && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle"
     else
-      "${SSH[@]}" "${SUDO}sh -c 'install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar -C $STATE/bundle.new -xf - 2>/dev/null && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle'"
+      "${SSH[@]}" "${SUDO}sh -c 'install -d -m 0755 $STATE && rm -rf $STATE/bundle.new && mkdir -p $STATE/bundle.new && tar --no-same-owner -C $STATE/bundle.new -xf - 2>/dev/null && rm -rf $STATE/bundle && mv $STATE/bundle.new $STATE/bundle && chmod -R a+rX,go-w $STATE/bundle'"
     fi
+  rm -rf "$pins"
 }
 stage_args() {
   STAGE_ARGS=(--profile "$PROFILE" --operator "$OP" --data-dir "$DATA" --bind "$BIND")
@@ -367,10 +376,12 @@ upload_images() {
     if [ "$have" = "$size" ]; then note "$name already on the host"; continue; fi
     say "copying $(basename "$p") ($((size / 1048576)) MiB) to $dst"
     sh_on_target "python3 $STATE/bundle/remote/ownlib.py manifest-add $STATE/manifest.json image $dst"
+    # written by the operator user, who owns the image dir: root never writes through what is there
     if [ "$LOCAL" = 1 ]; then
-      cp "$p" "$dst.part"
+      # shellcheck disable=SC2016  # $1 is sh -c's argument
+      runuser -u "$OP" -- sh -c 'umask 027; cat > "$1"' _ "$dst.part" < "$p" || die "image copy failed; re-run to retry"
     else
-      "${SSH[@]}" "${SUDO}sh -c 'cat > $dst.part'" < "$p" || die "image copy failed; re-run to retry"
+      "${SSH[@]}" "${SUDO}runuser -u $OP -- sh -c 'umask 027; cat > $dst.part'" < "$p" || die "image copy failed; re-run to retry"
     fi
   done
   return 0
@@ -385,7 +396,9 @@ remove_key() {
   [ -f "$KEY.pub" ] || { note "no $KEY.pub here: nothing to remove"; return; }
   local pub; pub=$(cat "$KEY.pub")
   say "removing the deploy key from the host"
-  printf '%s\n' "$pub" | "${SSH[@]}" "${SUDO}sh -c 'k=\$(cat); for f in /root/.ssh/authorized_keys /home/*/.ssh/authorized_keys; do [ -f \"\$f\" ] || continue; grep -qxF \"\$k\" \"\$f\" || continue; grep -vxF \"\$k\" \"\$f\" > \"\$f.tmp\" || true; cat \"\$f.tmp\" > \"\$f\"; rm -f \"\$f.tmp\"; echo \"   removed from \$f\"; done'"
+  # root edits files in users' .ssh dirs: its scratch file is its own (mktemp), never <file>.tmp there, and
+  # a symlinked authorized_keys is skipped
+  printf '%s\n' "$pub" | "${SSH[@]}" "${SUDO}sh -c 'k=\$(cat); t=\$(mktemp); for f in /root/.ssh/authorized_keys /home/*/.ssh/authorized_keys; do [ -f \"\$f\" ] && [ ! -L \"\$f\" ] || continue; grep -qxF \"\$k\" \"\$f\" || continue; grep -vxF \"\$k\" \"\$f\" > \"\$t\" || true; cat \"\$t\" > \"\$f\"; echo \"   removed from \$f\"; done; rm -f \"\$t\"'"
   if [ "$KEY_GIVEN" = 0 ]; then rm -f "$KEY" "$KEY.pub"; note "deleted $KEY here"; fi
 }
 
@@ -415,7 +428,7 @@ if [ "$DRY" = 1 ]; then
   echo "+ tar PINS remote configs | ssh root@$T 'unpack into $STATE/bundle'"
   echo "+ ssh root@$T bash $STATE/bundle/remote/deploy.sh --stage base:"
   bash "$HERE/remote/deploy.sh" --stage base "${base[@]}" | sed 's/^/    /'
-  echo "+ ssh root@$T 'cat > $DATA/images/<name>.part' < <your image file>   (each image given as a local file; skipped when already there)"
+  echo "+ ssh root@$T 'runuser -u $OP -- sh -c \"cat > $DATA/images/<name>.part\"' < <your image file>   (each image given as a local file; skipped when already there)"
   echo "+ ssh root@$T bash $STATE/bundle/remote/deploy.sh --stage rest:"
   bash "$HERE/remote/deploy.sh" --stage rest "${rest[@]}" | sed 's/^/    /'
   echo "+ ssh root@$T 'cat $STATE/operator-password; rm it'   (printed once to your terminal, never to the log)"
@@ -479,7 +492,7 @@ confirm "$LABEL"
 ship_bundle
 run_stage base
 [ "$ROOT_KEY_ADDED" = 1 ] || [ "$LOCAL" = 1 ] || [ -n "$ALIAS" ] || [ "$KEY_GIVEN" = 1 ] || \
-  sh_on_target "python3 $STATE/bundle/remote/ownlib.py manifest-add $STATE/manifest.json key $(printf '%q' "$(awk '{print $2}' "$KEY.pub" | cut -c1-24)") file=$KEY.pub" || true
+  sh_on_target "python3 $STATE/bundle/remote/ownlib.py manifest-add $STATE/manifest.json key $(printf '%q' "$(awk '{print $2}' "$KEY.pub" | cut -c1-24)") $(printf '%q' "file=$KEY.pub")" || true
 upload_images
 run_stage rest ${UPLOAD_ARGS[@]+"${UPLOAD_ARGS[@]}"}
 

@@ -24,9 +24,8 @@ import time
 from typing import Any, Awaitable, Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sse_starlette.sse import EventSourceResponse
 
-from shimpaku.api import routes_viz, view
+from shimpaku.api import routes_viz, streams, view
 
 TRAFFIC_TICK_S = 5.0
 EVENTS_TICK_S = 2.0
@@ -196,7 +195,7 @@ def router(call: Callable[..., Awaitable[Any]], reader: Callable[..., Any], serv
                     last = blob
                     yield {"event": "traffic", "data": blob}
                 await asyncio.sleep(TRAFFIC_TICK_S)
-        return EventSourceResponse(gen(), ping=15)
+        return streams.capped(request, p, gen(), ping=15)
 
     def kind_ok(e: dict, kind: str | None, severity: str | None) -> bool:
         return (not kind or e.get("kind") in kind.split(",")) and (not severity or e.get("severity") in severity.split(","))
@@ -240,7 +239,7 @@ def router(call: Callable[..., Awaitable[Any]], reader: Callable[..., Any], serv
                     last = max(e["id"] for e in rows)
                     yield {"event": "events", "data": json.dumps(rows, default=str)}
                 await asyncio.sleep(EVENTS_TICK_S)
-        return EventSourceResponse(gen(), ping=15)
+        return streams.capped(request, p, gen(), ping=15)
 
     @r.get("/api/live/range")
     async def live_range(p=Depends(reader)) -> dict:

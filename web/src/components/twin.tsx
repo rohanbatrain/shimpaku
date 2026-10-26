@@ -94,7 +94,7 @@ export function portSummary(p: HwPort) {
  * --------------------------------------------------------------------------------------------- */
 // azimuth 68°: the row of guests runs almost left to right and their front panels face the viewer
 const AZ = 68, EL = 30;
-const ROW_GAP = 9, PITCH = 16, GW = 13, GD = 10, GH = 4.4, HOST_H = 5, LIFT = 1.4, SITE_GAP = 6, HOST_D = 17;
+const ROW_GAP = 9, ROW_GAP_PHONE = 16, PITCH = 16, GW = 13, GD = 10, GH = 4.4, HOST_H = 5, LIFT = 1.4, SITE_GAP = 6, HOST_D = 17;
 
 function useNarrow(q = "(max-width: 640px)") {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.matchMedia(q).matches);
@@ -107,6 +107,8 @@ export function HypervisorFigure({ hw, selected, onSelect, compact = false }: { 
   const narrow = useNarrow();
   // phones: two rows (campus behind, fabric in front) so each guest stays legible
   const rows = narrow ? 2 : 1;
+  // the fabric row stands in front of the campus row and hides what lies just behind it, so on phones the gap holds the CAMPUS label clear of it
+  const rowGap = narrow ? ROW_GAP_PHONE : ROW_GAP;
   const slots = useMemo(() => {
     let x = 3, row = 0, prevSite: string | null = null;
     return devs.map((d) => {
@@ -114,13 +116,13 @@ export function HypervisorFigure({ hw, selected, onSelect, compact = false }: { 
         if (rows === 2) { row = 1; x = 3; } else x += SITE_GAP;
       }
       prevSite = d.site;
-      const s = { d, x, y: 3 + row * (GD + ROW_GAP) };
+      const s = { d, x, y: 3 + row * (GD + rowGap) };
       x += PITCH;
       return s;
     });
   }, [devs, rows]);
   const hostW = Math.max(...slots.map((s) => s.x + GW), 0) + 3;
-  const hostD = rows === 2 ? HOST_D + GD + ROW_GAP : HOST_D;
+  const hostD = rows === 2 ? HOST_D + GD + rowGap : HOST_D;
   const W = narrow ? 560 : 1000;
   const { P, H } = useMemo(() => {
     const pts: Point3[] = [[0, 0, 0], [hostW, 0, 0], [0, hostD, 0], [hostW, hostD, 0], [0, 0, HOST_H + LIFT + GH], [hostW, 0, HOST_H + LIFT + GH],

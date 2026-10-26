@@ -30,7 +30,9 @@
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
-		Referrer-Policy same-origin
+		# a default only (`?`): the invite pages below and the daemon's own answers set no-referrer, and
+		# this block is deferred (it deletes Server), so a plain set here would overwrite theirs
+		?Referrer-Policy same-origin
 		-Server
 	}
 }
@@ -39,7 +41,11 @@
 (upstream_opts) {
 	health_uri /api/whoami
 	health_interval 10s
-	health_timeout 3s
+	# the lab is a busy laptop: one slow answer is not an outage. Three failed checks in a row
+	# (about 30 s) mark it down; one good one brings it back. The daemon logs its own stalls (loopwatch).
+	health_timeout 5s
+	health_fails 3
+	health_passes 1
 	health_status 200
 	fail_duration 30s
 	max_fails 2
@@ -65,11 +71,19 @@
 	root * /srv/site
 	# short cache for the page's own files (Cloudflare's default would keep a .js 4 h after a deploy);
 	# index.html references them with a ?v= so a deploy can also bust it at once
-	header Cache-Control "public, max-age=300"
+	@pagefiles not path /install.sh
+	header @pagefiles Cache-Control "public, max-age=300"
 	# the dashboard link follows the host the visitor used ({{.Host}}), so every domain serves itself.
 	# HTML only: install.sh (the deploy-your-own one-liner) must reach the shell byte for byte.
 	templates {
 		mime text/html
+	}
+	# Our own static page: its scripts and styles are its own files (plus one inline <style> and style
+	# attributes); live.js / shim.js call the app host's /api/public/* (https:).
+	header {
+		# static.cloudflareinsights.com: Cloudflare Web Analytics, which Cloudflare injects when it is on for the zone
+		Content-Security-Policy "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; connect-src 'self' https:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+		X-Frame-Options DENY
 	}
 	@install path /install.sh
 	header @install Content-Type "text/plain; charset=utf-8"
@@ -104,7 +118,11 @@
 	# `/`: Kuma serves the status page whose domain list holds this host (one page per domain,
 	# scripts/kuma_setup.mjs --status-host). A host no page claims gets Kuma's redirect to its admin
 	# dashboard, which is turned into the default page here instead.
-	handle / {
+	@root {
+		method GET HEAD
+		path /
+	}
+	handle @root {
 		reverse_proxy {$SHIMPAKU_KUMA_UPSTREAM:uptime-kuma:3001} {
 			header_up X-Forwarded-For {client_ip}
 			header_up X-Real-IP {client_ip}
@@ -220,7 +238,9 @@
 		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {
 			health_uri /api/whoami
 			health_interval 10s
-			health_timeout 3s
+			health_timeout 5s
+			health_fails 3
+			health_passes 1
 			fail_duration 30s
 			flush_interval -1
 			header_up X-Forwarded-For {client_ip}
@@ -242,7 +262,9 @@
 		reverse_proxy {$SHIMPAKU_LAB_UPSTREAM} {
 			health_uri /api/whoami
 			health_interval 10s
-			health_timeout 3s
+			health_timeout 5s
+			health_fails 3
+			health_passes 1
 			fail_duration 30s
 			header_up X-Forwarded-For {client_ip}
 			header_up X-Real-IP {client_ip}
@@ -270,8 +292,12 @@
 		# Same policy the app sets on the pages it serves (src/shimpaku/api/app.py).
 		header {
 			X-Frame-Options DENY
-			Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+			# plus Cloudflare Web Analytics (injected by Cloudflare when on for the zone): its script and beacon
+			Content-Security-Policy "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 		}
+		# invite and request-status pages carry their token in the URL (SECURITY.md): no Referer at all
+		@token_pages path /start /request/status
+		header @token_pages Referrer-Policy no-referrer
 		# Hashed bundles: cache forever; a missing one is a real 404, never the SPA shell.
 		handle /assets/* {
 			@exists file

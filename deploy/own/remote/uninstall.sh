@@ -43,6 +43,9 @@ fi
 
 run() { printf '+ %s\n' "$*"; "$@" || echo "  (already gone or failed: continuing)"; }
 safe_path() {  # never rm -rf something short or outside the places the installer writes
+  case $1/ in
+    */../*|*/./*|*//*) echo "refusing to remove $1 (not a plain absolute path)" >&2; return 1 ;;
+  esac
   case $1 in
     /home/*/*|/home/lab|/var/lib/shimpaku-own/*|/etc/modprobe.d/kvm-nested.conf) return 0 ;;
   esac

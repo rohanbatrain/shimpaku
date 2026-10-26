@@ -48,7 +48,7 @@
 .arch-svg text.gt { font-size: 9.5px; font-weight: 700; fill: #6b4700; }
 .arch-panel { position: static; }
 .arch-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 4px 28px; }
-.arch-panel h3 { margin: 0 0 6px; font-size: 16px; }
+.arch-panel h2.arch-t { margin: 0 0 6px; font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--t); font-weight: 650; }
 .arch-panel ul { padding-left: 18px; margin: 6px 0; }
 .arch-panel li { margin: 3px 0; }
 .arch-panel code { font-family: var(--mono); font-size: 12px; background: var(--neutral-bg); padding: 1px 4px; border-radius: 3px; word-break: break-all; }

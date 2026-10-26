@@ -51,6 +51,17 @@ while (($#)); do
   shift
 done
 [[ $STAGE == base || $STAGE == rest ]] || { echo "deploy.sh: --stage base|rest" >&2; exit 64; }
+# This runs as root and puts these values into command strings (as_op, the env file): check them here
+# too, whatever install.sh did.
+bad() { echo "deploy.sh: $1" >&2; exit 64; }
+[[ $PROFILE == full || $PROFILE == fabric || $PROFILE == campus ]] || bad "--profile full|fabric|campus"
+[[ $OP =~ ^[a-z0-9_][a-z0-9_-]*$ ]] || bad "--operator: lower-case letters, digits, - and _"
+[[ $BIND == localhost || $BIND =~ ^[0-9A-Fa-f.:]+$ ]] || bad "--bind: an IP address"
+[[ $DATA =~ ^/[A-Za-z0-9._/-]+$ && $DATA != *..* ]] || bad "--data-dir: an absolute path"
+[[ $IMG_ROUTER$IMG_SWITCH != *[[:cntrl:]]* ]] || bad "an image path contains a control character"
+for _u in ${UPLOADS[@]+"${UPLOADS[@]}"}; do
+  [[ $_u =~ ^(router|switch)=vJunos-(router|switch)-[A-Za-z0-9.-]+\.qcow2:[0-9]+$ ]] || bad "--upload KIND=vJunos-KIND-VERSION.qcow2:BYTES"
+done
 ((DRY)) && RBUNDLE=$STATE/bundle
 if ((!DRY)) && [[ $(id -u) != 0 ]]; then echo "deploy.sh: run as root" >&2; exit 1; fi
 
@@ -226,6 +237,19 @@ data_dir() {
   run env LAB_OWNER="$OP" LAB_GROUP="$QGROUP" LAB_DATA="$DATA" bash "$LABREPO/ops/lab-host-setup.sh"
 }
 
+# $DATA/images belongs to the operator user (lab-host-setup.sh: 2770, the QEMU group), a user that runs
+# network-facing services. Root never opens, moves, chowns or chmods a file in it: a symlink planted there
+# would turn that into a write or a chown of any file on the host. Root only reads the source; the
+# operator user writes, sets the mode and group, and renames.
+# shellcheck disable=SC2016  # $1 $2 are the operator's sh -c arguments
+IMG_PUT='umask 027; cat > "$1.part" && chgrp "$2" "$1.part" && chmod 0640 "$1.part" && mv -f "$1.part" "$1"'
+# shellcheck disable=SC2016
+IMG_DONE='chgrp "$2" "$1.part" && chmod 0640 "$1.part" && mv -f "$1.part" "$1"'
+img_as_op() {  # script dst [< data]
+  printf '+ [as %s] %s  (dst %s)\n' "$OP" "$1" "$2"
+  ((DRY)) || runuser -u "$OP" -- sh -c "$1" _ "$2" "$QGROUP"
+}
+
 host_images() {
   say "7. images already on the host"
   local kind src dst
@@ -236,10 +260,7 @@ host_images() {
     if [[ $src == "$dst" ]]; then echo "   $dst (in place)"; continue; fi
     if ! ((DRY)) && [[ -f $dst && $(stat -c %s "$src") == "$(stat -c %s "$dst")" ]]; then echo "   $dst present"; continue; fi
     rec image "$dst"
-    run cp --sparse=always "$src" "$dst.part"
-    run mv "$dst.part" "$dst"
-    run chown "$OP:$QGROUP" "$dst"
-    run chmod 0640 "$dst"
+    if ((DRY)); then img_as_op "$IMG_PUT" "$dst"; else img_as_op "$IMG_PUT" "$dst" < "$src"; fi
   done
 }
 
@@ -253,9 +274,7 @@ finish_uploads() {
     if ! ((DRY)) && [[ $(stat -c %s "$dst.part" 2>/dev/null) != "$size" ]]; then
       echo "upload of the $kind image is incomplete ($dst.part); re-run to resume" >&2; exit 3
     fi
-    run mv "$dst.part" "$dst"
-    run chown "$OP:$QGROUP" "$dst"
-    run chmod 0640 "$dst"
+    img_as_op "$IMG_DONE" "$dst"
   done
 }
 
@@ -288,6 +307,17 @@ lab_up() {
     for n in $(topo_nodes "$t"); do rec domain "lab-${n%%=*}"; done
     as_op "cd ~/juniper-7-day-sprint && ops/lab.sh up lab/topologies/$t.toml"
   done
+  # each topology's net script recreates lab_iso with only its own bridges: put back a forward
+  # drop for every lab bridge of every topology (idempotent)
+  if (( ${#TOPOS[@]} > 1 )); then
+    say "9b. lab: isolation rules for every topology's bridges"
+    for t in "${TOPOS[@]}"; do
+      for b in $(lib bridges --topology "$t"); do
+        [[ $b =~ ^[a-z0-9-]{1,15}$ ]] || { echo "deploy.sh: unexpected bridge name '$b' in topology $t" >&2; exit 3; }
+        run sh -c "nft list chain inet lab_iso forward | grep -q 'iifname \"$b\" drop' || nft add rule inet lab_iso forward iifname \"$b\" drop"
+      done
+    done
+  fi
 }
 
 apply_args() {  # topology [services-only] -> apply_sets.py --node args

@@ -186,7 +186,7 @@ function Timeline({ stages, at, reduced }: { stages: Stage[]; at: number | null;
   }, [cur, reduced]);
   const shown = (x: Stage) => ["done", "failed"].includes(stateAt(x, at));
   return (
-    <ol className="th-line" ref={ref} aria-label="Run timeline">
+    <ol className="th-line" ref={ref} aria-label="Run timeline" tabIndex={0}>
       {stages.map((s, i) => {
         const st = stateAt(s, at);
         const t = shown(s) ? s.t : null;

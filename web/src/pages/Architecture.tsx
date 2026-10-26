@@ -133,7 +133,7 @@ export default function Architecture() {
             </ZoomPan></div>
           </div>
           <aside className="card arch-panel" aria-live="polite">
-            <h3>{sel.title}</h3>
+            <h2 className="arch-t">{sel.title}</h2>
             <div className="small weak">{sel.sub}</div>
             <div className="arch-cols">
               <section>
