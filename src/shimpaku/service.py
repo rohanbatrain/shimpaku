@@ -20,6 +20,8 @@ Device reads go through `shimpaku.devices` (PyEZ pool) in a worker thread.
 
 from __future__ import annotations
 
+from shimpaku.modelname import short_model
+
 import asyncio
 import ipaddress
 import inspect
@@ -489,7 +491,7 @@ async def assistant_ask(question: str, principal: str, context: dict | None = No
         async for ev in (bot.ask(question, history=past) if past else bot.ask(question)):
             t = ev.get("type")
             if t == "route":
-                yield {"type": "meta", "model": ev.get("model", "?")}
+                yield {"type": "meta", "model": short_model(ev.get("model", "?"))}
             elif t == "tool_call":
                 started[ev["id"]] = _t.perf_counter()
                 arg_s[ev["id"]] = _args_summary(ev.get("args"))

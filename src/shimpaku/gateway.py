@@ -18,6 +18,8 @@ Results are cached 30 s so a page left open does not hammer the gateway.
 
 from __future__ import annotations
 
+from shimpaku.modelname import short_model
+
 import asyncio
 import time
 from datetime import datetime, timedelta, timezone
@@ -68,7 +70,7 @@ def aggregate(rows: list[dict]) -> dict:
         if not isinstance(r, dict):
             continue
         md = r.get("metadata") if isinstance(r.get("metadata"), dict) else {}
-        model = str(r.get("model") or r.get("model_group") or "unknown")[:80]
+        model = short_model(r.get("model") or r.get("model_group") or "unknown")[:80]
         who = mask_key(md.get("user_api_key_alias") or r.get("key_alias"), r.get("api_key"))
         status = str(r.get("status") or md.get("status") or "success").lower()
         err = status not in ("success", "ok", "200")
@@ -103,7 +105,7 @@ def _health_summary(h: Any) -> list[dict] | None:
         return None
     body = h.get("health_check_results") if isinstance(h.get("health_check_results"), dict) else h
     if isinstance(body.get("latest_health_checks"), dict):
-        return [{"model": str(m)[:80], "healthy": str((v or {}).get("status", "")).lower() == "healthy"}
+        return [{"model": short_model(m)[:80], "healthy": str((v or {}).get("status", "")).lower() == "healthy"}
                 for m, v in body["latest_health_checks"].items()]
     if "healthy_endpoints" not in body and "unhealthy_endpoints" not in body:
         return None
@@ -111,7 +113,7 @@ def _health_summary(h: Any) -> list[dict] | None:
     for ok, k in ((True, "healthy_endpoints"), (False, "unhealthy_endpoints")):
         for e in body.get(k) or []:
             if isinstance(e, dict):
-                out.append({"model": str(e.get("model") or "unknown")[:80], "healthy": ok})
+                out.append({"model": short_model(e.get("model") or "unknown")[:80], "healthy": ok})
     return out
 
 

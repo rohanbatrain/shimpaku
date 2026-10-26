@@ -44,8 +44,8 @@ def host() -> dict:
 def gateway() -> dict:
     now = time.time()
     models = [
-        {"name": "nvidia-nemotron-ultra", "requests": 412, "errors": 9, "spend_usd": 1.8421, "tokens": 1_204_311, "p50_ms": 9800, "p95_ms": 21400},
-        {"name": "nvidia-nemotron-lightning", "requests": 958, "errors": 4, "spend_usd": 0.6120, "tokens": 1_850_022, "p50_ms": 3100, "p95_ms": 9900},
+        {"name": "nemotron-ultra", "requests": 412, "errors": 9, "spend_usd": 1.8421, "tokens": 1_204_311, "p50_ms": 9800, "p95_ms": 21400},
+        {"name": "nemotron-lightning", "requests": 958, "errors": 4, "spend_usd": 0.6120, "tokens": 1_850_022, "p50_ms": 3100, "p95_ms": 9900},
         {"name": "glm-flash", "requests": 37, "errors": 31, "spend_usd": 0.0, "tokens": 12_400, "p50_ms": 118000, "p95_ms": 120000},
     ]
     keys = [
@@ -62,6 +62,6 @@ def gateway() -> dict:
             "health": {"alive": True, "ready": True, "db": "connected", "version": "1.79.3"},
             "totals": tot, "models": models, "keys": keys,
             "sampled": {"rows": 1000, "total": 1407, "capped": True},
-            "models_health": [{"model": "nvidia-nemotron-ultra", "healthy": True},
-                              {"model": "nvidia-nemotron-lightning", "healthy": True},
+            "models_health": [{"model": "nemotron-ultra", "healthy": True},
+                              {"model": "nemotron-lightning", "healthy": True},
                               {"model": "glm-flash", "healthy": False}]}

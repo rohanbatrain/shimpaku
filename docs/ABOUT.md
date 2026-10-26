@@ -14,7 +14,7 @@ Everything (source code, design notes, the incident log, the benchmark) is on Gi
 
 Shim calls its language models through the operator's own LiteLLM gateway. Which models it uses
 is set in the daemon's configuration (`SHIMPAKU_LLM_MODELS`, one per role: triage, diagnose,
-escalate); by default those are NVIDIA Nemotron models. Shim does not run on any one vendor's
+escalate); by default those are Nemotron models. Shim does not run on any one vendor's
 model by design: the guardrails, the audit chain and human approval are what keep it safe, not the
 model.
 
