@@ -42,11 +42,12 @@ caught by watching the live system, not by a test; the fix commit adds the test 
 | 16 | 2026-10-25 | `scripts/kuma_setup.mjs` ignored Kuma 2's incremental `updateMonitorIntoList` events | After regrouping, the emptied default group was not found and stayed | Merge the incremental updates (`322b7ee`) | rerun against the live Kuma: group removed |
 | 17 | 2026-10-25 | `ops/sync.sh` mirrored the git-ignored operator folder (`.local/`) to the lab host | Operator-only files (settings, a status-page admin credential, deploy logs) sat on the lab host, same owner, mode 0600 | Removed there; the sync excludes `.local/` (`9fa02ea`) | `ls` on the lab host after a sync |
 | 18 | 2026-10-25 | The deploy-your-own installer pinned Shimpaku to a commit of the private working history | Every self-deploy would have failed at the clone step | The host clones the commit the one-liner downloaded (or the clone's own HEAD) (`767b69c`); preflight's "Pins" check FAILs on an unpublished commit | the public one-liner's `--check` run: "pinned commits are published" |
+| 19 | 2026-10-26 | Providers took the shared DuckDB lock (and ran `ping`) on the event loop | While the analytics pass held the lock, every request stalled, the edge's 3 s health check failed ~100 times in 3 h, and the public site kept flipping to "lab offline" (replay) | Providers run in worker threads; the edge needs 3 failed checks in a row; a loop watchdog logs any future stall with its stack | `test_a_provider_waiting_for_the_store_lock_never_stalls_the_event_loop` (fails on the old code); 15 min live after: 0 stalls, 0 failed checks |
 
 ## How a reviewer can check
 
 ```bash
-.venv/bin/pytest -q                                   # 976 passed, 2 skipped (live-lab tests need -m lab)
+.venv/bin/pytest -q                                   # 1014 passed, 2 skipped (live-lab tests need -m lab)
 git log --oneline                                     # every fix is its own commit, with evidence in the message
 curl -s 127.0.0.1:8780/api/actions/act-20261024-9b7065   # the false verification, unaltered
 curl -s 127.0.0.1:8780/api/actions/act-20261024-acdfc3   # the recurrence, caught

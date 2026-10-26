@@ -29,6 +29,15 @@ CPU and memory are read live; the drawings are original and generic, not product
 
 ## 30-second tour
 
+- **Watch it live**: the repository's website link is the public demo, read-only for visitors,
+  served from the lab itself (a recorded replay when the lab is offline). Its status page shows the
+  site and the lab's health, and goes red on purpose while the operator runs a live **Virga** fault
+  drill from the dashboard's **Fault lab** (`/virga`) — a real fault on real devices, then a proven revert.
+- **Run your own**: one line on your computer or on a bare-metal x86 Linux hypervisor
+  ([Deploy your own](#deploy-your-own), `docs/DEPLOY-YOUR-OWN.md`): it checks the machine read-only,
+  shows a plan, and builds the seven devices, Shimpaku and Virga on your yes.
+- **On the lab host**:
+
 ```bash
 ssh -N -L 8780:127.0.0.1:8780 <lab-host>   # the lab host (any host that can reach the lab)
 open http://127.0.0.1:8780             # the dashboard: Service levels → Root cause → Actions
