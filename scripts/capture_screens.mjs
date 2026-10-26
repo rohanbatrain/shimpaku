@@ -35,10 +35,12 @@ for (const dir of [here, process.env.PUPPETEER_MODULES].filter(Boolean)) {
 }
 if (!puppeteer) { console.error("puppeteer-core not found: run npm install in scripts/ or set PUPPETEER_MODULES"); process.exit(2); }
 
-const APP = "https://shimpaku-app.rohanbatra.in";
-const SITE = "https://shimpaku.rohanbatra.in";
-const STATUS_A = "https://shimpaku-status.rohanbatra.in";
-const STATUS_B = "https://shimpaku-status.shaktawat.in";
+// the deployment to capture (set them; nothing host-specific is committed)
+const need = (k) => process.env[k] || (console.error(`set ${k}`), process.exit(2));
+const APP = need("CAPTURE_APP_URL");
+const SITE = need("CAPTURE_SITE_URL");
+const STATUS_A = need("CAPTURE_STATUS_URL");
+const STATUS_B = process.env.CAPTURE_STATUS_URL_2 || "";
 const INC = "INC-20261024-0839-fabric";
 const ACT_VERIFIED = "act-20261025-838aed";
 const ACT_RECURRED = "act-20261024-acdfc3";
@@ -124,7 +126,7 @@ try {
     mkdir(join(OUT, mode.dir));
     const page = await browser.newPage();
     await page.setViewport({ width: mode.w, height: mode.h, deviceScaleFactor: 2, isMobile: mode.mobile, hasTouch: mode.mobile });
-    for (const s of SHOTS) {
+    for (const s of SHOTS.filter((x) => !x.url.startsWith("/"))) {  // a second status page only when CAPTURE_STATUS_URL_2 is set
       if (ONLY.length && !ONLY.some((o) => s.name.includes(o))) continue;
       if (s.gated && !GATED) continue;
       const how = (mode.mobile ? s.m : s.d) ?? (mode.mobile ? "full" : "viewport");
